@@ -1,0 +1,36 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  slug: string;
+  date: string;
+  categories?: string[];
+  tags?: string[];
+  readingTime?: string;
+}
+
+const { title, description, slug, date, categories = [], tags = [], readingTime } = Astro.props;
+const formattedDate = new Date(date).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+  <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-2 space-x-3">
+    <time datetime={date}>{formattedDate}</time>
+    {readingTime && <span>{readingTime}</span>}
+  </div>
+  <a href={`/blog/${slug}`} class="block">
+    <h2 class="text-xl font-bold mb-1 text-gray-900 dark:text-white hover:text-lemon transition">{title}</h2>
+  </a>
+  <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">{description}</p>
+  {categories.length > 0 && (
+    <div class="flex flex-wrap gap-2 mt-2">
+      {categories.map(cat => (
+        <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-1 rounded-full">{cat}</span>
+      ))}
+    </div>
+  )}
+</article>

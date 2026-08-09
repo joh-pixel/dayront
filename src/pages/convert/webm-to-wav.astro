@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'WebM to WAV Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Extract lossless WAV audio from WebM video files directly in your browser. No upload, 100% private and free.',
+  toolName: 'WebM to WAV Converter',
+  toolIcon: '🎬',
+  toolConfig: {
+    type: 'convert',
+    from: 'webm',
+    to: 'wav',
+    label: 'WebM to WAV',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your WebM file',
+      text: 'Select a WebM video or audio file from your device.',
+    },
+    {
+      title: 'Convert to WAV',
+      text: 'Our tool extracts the audio and saves it as an uncompressed WAV.',
+    },
+    {
+      title: 'Download the WAV',
+      text: 'Get a high‑quality WAV file for editing or archiving.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Is the audio truly lossless?',
+      answer: 'WAV is a lossless container. It will preserve the original audio stream without adding compression.',
+    },
+    {
+      question: 'Can I convert WebM videos?',
+      answer: 'Yes, any WebM file with an audio track works – video is ignored.',
+    },
+    {
+      question: 'Is this free?',
+      answer: 'Completely free, no account needed.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/webm-to-mp3', icon: '🎬', name: 'WebM to MP3' },
+    { href: '/convert/mp4-to-wav', icon: '🎬', name: 'MP4 to WAV' },
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

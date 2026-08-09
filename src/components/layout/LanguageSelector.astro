@@ -1,0 +1,27 @@
+<select
+  id="lang-select"
+  class="bg-transparent text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 focus:outline-none"
+  aria-label="Select language"
+>
+  <option value="en">🇬🇧 EN</option>
+  <option value="es">🇪🇸 ES</option>
+  <option value="pt">🇵🇹 PT</option>
+  <option value="de">🇩🇪 DE</option>
+  <option value="fr">🇫🇷 FR</option>
+  <option value="ja">🇯🇵 JA</option>
+</select>
+
+<script>
+  const select = document.getElementById("lang-select");
+  // Set current from localStorage
+  const currentLang = localStorage.getItem("lang") || "en";
+  if (select) select.value = currentLang;
+
+  select?.addEventListener("change", (e) => {
+    const lang = e.target.value;
+    localStorage.setItem("lang", lang);
+    // In a real app we would redirect or reload with i18n routing
+    // For now just reload to apply (simplified)
+    window.location.reload();
+  });
+</script>

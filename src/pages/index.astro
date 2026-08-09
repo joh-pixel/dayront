@@ -1,0 +1,512 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const stats = [
+  { value: '100%', label: 'Private Processing' },
+  { value: '0', label: 'Server Uploads' },
+  { value: '22+', label: 'Free Tools' },
+  { value: '24/7', label: 'Available Offline' },
+];
+
+const testimonials = [
+  {
+    quote: "Finally, a converter that respects my privacy. No uploads, no waiting — just works.",
+    name: "Sarah Chen",
+    role: "Video Editor",
+    avatar: "SC",
+  },
+  {
+    quote: "I use Dayront daily for podcast editing. The audio cutter is incredibly fast and stays in my browser.",
+    name: "Marcus Rivera",
+    role: "Podcast Host",
+    avatar: "MR",
+  },
+  {
+    quote: "As a journalist, I need tools that keep my sources safe. Dayront's local processing is exactly that.",
+    name: "Emma Johansson",
+    role: "Investigative Journalist",
+    avatar: "EJ",
+  },
+];
+
+const features = [
+  {
+    icon: "🔒",
+    title: "100% Private",
+    description: "All processing happens locally in your browser. Your files never touch a server.",
+    link: "/privacy",
+  },
+  {
+    icon: "⚡",
+    title: "Lightning Fast",
+    description: "Powered by FFmpeg.wasm. No uploads, no waiting — convert files in seconds.",
+    link: "/tools",
+  },
+  {
+    icon: "📱",
+    title: "Works Everywhere",
+    description: "Mobile, tablet, or desktop. Dayront works on any modern browser.",
+    link: "/tools",
+  },
+  {
+    icon: "🆓",
+    title: "Completely Free",
+    description: "All 22+ tools are free forever. No accounts, no hidden fees.",
+    link: "/tools",
+  },
+  {
+    icon: "🌐",
+    title: "Multi-Language",
+    description: "Available in English, Spanish, Portuguese, German, French, and Japanese.",
+    link: "/about",
+  },
+  {
+    icon: "🎨",
+    title: "Clean Design",
+    description: "Minimal, accessible interface. Dark mode included. No distractions.",
+    link: "/about",
+  },
+];
+
+const popularTools = [
+  { name: 'MP4 to MP3', url: '/convert/mp4-to-mp3', icon: '🎬', desc: 'Extract audio from videos' },
+  { name: 'Audio Cutter', url: '/tools/audio-cutter', icon: '✂️', desc: 'Trim audio files precisely' },
+  { name: 'MP3 to WAV', url: '/convert/mp3-to-wav', icon: '🎵', desc: 'Convert to lossless format' },
+  { name: 'Audio Merger', url: '/tools/audio-merger', icon: '🔗', desc: 'Combine multiple tracks' },
+  { name: 'Volume Booster', url: '/tools/volume-booster', icon: '🔊', desc: 'Make audio louder' },
+  { name: 'Speed Changer', url: '/tools/speed-changer', icon: '⏩', desc: 'Speed up or slow down' },
+];
+
+const faqs = [
+  {
+    q: 'How does Dayront keep my files private?',
+    a: 'All processing happens inside your browser using WebAssembly technology. Your files are never uploaded to any server — we couldn\'t see them even if we wanted to.',
+  },
+  {
+    q: 'Is Dayront really free?',
+    a: 'Yes! All 22+ tools are completely free with no limits. We sustain through privacy-friendly ads that never block your conversion.',
+  },
+  {
+    q: 'Do I need to install anything?',
+    a: 'Nothing at all. Dayront works directly in your browser. Just open the site and start converting.',
+  },
+  {
+    q: 'What file formats are supported?',
+    a: 'We support MP3, WAV, M4A, FLAC, OGG, MP4, MOV, MKV, AVI, WebM, and more. New formats are added regularly.',
+  },
+];
+---
+
+<BaseLayout
+  title="Dayront – Free Media Tools, 100% Private & No Upload"
+  description="Convert, cut, merge, and edit audio & video files directly in your browser. 22+ free tools, no uploads, no servers. Your privacy guaranteed."
+>
+  <!-- ========== HERO ========== -->
+  <section class="relative overflow-hidden bg-gradient-to-b from-sky-light/50 via-white to-white dark:from-sky/10 dark:via-gray-950 dark:to-gray-950">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-72 sm:w-96 sm:h-96 bg-sky/10 dark:bg-sky/15 rounded-full blur-3xl"></div>
+      <div class="absolute top-40 left-0 w-40 h-40 bg-yellow-300/10 dark:bg-yellow-300/5 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 pt-16 pb-24 md:pt-24 md:pb-32 text-center relative z-10">
+      <div class="inline-flex items-center gap-2 bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 mb-6 shadow-sm backdrop-blur animate-fade-in-down">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        Your files never leave your device
+      </div>
+
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-black dark:text-white mb-6 animate-fade-in-up">
+        Media Tools That<br class="sm:hidden" />
+        <span class="text-sky">Respect Your Privacy</span>
+      </h1>
+
+      <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10 animate-fade-in-up">
+        Convert, edit, and process audio & video files directly in your browser.
+        No uploads, no servers, no tracking — just fast, private tools that work.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up">
+        <a href="/tools" class="btn-primary text-lg px-8 py-3.5 inline-flex items-center gap-2 hover:-translate-y-1 transition-transform duration-300">
+          Explore All Tools
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </a>
+        <a href="/about" class="btn-secondary text-lg px-8 py-3.5 hover:-translate-y-1 transition-transform duration-300">
+          Learn More
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STATS BAR ========== -->
+  <section class="max-w-5xl mx-auto px-4 -mt-12 relative z-20 reveal">
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg dark:shadow-black/30 p-6 sm:p-8 hover:shadow-xl dark:hover:shadow-black/40 transition-shadow duration-500">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        {stats.map(stat => (
+          <div class="space-y-1">
+            <p class="text-3xl sm:text-4xl font-extrabold text-sky">{stat.value}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== LIVE DEMO SECTION ========== -->
+  <section class="max-w-4xl mx-auto px-4 py-20 reveal">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Try It Right Now</h2>
+      <p class="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
+        Drop a file below and see how fast local processing really is. This demo converts MP4 to MP3 instantly.
+      </p>
+    </div>
+
+    <div
+      class="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-sky dark:hover:border-sky rounded-3xl p-8 sm:p-12 text-center transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-black/30"
+      id="demo-dropzone"
+    >
+      <div class="mb-4">
+        <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 group-hover:text-sky transition-colors" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/></svg>
+      </div>
+
+      <p class="text-xl font-semibold text-black dark:text-white mb-2">Drop your MP4 file here</p>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">or click to browse · Max 500MB</p>
+
+      <span class="btn-primary inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Choose File
+      </span>
+
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-4 flex items-center justify-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        100% local processing — no upload
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== FEATURES GRID ========== -->
+  <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 reveal">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Why Choose Dayront?</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
+          Built from the ground up for privacy, speed, and simplicity.
+        </p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map(feature => (
+          <a
+            href={feature.link}
+            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 hover:border-sky hover:shadow-lg dark:hover:shadow-black/30 hover:-translate-y-1 transition-all duration-300 group"
+          >
+            <span class="text-3xl mb-3 block transition-transform duration-300 group-hover:scale-110">{feature.icon}</span>
+            <h3 class="text-lg font-semibold text-black dark:text-white mb-2 group-hover:text-sky transition-colors">{feature.title}</h3>
+            <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{feature.description}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== POPULAR TOOLS ========== -->
+  <section class="py-20 reveal">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-between mb-10">
+        <div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-2">Popular Tools</h2>
+          <p class="text-gray-600 dark:text-gray-400">Start with these most-used converters and editors.</p>
+        </div>
+
+        <a href="/tools" class="hidden sm:inline-flex items-center gap-2 text-sky font-medium hover:underline">
+          View All 22+ Tools
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {popularTools.map(tool => (
+          <a
+            href={tool.url}
+            class="tool-card text-center py-6 hover:-translate-y-2 transition-transform duration-300"
+          >
+            <span class="text-3xl mb-2 block">{tool.icon}</span>
+            <p class="font-semibold text-sm text-black dark:text-white">{tool.name}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{tool.desc}</p>
+          </a>
+        ))}
+      </div>
+
+      <div class="text-center mt-8 sm:hidden">
+        <a href="/tools" class="text-sky font-medium hover:underline">View All 22+ Tools →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TESTIMONIALS ========== -->
+  <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 reveal">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Trusted by Thousands</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-lg">People love Dayront because it's fast, free, and private.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        {testimonials.map(t => (
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-black/30 transition-all duration-300">
+            <div class="flex gap-1 mb-4">
+              {[...Array(5)].map(() => <span class="text-yellow-400 text-sm">★</span>)}
+            </div>
+
+            <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed flex-1 mb-4 italic">"{t.quote}"</p>
+
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-sky-light dark:bg-sky/20 flex items-center justify-center text-sm font-bold text-sky">
+                {t.avatar}
+              </div>
+
+              <div>
+                <p class="text-sm font-semibold text-black dark:text-white">{t.name}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{t.role}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="py-20 reveal">
+    <div class="max-w-4xl mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">How It Works</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-lg">Three simple steps to process your files privately.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-8">
+        <div class="text-center reveal-child">
+          <div class="w-16 h-16 rounded-2xl bg-sky-light dark:bg-sky/15 flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-extrabold text-sky">1</span>
+          </div>
+          <h3 class="font-semibold text-black dark:text-white mb-2">Choose a Tool</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Pick from 22+ free tools — converters, editors, and utilities.</p>
+        </div>
+
+        <div class="text-center reveal-child">
+          <div class="w-16 h-16 rounded-2xl bg-sky-light dark:bg-sky/15 flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-extrabold text-sky">2</span>
+          </div>
+          <h3 class="font-semibold text-black dark:text-white mb-2">Drop Your File</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Your file stays on your device. Processing happens locally.</p>
+        </div>
+
+        <div class="text-center reveal-child">
+          <div class="w-16 h-16 rounded-2xl bg-sky-light dark:bg-sky/15 flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl font-extrabold text-sky">3</span>
+          </div>
+          <h3 class="font-semibold text-black dark:text-white mb-2">Download Instantly</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Get your processed file immediately. No waiting for uploads.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FAQ ========== -->
+  <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 reveal">
+    <div class="max-w-3xl mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Frequently Asked Questions</h2>
+      </div>
+
+      <dl class="space-y-4">
+        {faqs.map(faq => (
+          <details class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 group cursor-pointer hover:border-sky transition-colors">
+            <summary class="font-semibold text-black dark:text-white list-none flex items-center justify-between">
+              {faq.q}
+              <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 group-open:rotate-180 transition-transform flex-shrink-0 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </summary>
+            <p class="mt-3 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{faq.a}</p>
+          </details>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <!-- ========== CTA ========== -->
+  <section class="py-20 reveal">
+    <div class="max-w-2xl mx-auto px-4 text-center">
+      <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-8 sm:p-12 shadow-sm dark:shadow-black/20">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Ready to Get Started?</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-lg mb-8">All tools are free, private, and work instantly in your browser.</p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="/tools" class="btn-primary text-lg px-8 py-3.5 hover:-translate-y-1 transition-transform duration-300">Start Converting Now</a>
+          <a href="/blog" class="btn-secondary text-lg px-8 py-3.5 hover:-translate-y-1 transition-transform duration-300">Read the Blog</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating privacy status -->
+  <div
+    id="privacy-status"
+    class="fixed bottom-5 right-5 z-50 translate-y-20 opacity-0 transition-all duration-500 pointer-events-none"
+  >
+    <div class="flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-xl px-4 py-2.5">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Processing stays on your device</span>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translateY(35px);
+    transition:
+      opacity 700ms ease,
+      transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-child {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      opacity 600ms ease,
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .is-visible .reveal-child:nth-child(1) {
+    transition-delay: 100ms;
+  }
+
+  .is-visible .reveal-child:nth-child(2) {
+    transition-delay: 200ms;
+  }
+
+  .is-visible .reveal-child:nth-child(3) {
+    transition-delay: 300ms;
+  }
+
+  .is-visible .reveal-child {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal-child {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const revealElements = document.querySelectorAll('.reveal');
+
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        } else {
+          entry.target.classList.remove('is-visible');
+        }
+      });
+    },
+    {
+      threshold: 0.12,
+      rootMargin: '0px 0px -60px 0px',
+    }
+  );
+
+  revealElements.forEach((element) => {
+    revealObserver.observe(element);
+  });
+
+  // Scroll-direction motion
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+
+  function updateScrollMotion() {
+    const currentScrollY = window.scrollY;
+    const direction = currentScrollY > lastScrollY ? 'down' : 'up';
+
+    document.documentElement.dataset.scrollDirection = direction;
+
+    lastScrollY = currentScrollY;
+    ticking = false;
+  }
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollMotion);
+        ticking = true;
+      }
+    },
+    { passive: true }
+  );
+
+  // Floating privacy indicator
+  const privacyStatus = document.getElementById('privacy-status');
+
+  let privacyTimer;
+
+  function showPrivacyStatus() {
+    if (!privacyStatus) return;
+
+    privacyStatus.classList.remove('translate-y-20', 'opacity-0');
+    privacyStatus.classList.add('translate-y-0', 'opacity-100');
+
+    clearTimeout(privacyTimer);
+
+    privacyTimer = setTimeout(() => {
+      privacyStatus.classList.add('translate-y-20', 'opacity-0');
+      privacyStatus.classList.remove('translate-y-0', 'opacity-100');
+    }, 3500);
+  }
+
+  let lastPrivacyScroll = 0;
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      const current = window.scrollY;
+
+      if (Math.abs(current - lastPrivacyScroll) > 120) {
+        showPrivacyStatus();
+        lastPrivacyScroll = current;
+      }
+    },
+    { passive: true }
+  );
+
+  // Make the demo drop zone respond visually in real time.
+  const dropzone = document.getElementById('demo-dropzone');
+
+  if (dropzone) {
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.add('border-sky', 'scale-[1.01]');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.remove('border-sky', 'scale-[1.01]');
+      });
+    });
+  }
+</script>

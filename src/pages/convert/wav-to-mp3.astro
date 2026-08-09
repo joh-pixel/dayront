@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'WAV to MP3 Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert WAV audio files to MP3 in your browser. No upload, fully private. Reduce file size without losing noticeable quality.',
+  toolName: 'WAV to MP3 Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'wav',
+    to: 'mp3',
+    label: 'WAV to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your WAV file',
+      text: 'Drag & drop or click to select a WAV audio file.',
+    },
+    {
+      title: 'Convert to MP3',
+      text: 'Our browser engine compresses WAV to MP3 using a high‑quality encoder.',
+    },
+    {
+      title: 'Download the MP3',
+      text: 'Save the smaller MP3 file to your device – ideal for sharing.',
+    },
+  ],
+  faq: [
+    {
+      question: 'How much smaller will the file be?',
+      answer: 'Typically 5‑10× smaller than WAV, depending on the content and bitrate.',
+    },
+    {
+      question: 'Will I hear the difference?',
+      answer: 'For most listeners, a high‑bitrate MP3 (320kbps) is indistinguishable from WAV.',
+    },
+    {
+      question: 'Is it really free?',
+      answer: 'Yes, unlimited conversions, no signup required.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
+    { href: '/convert/flac-to-mp3', icon: '🎵', name: 'FLAC to MP3' },
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

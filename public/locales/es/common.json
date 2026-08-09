@@ -1,0 +1,31 @@
+{
+  "nav": {
+    "tools": "Herramientas",
+    "blog": "Blog",
+    "about": "Sobre nosotros",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "search": "Buscar"
+  },
+  "footer": {
+    "brand_description": "Herramientas multimedia que priorizan la privacidad, procesadas localmente.",
+    "tools": "Herramientas",
+    "all_tools": "Todas las herramientas",
+    "blog": "Blog",
+    "latest_articles": "Artículos más recientes",
+    "search": "Buscar",
+    "company": "Empresa",
+    "about": "Sobre nosotros",
+    "privacy_policy": "Política de privacidad",
+    "terms_of_service": "Términos del servicio",
+    "rss_feed": "Suscribirse al RSS",
+    "connect": "Conectar",
+    "github": "GitHub",
+    "contact": "Contacto",
+    "copyright": "© {{year}} Dayront. Todos los derechos reservados. · Sus archivos nunca salen de su dispositivo."
+  },
+  "privacy_badge": "Tus archivos nunca salen de tu dispositivo",
+  "theme_toggle": "Alternar tema",
+  "menu_open": "Abrir menú",
+  "version": "v1.0.0"
+}

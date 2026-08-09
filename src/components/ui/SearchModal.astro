@@ -1,0 +1,131 @@
+---
+export interface SearchItem {
+  title: string;
+  description: string;
+  url: string;
+  type: 'tool' | 'blog';
+  icon?: string;
+}
+
+const { items = [] } = Astro.props;
+---
+
+<!-- Modal backdrop (Now uses opacity and pointer-events instead of hidden) -->
+<div 
+  id="search-modal" 
+  class="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/50 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none" 
+  aria-modal="true" 
+  role="dialog"
+>
+  <!-- Modal Content (Uses scale, translate, and opacity for smooth entry/exit) -->
+  <div 
+    id="search-modal-content" 
+    class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden transition-all duration-300 opacity-0 scale-95 translate-y-4 sm:translate-y-0"
+  >
+    <div class="relative border-b border-gray-200 dark:border-gray-800">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input
+        id="modal-search-input"
+        type="text"
+        placeholder="Search tools, articles..."
+        class="w-full pl-12 pr-4 py-4 text-lg bg-transparent text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none"
+        autocomplete="off"
+      />
+      <button
+        id="modal-close"
+        class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+        aria-label="Close search"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div id="modal-results" class="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+      <div class="p-6 text-center text-gray-400 dark:text-gray-500">
+        <p class="text-lg mb-2">Start typing to search…</p>
+        <p class="text-sm">Find tools, guides, and more</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ items }}>
+  const searchData = items;
+
+  const modal = document.getElementById('search-modal');
+  const modalContent = document.getElementById('search-modal-content');
+  const input = document.getElementById('modal-search-input');
+  const results = document.getElementById('modal-results');
+  const close = document.getElementById('modal-close');
+
+  function renderResults(filtered) {
+    if (filtered.length === 0) {
+      results.innerHTML = `<div class="p-6 text-center text-gray-400">No results found</div>`;
+      return;
+    }
+    results.innerHTML = filtered.map(item => `
+      <a href="${item.url}" class="flex items-start gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        <span class="text-2xl flex-shrink-0">${item.icon || (item.type === 'blog' ? '📝' : '🔧')}</span>
+        <div class="min-w-0">
+          <p class="font-semibold text-black dark:text-white truncate">${item.title}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">${item.description || ''}</p>
+          <span class="text-xs text-gray-400 mt-1 capitalize">${item.type}</span>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  input?.addEventListener('input', () => {
+    const q = input.value.toLowerCase().trim();
+    if (!q) {
+      results.innerHTML = `<div class="p-6 text-center text-gray-400 dark:text-gray-500">Start typing to search…</div>`;
+      return;
+    }
+    const filtered = searchData.filter(item =>
+      item.title.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q)
+    );
+    renderResults(filtered);
+  });
+
+  // Function to handle Opening with animations
+  window.openSearch = () => {
+    // Reveal Backdrop
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    
+    // Reveal and Scale Content
+    modalContent.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+    modalContent.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+    
+    input?.focus();
+    if (input) input.value = '';
+    results.innerHTML = `<div class="p-6 text-center text-gray-400 dark:text-gray-500">Start typing to search…</div>`;
+  };
+
+  // Function to handle Closing with animations
+  const closeSearch = () => {
+    // Hide Backdrop
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    
+    // Hide and Scale Down Content
+    modalContent.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+    modalContent.classList.add('opacity-0', 'scale-95', 'translate-y-4');
+    
+    // Optional: Blur the input so mobile keyboards dismiss immediately
+    input?.blur();
+  };
+
+  close?.addEventListener('click', closeSearch);
+  
+  // Close when clicking outside the modal content
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeSearch();
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('pointer-events-none')) {
+      closeSearch();
+    }
+  });
+</script>

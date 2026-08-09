@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'MP3 to OGG Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert MP3 audio to OGG Vorbis format in your browser. No upload, completely private. Open source format.',
+  toolName: 'MP3 to OGG Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'mp3',
+    to: 'ogg',
+    label: 'MP3 to OGG',
+  } as const,
+  howTo: [
+    {
+      title: 'Select your MP3 file',
+      text: 'Choose an MP3 audio file from your device.',
+    },
+    {
+      title: 'Convert to OGG',
+      text: 'Our tool re‑encodes the audio to OGG Vorbis.',
+    },
+    {
+      title: 'Download the OGG file',
+      text: 'Save the open‑source OGG file – great for games and streaming.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Why convert to OGG?',
+      answer: 'OGG is a free, open format with excellent quality and smaller file sizes than MP3 in many cases.',
+    },
+    {
+      question: 'Is quality lost?',
+      answer: 'There is some quality loss during transcoding, but we use high‑quality settings to minimize it.',
+    },
+    {
+      question: 'Is it safe?',
+      answer: 'Yes, everything is processed locally.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/ogg-to-mp3', icon: '🎵', name: 'OGG to MP3' },
+    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
+    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

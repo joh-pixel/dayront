@@ -1,0 +1,51 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'Volume Booster – Increase Audio Volume Online Free | Dayront',
+  metaDescription:
+    'Make your audio files louder instantly. No upload, 100% private. Works with MP3, WAV, M4A, and more.',
+  toolName: 'Volume Booster',
+  toolIcon: '🔊',
+  toolConfig: {
+    type: 'boost',
+    outputFormat: 'mp3',
+    label: 'Volume Booster',
+  } as const,
+  howTo: [
+    {
+      title: 'Select your audio file',
+      text: 'Drag & drop or click to choose a quiet track.',
+    },
+    {
+      title: 'Boost the volume',
+      text: 'Our tool applies a safe gain increase without distortion.',
+    },
+    {
+      title: 'Download the louder file',
+      text: 'Save the boosted audio to your device.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Will it distort the sound?',
+      answer: 'No, we use a transparent limiter to prevent clipping while maximizing loudness.',
+    },
+    {
+      question: 'How much louder can I make it?',
+      answer: 'We boost by +6 dB by default, enough for most quiet recordings.',
+    },
+    {
+      question: 'Which formats are supported?',
+      answer: 'MP3, WAV, M4A, OGG, FLAC, and more.',
+    },
+  ],
+  relatedTools: [
+    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
+    { href: '/tools/speed-changer', icon: '⏩', name: 'Speed Changer' },
+    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

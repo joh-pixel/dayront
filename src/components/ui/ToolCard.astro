@@ -1,0 +1,14 @@
+---
+export interface Props {
+  name: string;
+  href: string;
+  icon: string;
+}
+
+const { name, href, icon } = Astro.props;
+---
+
+<a href={href} class="tool-card flex flex-col items-start gap-2">
+  <span class="text-2xl">{icon}</span>
+  <span class="font-medium text-sm sm:text-base">{name}</span>
+</a>

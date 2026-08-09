@@ -1,0 +1,38 @@
+---
+import ArticleCard from './ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+// Accept a list of slugs for related posts
+export interface Props {
+  relatedSlugs: string[];
+  lang?: string; // currently 'en'
+}
+
+const { relatedSlugs, lang = 'en' } = Astro.props;
+
+// Fetch all blog posts in the language folder and filter by slug
+const posts = await getCollection('blog', (entry) => {
+  // entry.id is like 'en/how-to-convert-mp4-to-mp3'
+  return entry.id.startsWith(`${lang}/`);
+});
+
+const relatedPosts = posts.filter(p => relatedSlugs.includes(p.slug)).map(p => ({
+  title: p.data.title,
+  description: p.data.description,
+  slug: p.slug,
+  date: p.data.date.toISOString(),
+  categories: p.data.categories,
+}));
+
+// If no related posts found, show nothing
+if (relatedPosts.length === 0) return null;
+---
+
+<section class="mt-16">
+  <h2 class="text-2xl font-bold mb-6">Related Articles</h2>
+  <div class="grid gap-6 sm:grid-cols-2">
+    {relatedPosts.map(post => (
+      <ArticleCard {...post} />
+    ))}
+  </div>
+</section>

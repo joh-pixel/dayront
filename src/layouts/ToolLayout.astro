@@ -1,0 +1,186 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import AdSlot from '../components/layout/AdSlot.astro';
+import Converter from '../components/conversion/Converter';
+import PrivacyBadge from '../components/ui/PrivacyBadge.astro';
+
+export interface HowToStep {
+  title: string;
+  text: string;
+}
+export interface FAQ {
+  question: string;
+  answer: string;
+}
+export interface RelatedTool {
+  href: string;
+  icon: string;
+  name: string;
+}
+
+export interface Props {
+  // SEO & content
+  metaTitle: string;
+  metaDescription: string;
+  toolName: string;
+  toolIcon: string;
+  // Converter config
+  toolConfig: {
+    type: 'convert' | 'cut' | 'merge' | 'compress' | 'boost' | 'speed' | 'reverse' | 'stereo-to-mono';
+    from?: string;
+    to?: string;
+    outputFormat?: string;
+    label: string;
+  };
+  // Page sections
+  howTo: HowToStep[];
+  faq: FAQ[];
+  relatedTools: RelatedTool[];
+  // Optional custom content before/after converter
+  preConverter?: any;
+  postConverter?: any;
+}
+
+const {
+  metaTitle,
+  metaDescription,
+  toolName,
+  toolIcon,
+  toolConfig,
+  howTo,
+  faq,
+  relatedTools,
+  preConverter,
+  postConverter,
+} = Astro.props;
+
+// Build Schema.org data dynamically
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: toolName,
+  description: metaDescription,
+  step: howTo.map((step, i) => ({
+    '@type': 'HowToStep',
+    position: i + 1,
+    name: step.title,
+    text: step.text,
+  })),
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((q) => ({
+    '@type': 'Question',
+    name: q.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: q.answer,
+    },
+  })),
+};
+---
+
+<BaseLayout title={metaTitle} description={metaDescription}>
+  <!-- Structured data -->
+  <script type="application/ld+json" set:html={JSON.stringify(howToSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <section class="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+    <!-- Breadcrumbs -->
+    <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
+      <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
+        <li><a href="/" class="hover:text-lemon transition">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/tools" class="hover:text-lemon transition">Tools</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-gray-900 dark:text-white font-medium">{toolName}</li>
+      </ol>
+    </nav>
+
+    <div class="lg:grid lg:grid-cols-3 lg:gap-10">
+      <!-- Main column -->
+      <div class="lg:col-span-2">
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-6">
+          <span class="text-3xl">{toolIcon}</span>
+          <h1 class="text-3xl sm:text-4xl font-extrabold">{toolName}</h1>
+        </div>
+
+        <!-- Privacy badge -->
+        <div class="privacy-badge mb-8">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Your files never leave your device
+        </div>
+
+        <!-- Optional content before converter -->
+        {preConverter && <div class="mb-6">{preConverter}</div>}
+
+        <!-- The functional converter island -->
+        <Converter client:load toolConfig={toolConfig} />
+
+        <!-- Optional content after converter -->
+        {postConverter && <div class="mt-6">{postConverter}</div>}
+
+        <!-- Below‑tool advertisement slot -->
+        <AdSlot position="below-tool" class="my-10" />
+      
+
+        <!-- How‑to steps -->
+        <section class="mt-16">
+          <h2 class="text-2xl font-bold mb-6">How to use {toolName}</h2>
+          <ol class="space-y-6">
+            {howTo.map((step, i) => (
+              <li class="flex gap-4">
+                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-lemon text-black font-bold flex items-center justify-center text-sm">
+                  {i + 1}
+                </span>
+                <div>
+                  <h3 class="font-semibold text-lg">{step.title}</h3>
+                  <p class="text-gray-600 dark:text-gray-400">{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <!-- FAQ -->
+        <section class="mt-16">
+          <h2 class="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
+          <dl class="space-y-6">
+            {faq.map((q) => (
+              <div>
+                <dt class="font-semibold text-lg mb-2">{q.question}</dt>
+                <dd class="text-gray-600 dark:text-gray-400">{q.answer}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      </div>
+
+      <!-- Sidebar: Related Tools (desktop) -->
+      <aside class="hidden lg:block space-y-8">
+        <div class="sticky top-24">
+          <!-- Third ad slot will go here later (in‑content for blog), 
+               but sidebar can optionally have an ad if you like.
+               For now we leave it clean. -->
+          <h3 class="text-lg font-semibold mb-4">Related Tools</h3>
+          <ul class="space-y-2">
+            {relatedTools.map((tool) => (
+              <li>
+                <a
+                  href={tool.href}
+                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  <span>{tool.icon}</span>
+                  <span class="text-sm font-medium">{tool.name}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>

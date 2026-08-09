@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArticleCard from '../../../components/blog/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection('blog', (entry) => entry.id.startsWith('en/'));
+  const tagsSet = new Set<string>();
+  allPosts.forEach(post => {
+    post.data.tags?.forEach(tag => tagsSet.add(tag.toLowerCase()));
+  });
+  return Array.from(tagsSet).map(tag => ({
+    params: { tag },
+  }));
+}
+
+const { tag } = Astro.params;
+const allPosts = await getCollection('blog', (entry) => entry.id.startsWith('en/'));
+const filteredPosts = allPosts
+  .filter(post => post.data.tags?.some(t => t.toLowerCase() === tag))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .map(post => ({
+    title: post.data.title,
+    description: post.data.description,
+    slug: post.id.replace(/\.mdx$/, '').replace(/^en\//, ''),
+    date: post.data.date.toISOString(),
+    categories: post.data.categories || [],
+    tags: post.data.tags || [],
+  }));
+
+const tagName = tag.charAt(0).toUpperCase() + tag.slice(1);
+---
+
+<BaseLayout
+  title={`${tagName} – Blog | Dayront`}
+  description={`Blog posts tagged with "${tagName}" – guides, tips, and more.`}
+>
+  <section class="max-w-7xl mx-auto px-4 py-12">
+    <h1 class="text-4xl font-extrabold text-black dark:text-white mb-8">Tag: {tagName}</h1>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {filteredPosts.map(post => <ArticleCard {...post} />)}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,29 @@
+---
+export interface Props {
+  position: 'sticky-footer' | 'below-tool' | 'in-content' | 'below-header';
+  class?: string;
+}
+
+const { position, class: className = '' } = Astro.props;
+
+const dimensionsMap = {
+  'sticky-footer':   'h-[60px] md:h-[90px]',
+  'below-tool':      'h-[90px] md:h-[120px]',
+  'in-content':      'h-[250px] md:h-[280px]',
+  'below-header':    'h-[50px] md:h-[60px]',   // ← compact banner
+};
+
+const reservedHeight = dimensionsMap[position];
+---
+
+<div
+  class:list={[
+    'w-full bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden flex items-center justify-center',
+    reservedHeight,
+    className,
+  ]}
+  data-ad-position={position}
+  aria-label="Advertisement"
+>
+  <span class="text-xs text-gray-400 dark:text-gray-500 select-none">Ad</span>
+</div>

@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'MP3 to M4A Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert MP3 to M4A (AAC) audio format in your browser. Keep quality, reduce size. 100% private, no server upload.',
+  toolName: 'MP3 to M4A Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'mp3',
+    to: 'm4a',
+    label: 'MP3 to M4A',
+  } as const,
+  howTo: [
+    {
+      title: 'Select your MP3 file',
+      text: 'Drag & drop or click to choose an MP3 audio file.',
+    },
+    {
+      title: 'Convert to M4A',
+      text: 'Our local converter wraps the audio in an M4A container with AAC encoding.',
+    },
+    {
+      title: 'Download the M4A file',
+      text: 'Save the M4A file – perfect for Apple devices and better compression.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Why convert MP3 to M4A?',
+      answer: 'M4A (AAC) often provides better quality at the same bitrate as MP3, and is ideal for iTunes/iPhone.',
+    },
+    {
+      question: 'Does the conversion lose quality?',
+      answer: 'There is minimal quality loss because we use a high‑bitrate AAC encoder.',
+    },
+    {
+      question: 'Is it free?',
+      answer: 'Yes, completely free – no hidden costs or watermarks.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/m4a-to-mp3', icon: '🎵', name: 'M4A to MP3' },
+    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
+    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

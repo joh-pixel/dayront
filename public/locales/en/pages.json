@@ -1,0 +1,72 @@
+{
+  "about": {
+    "metaTitle": "About Dayront – Privacy‑First Media Tools",
+    "metaDescription": "Dayront processes your files entirely in your browser. No uploads, no servers, just fast and private media tools.",
+    "heading": "About Dayront",
+    "paragraphs": [
+      "Dayront is a collection of free, online media tools that run 100% in your browser. We never upload your files to any server. Everything stays on your device.",
+      "Built with privacy and speed as core principles, Dayront uses modern web technologies like FFmpeg.wasm to process audio and video locally. No software installation required.",
+      "Our mission: make powerful media editing accessible to everyone, without compromising your data."
+    ]
+  },
+  "terms": {
+    "metaTitle": "Terms of Service – Dayront",
+    "metaDescription": "Terms of service for using Dayront's free online media tools.",
+    "heading": "Terms of Service",
+    "lastUpdated": "2025-01-01",
+    "sections": [
+      {
+        "title": "Acceptance of Terms",
+        "body": "By accessing or using Dayront, you agree to be bound by these Terms of Service. If you do not agree, please do not use the service."
+      },
+      {
+        "title": "Description of Service",
+        "body": "Dayront provides browser-based media conversion and editing tools. All processing is performed locally on your device. We do not have access to your files."
+      },
+      {
+        "title": "User Responsibilities",
+        "body": "You are solely responsible for the files you process. You must not use Dayront for any illegal or unauthorised purpose."
+      },
+      {
+        "title": "Intellectual Property",
+        "body": "The Dayront name, logo, and website code are our property. You may not copy or modify them without permission."
+      },
+      {
+        "title": "Disclaimer of Warranties",
+        "body": "The service is provided \"as is\" without warranties of any kind. We do not guarantee that the tools will meet your requirements or be error-free."
+      },
+      {
+        "title": "Limitation of Liability",
+        "body": "Dayront shall not be liable for any damages arising from the use or inability to use the service."
+      },
+      {
+        "title": "Changes to Terms",
+        "body": "We reserve the right to update these terms at any time. Continued use after changes constitutes acceptance."
+      }
+    ]
+  },
+  "privacy": {
+    "metaTitle": "Privacy Policy – Dayront",
+    "metaDescription": "Dayront's privacy policy: your files never leave your device. Read how we protect your data.",
+    "heading": "Privacy Policy",
+    "lastUpdated": "2025-01-01",
+    "sections": [
+      {
+        "title": "Your Files Stay on Your Device",
+        "body": "All conversions and edits are performed inside your browser using WebAssembly. We do not upload, store, or view your files. Ever."
+      },
+      {
+        "title": "Data We Collect",
+        "body": "We may use anonymous analytics (without cookies) to understand how our tools are used. No personal data is collected."
+      },
+      {
+        "title": "Advertisements",
+        "body": "Advertisements may be displayed via third‑party networks that could use cookies. Please refer to their respective privacy policies for more information."
+      },
+      {
+        "title": "Contact Us",
+        "body": "If you have questions about this policy, please contact us at privacy@dayront.com."
+      }
+    ]
+  }
+}

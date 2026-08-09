@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "tools": "Tools",
+    "blog": "Blog",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "search": "Search"
+  },
+  {
+{
+  "brand_description": "Privacy‑first media tools, processed locally. No uploads, no servers.",
+  "version": "v1.0.0",
+  "popular_tools": "Popular Tools",
+  "all_tools": "All Tools",
+  "company": "Company",
+  "about": "About",
+  "blog": "Blog",
+  "search": "Search",
+  "github": "GitHub",
+  "contact": "Contact",
+  "legal": "Legal",
+  "privacy_policy": "Privacy Policy",
+  "terms_of_service": "Terms of Service",
+  "rss_feed": "RSS Feed",
+  "copyright": "© {{year}} Dayront. All rights reserved."
+}
+  },
+  "privacy_badge": "Your files never leave your device",
+  "theme_toggle": "Toggle theme",
+  "menu_open": "Open menu",
+  "version": "v1.0.0"
+}

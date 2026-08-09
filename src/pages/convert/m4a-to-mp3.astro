@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'M4A to MP3 Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert M4A (AAC) audio to MP3 format in your browser. No upload, fully private. Works on all devices.',
+  toolName: 'M4A to MP3 Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'm4a',
+    to: 'mp3',
+    label: 'M4A to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your M4A file',
+      text: 'Select an M4A file from your device.',
+    },
+    {
+      title: 'Convert to MP3',
+      text: 'Our tool will extract and re‑encode the audio to MP3.',
+    },
+    {
+      title: 'Download your MP3',
+      text: 'Get a universally compatible MP3 file instantly.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Why convert M4A to MP3?',
+      answer: 'MP3 is more widely supported, especially on older devices and non‑Apple platforms.',
+    },
+    {
+      question: 'Will the file size increase?',
+      answer: 'Not necessarily – we maintain a high‑quality MP3 bitrate, so size may be similar.',
+    },
+    {
+      question: 'Is my file secure?',
+      answer: 'Yes – all processing happens locally, no data leaves your browser.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/mp3-to-m4a', icon: '🎵', name: 'MP3 to M4A' },
+    { href: '/convert/wav-to-mp3', icon: '🎵', name: 'WAV to MP3' },
+    { href: '/tools/volume-booster', icon: '🔊', name: 'Volume Booster' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

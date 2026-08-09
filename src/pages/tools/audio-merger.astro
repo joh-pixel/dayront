@@ -1,0 +1,54 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'Audio Merger – Combine Audio Files Online Free | Dayront',
+  metaDescription:
+    'Merge multiple audio tracks into one file. Supports MP3, WAV, M4A, and more. No upload, fully private.',
+  toolName: 'Audio Merger',
+  toolIcon: '🔗',
+  toolConfig: {
+    type: 'merge',
+    outputFormat: 'mp3',
+    label: 'Audio Merger',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your audio files',
+      text: 'Select two or more audio files from your device.',
+    },
+    {
+      title: 'Arrange the order',
+      text: 'Drag the clips to set the playback sequence.',
+    },
+    {
+      title: 'Merge & download',
+      text: 'Click "Merge" and your combined file will be ready.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Can I merge different formats?',
+      answer:
+        'Yes, you can mix MP3, WAV, M4A, and more in the same merge.',
+    },
+    {
+      question: 'Is the quality preserved?',
+      answer:
+        'Absolutely. We avoid unnecessary re‑encoding to keep quality high.',
+    },
+    {
+      question: 'Is there a file size limit?',
+      answer:
+        'No hard limit; performance depends on your device’s memory.',
+    },
+  ],
+  relatedTools: [
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
+    { href: '/convert/wav-to-mp3', icon: '🎵', name: 'WAV to MP3' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

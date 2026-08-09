@@ -1,0 +1,51 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'Reverse Audio – Play Audio Backwards Free Online | Dayront',
+  metaDescription:
+    'Reverse your audio files online – no upload needed. Supports MP3, WAV, and more. 100% private.',
+  toolName: 'Reverse Audio',
+  toolIcon: '↩️',
+  toolConfig: {
+    type: 'reverse',
+    outputFormat: 'mp3',
+    label: 'Reverse Audio',
+  } as const,
+  howTo: [
+    {
+      title: 'Choose your audio file',
+      text: 'Drop an MP3, WAV, or other file into the box.',
+    },
+    {
+      title: 'Reverse it',
+      text: 'Click "Reverse" and the track will play backwards.',
+    },
+    {
+      title: 'Download the reversed file',
+      text: 'Save the backwards audio to your device.',
+    },
+  ],
+  faq: [
+    {
+      question: 'What does reversing audio do?',
+      answer: 'It plays the sound backwards – often used for hidden messages, music effects, or fun edits.',
+    },
+    {
+      question: 'Does it work with long files?',
+      answer: 'Yes, but very long files may take a bit longer depending on your device.',
+    },
+    {
+      question: 'Is my file safe?',
+      answer: 'Absolutely, everything stays on your device.',
+    },
+  ],
+  relatedTools: [
+    { href: '/tools/speed-changer', icon: '⏩', name: 'Speed Changer' },
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+    { href: '/convert/mp3-to-ogg', icon: '🎵', name: 'MP3 to OGG' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

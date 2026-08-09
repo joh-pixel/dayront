@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'OGG to MP3 Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert OGG audio to MP3 format in your browser. No upload, fully private. Works with OGG Vorbis files.',
+  toolName: 'OGG to MP3 Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'ogg',
+    to: 'mp3',
+    label: 'OGG to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your OGG file',
+      text: 'Select an OGG audio file (Vorbis) from your device.',
+    },
+    {
+      title: 'Convert to MP3',
+      text: 'Our tool transcodes the audio to MP3 for maximum compatibility.',
+    },
+    {
+      title: 'Download the MP3',
+      text: 'Get a universally playable MP3 file.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Why convert OGG to MP3?',
+      answer: 'MP3 is more widely supported by hardware and software, especially older devices.',
+    },
+    {
+      question: 'Will the file size change?',
+      answer: 'It may increase slightly; MP3 at high bitrate is comparable in size.',
+    },
+    {
+      question: 'Is it really free?',
+      answer: 'Yes, no registration, no ads that block conversion.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/mp3-to-ogg', icon: '🎵', name: 'MP3 to OGG' },
+    { href: '/convert/flac-to-mp3', icon: '🎵', name: 'FLAC to MP3' },
+    { href: '/tools/reverse-audio', icon: '↩️', name: 'Reverse Audio' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

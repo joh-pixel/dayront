@@ -1,0 +1,716 @@
+{
+  "audio-cutter": {
+    "title": "Cortador de audio",
+    "metaTitle": "Cortador de audio – Recorte MP3, WAV en línea gratis | Dayront",
+    "metaDescription": "Corta archivos de audio en línea sin cargarlos. Recorte MP3, WAV, M4A y más. 100% privado, funciona en su navegador.",
+    "icon": "✂️",
+    "howTo": [
+      {
+        "title": "Seleccionar fichero de audio",
+        "text": "Haz clic o arrastra y suelta tu archivo de audio en el área de carga."
+      },
+      {
+        "title": "Ajuste los puntos de corte",
+        "text": "Utilice los controles deslizantes para establecer el inicio y el final del segmento que desea conservar."
+      },
+      {
+        "title": "Descarga el audio recortado",
+        "text": "Haga clic en \"Cortar audio\" y su archivo recortado estará listo para descargar al instante."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Realmente es gratuito?",
+        "answer": "Sí, totalmente gratis. Sin costes ocultos."
+      },
+      {
+        "question": "¿Mis archivos abandonan mi dispositivo?",
+        "answer": "No. Todo el corte se realiza localmente en su navegador. Nunca vemos sus archivos."
+      },
+      {
+        "question": "¿Qué formatos son compatibles?",
+        "answer": "MP3, WAV, M4A, OGG, FLAC y más."
+      }
+    ]
+  },
+  "audio-merger": {
+    "title": "Fusión de audio",
+    "metaTitle": "Fusión de audio – Combinar archivos de audio en línea gratis | Dayront",
+    "metaDescription": "Combina varias pistas de audio en un solo archivo. Compatible con MP3, WAV, M4A y más. Sin carga, totalmente privado.",
+    "icon": "🔗",
+    "howTo": [
+      {
+        "title": "Subir archivos de audio",
+        "text": "Seleccione dos o más archivos de audio de su dispositivo."
+      },
+      {
+        "title": "Organiza el pedido",
+        "text": "Arrastre los clips para establecer la secuencia de reproducción."
+      },
+      {
+        "title": "Combinar y descargar",
+        "text": "Haz clic en \"Combinar\" y tu archivo combinado estará listo."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Puedo combinar diferentes formatos?",
+        "answer": "Sí, puedes mezclar MP3, WAV, M4A y más en la misma combinación."
+      },
+      {
+        "question": "¿Se conserva la calidad?",
+        "answer": "Absolutamente. Evitamos la recodificación innecesaria para mantener la calidad alta."
+      },
+      {
+        "question": "¿Hay un límite de tamaño de archivo?",
+        "answer": "Sin límite estricto; el rendimiento depende de la memoria de su dispositivo."
+      }
+    ]
+  },
+  "audio-compressor": {
+    "title": "Compresor de audio",
+    "metaTitle": "Compresor de audio – Reducir el tamaño del archivo de audio en línea | Dayront",
+    "metaDescription": "Comprima archivos MP3, WAV, M4A directamente en su navegador. Sin subidas, 100% privado, gratis.",
+    "icon": "📦",
+    "howTo": [
+      {
+        "title": "Suba su archivo de audio",
+        "text": "Seleccione el archivo que desea hacer más pequeño."
+      },
+      {
+        "title": "Elija la resistencia a la compresión",
+        "text": "Ajuste el control deslizante de calidad: tamaño más pequeño o calidad más alta."
+      },
+      {
+        "title": "Descargar el archivo comprimido",
+        "text": "Obtenga una lima más ligera al instante, sin pérdida de calidad notable."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Se resentirá la calidad?",
+        "answer": "Nuestra compresión inteligente mantiene el audio claro al tiempo que reduce el tamaño del archivo."
+      },
+      {
+        "question": "¿Está a salvo mi archivo?",
+        "answer": "Sí, todo sucede en tu dispositivo. No vemos ni almacenamos tu archivo."
+      },
+      {
+        "question": "¿Qué formatos puedo comprimir?",
+        "answer": "MP3, WAV, M4A, OGG, FLAC: todos los tipos de audio populares."
+      }
+    ]
+  },
+  "volume-booster": {
+    "title": "<g id=\"1\">VOLUME</g><g id=\"2\"> </g><g id=\"3\">BOOSTER</g>",
+    "metaTitle": "Aumentador de volumen – Aumenta el volumen de audio en línea gratis | Dayront",
+    "metaDescription": "Haz que tus archivos de audio sean más ruidosos al instante. Sin carga, 100% privado. Funciona con MP3, WAV, M4A y más.",
+    "icon": "🔊",
+    "howTo": [
+      {
+        "title": "Seleccionar fichero de audio",
+        "text": "Arrastra y suelta o haz clic para elegir una pista silenciosa."
+      },
+      {
+        "title": "Aumenta el volumen",
+        "text": "Nuestra herramienta aplica un aumento de ganancia seguro sin distorsión."
+      },
+      {
+        "title": "Descarga el archivo más alto",
+        "text": "Guarda el audio mejorado en tu dispositivo."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Distorsionará el sonido?",
+        "answer": "No, utilizamos un limitador transparente para evitar el recorte mientras maximizamos el volumen."
+      },
+      {
+        "question": "¿Cuánto más fuerte puedo hacerlo?",
+        "answer": "Aumentamos en +6 dB por defecto, suficiente para la mayoría de las grabaciones silenciosas."
+      },
+      {
+        "question": "¿Cuáles son los formatos de archivo que rubiTrack apoya?",
+        "answer": "MP3, WAV, M4A, OGG, FLAC y más."
+      }
+    ]
+  },
+  "speed-changer": {
+    "title": "cambiador de velocidad del juego",
+    "metaTitle": "Cambiador de velocidad de audio – Cambia la velocidad de reproducción en línea gratis | Dayront",
+    "metaDescription": "Acelera o ralentiza los archivos de audio en tu navegador. Sin carga, 100% privado. Funciona con MP3, WAV y más.",
+    "icon": "⏩",
+    "howTo": [
+      {
+        "title": "Sube tu audio",
+        "text": "Seleccione el dato que desea modificar."
+      },
+      {
+        "title": "Elige el factor de velocidad",
+        "text": "Elige una velocidad, por ejemplo, 1,5veces más rápida o 0,75veces más lenta."
+      },
+      {
+        "title": "Descargar el archivo alterado",
+        "text": "Obtenga su audio acelerado o ralentizado al instante."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿El cambio de velocidad afecta al tono?",
+        "answer": "De forma predeterminada, conservamos el tono original, pero puede optar por cambiar el tono si lo desea."
+      },
+      {
+        "question": "¿Qué velocidades son posibles?",
+        "answer": "De 0,25× (muy lento) a 4× (muy rápido)."
+      },
+      {
+        "question": "¿Es gratis?",
+        "answer": "Sí, totalmente gratis y sin límites."
+      }
+    ]
+  },
+  "reverse-audio": {
+    "title": "Audio inverso",
+    "metaTitle": "Audio inverso – Reproducir audio al revés gratis en línea | Dayront",
+    "metaDescription": "Invierte tus archivos de audio en línea: no es necesario cargarlos. Compatible con MP3, WAV y más. 100% privado.",
+    "icon": "↩️",
+    "howTo": [
+      {
+        "title": "Elegir fichero de audio",
+        "text": "Suelta un archivo MP3, WAV u otro en la caja."
+      },
+      {
+        "title": "Reviértelo.",
+        "text": "Haga clic en \"Invertir\" y la pista se reproducirá hacia atrás."
+      },
+      {
+        "title": "Descargar el archivo invertido",
+        "text": "Guarda el audio al revés en tu dispositivo."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Qué hace el audio inverso?",
+        "answer": "Reproduce el sonido al revés, a menudo utilizado para mensajes ocultos, efectos musicales o ediciones divertidas."
+      },
+      {
+        "question": "¿Funciona con archivos largos?",
+        "answer": "Sí, pero los archivos muy largos pueden tardar un poco más dependiendo de tu dispositivo."
+      },
+      {
+        "question": "¿Está a salvo mi archivo?",
+        "answer": "Por supuesto, todo se queda en tu dispositivo."
+      }
+    ]
+  },
+  "stereo-to-mono": {
+    "title": "Estéreo a mono",
+    "metaTitle": "Convertidor de estéreo a mono – Herramienta en línea gratuita | Dayront",
+    "metaDescription": "Convierte el audio estéreo a mono al instante en tu navegador. Sin carga, 100% privado.",
+    "icon": "🔉",
+    "howTo": [
+      {
+        "title": "Sube tu archivo estéreo",
+        "text": "Seleccione un archivo MP3, WAV u otro archivo de audio."
+      },
+      {
+        "title": "Convertir automáticamente",
+        "text": "Nuestra herramienta mezcla instantáneamente ambos canales en una sola pista mono."
+      },
+      {
+        "title": "Descarga tu archivo",
+        "text": "Guarde el audio de un solo canal en su dispositivo."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Por qué convertir a mono?",
+        "answer": "Los archivos mono son más pequeños y reproducen el mismo audio en ambos oídos. Útil para podcasts o grabaciones de voz."
+      },
+      {
+        "question": "¿Se pierde calidad?",
+        "answer": "No, la señal combinada conserva la claridad original."
+      },
+      {
+        "question": "¿Funciona con todos los formatos?",
+        "answer": "Sí, MP3, WAV, M4A, FLAC, OGG y más."
+      }
+    ]
+  },
+  "mp3-to-wav": {
+    "title": "Convertidor MP3 a WAV",
+    "metaTitle": "Convertidor de MP3 a WAV – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte MP3 a formato WAV sin pérdidas en tu navegador. Sin carga, 100% privado. Perfecto para editar o archivar.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Subir tu archivo",
+        "text": "Arrastra y suelta o haz clic para seleccionar un archivo de audio MP3."
+      },
+      {
+        "title": "Convertir a wav",
+        "text": "Nuestra herramienta decodifica MP3 a WAV sin comprimir en segundos."
+      },
+      {
+        "title": "Descargue el archivo",
+        "text": "Obtenga un archivo WAV sin pérdidas adecuado para editar, grabar CD o archivar."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿La conversión de MP3 a WAV mejora la calidad?",
+        "answer": "No, WAV no tiene pérdidas, pero solo puede preservar la calidad original de MP3. No restaura los datos perdidos."
+      },
+      {
+        "question": "Convertir a wav",
+        "answer": "Se prefiere WAV para la edición de audio, ya que no tiene artefactos de compresión que se multipliquen al volver a codificar."
+      },
+      {
+        "question": "¿Está a salvo mi archivo?",
+        "answer": "Sí, todo el procesamiento es local. Nunca vemos tu expediente."
+      }
+    ]
+  },
+  "wav-to-mp3": {
+    "title": "Convertidor de WAV a MP3",
+    "metaTitle": "Convertidor de WAV a MP3 – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte archivos de audio WAV a MP3 en tu navegador. Sin carga, totalmente privado. Reduzca el tamaño del archivo sin perder calidad notable.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Subir tu archivo",
+        "text": "Arrastra y suelta o haz clic para seleccionar un archivo de audio WAV."
+      },
+      {
+        "title": "CONVERTIR CD A MP3",
+        "text": "Nuestro motor de navegador comprime WAV a MP3 utilizando un codificador de alta calidad."
+      },
+      {
+        "title": "Descarga el MP3",
+        "text": "Guarde el archivo MP3 más pequeño en su dispositivo, ideal para compartir."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Cuánto más pequeño será el archivo?",
+        "answer": "Por lo general, 5‑10veces más pequeño que WAV, dependiendo del contenido y la tasa de bits."
+      },
+      {
+        "question": "¿Oiré la diferencia?",
+        "answer": "Para la mayoría de los oyentes, un MP3 de alta velocidad de bits (320 kbps) es indistinguible de WAV."
+      },
+      {
+        "question": "¿Realmente es gratuito?",
+        "answer": "Sí, conversiones ilimitadas, no es necesario registrarse."
+      }
+    ]
+  },
+  "m4a-to-mp3": {
+    "title": "Convertidor de M4A a MP3",
+    "metaTitle": "Convertidor de M4A a MP3 – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte audio M4A (AAC) a formato MP3 en tu navegador. Sin carga, totalmente privado. Funciona en todos los dispositivos.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Subir tu archivo",
+        "text": "Seleccione un archivo M4A de su dispositivo."
+      },
+      {
+        "title": "CONVERTIR CD A MP3",
+        "text": "Nuestra herramienta extraerá y volveráacodificar el audio en MP3."
+      },
+      {
+        "title": "Descarga tu MP3",
+        "text": "Obtenga un archivo MP3 universalmente compatible al instante."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Por qué convertir M4A a MP3?",
+        "answer": "MP3 es más ampliamente compatible, especialmente en dispositivos más antiguos y plataformas que no sondeApple."
+      },
+      {
+        "question": "¿Aumentará el tamaño del archivo?",
+        "answer": "No necesariamente: mantenemos una tasa de bits MP3 de alta calidad, por lo que el tamaño puede ser similar."
+      },
+      {
+        "question": "¿Mi archivo está seguro?",
+        "answer": "Sí, todo el procesamiento se realiza localmente, ningún dato sale de su navegador."
+      }
+    ]
+  },
+  "mp3-to-m4a": {
+    "title": "Convertidor de MP3 a M4A",
+    "metaTitle": "Convertidor de MP3 a M4A – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte el formato de audio MP3 a M4A (AAC) en tu navegador. Mantenga la calidad, reduzca el tamaño. 100% privado, sin carga de servidor.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Seleccione su archivo",
+        "text": "Arrastra y suelta o haz clic para elegir un archivo de audio MP3."
+      },
+      {
+        "title": "Convertir en",
+        "text": "Nuestro convertidor local envuelve el audio en un contenedor M4A con codificación AAC."
+      },
+      {
+        "title": "Descargue el archivo",
+        "text": "Guarda el archivo M4A: perfecto para dispositivos Apple y mejor compresión."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Por qué convertir MP3 a M4A?",
+        "answer": "M4A (AAC) a menudo proporciona una mejor calidad a la misma velocidad de bits que MP3, y es ideal para iTunes/iPhone."
+      },
+      {
+        "question": "¿La conversión pierde calidad?",
+        "answer": "Hay una pérdida de calidad mínima porque utilizamos un codificador AAC de alta tasa de bits."
+      },
+      {
+        "question": "¿Es gratis?",
+        "answer": "Sí, completamente gratis, sin costes ocultos ni marcas de agua."
+      }
+    ]
+  },
+  "flac-to-mp3": {
+    "title": "Convertidor de FLAC a MP3",
+    "metaTitle": "Convertidor de FLAC a MP3 – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte archivos de audio FLAC a formato MP3 directamente en tu navegador. 100% privado, sin carga en el servidor. Rápido y gratis.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Subir tu archivo",
+        "text": "Arrastre y suelte o haga clic para seleccionar un archivo de audio FLAC."
+      },
+      {
+        "title": "Convertir al instante",
+        "text": "Nuestro motor basadoen navegador transcodifica FLAC a MP3 en segundos."
+      },
+      {
+        "title": "Descarga tu MP3",
+        "text": "Guarde el archivo MP3 comprimido en su dispositivo."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Perderé la calidad del audio?",
+        "answer": "MP3 es un formato con pérdidas, pero utilizamos codificación de altacalidad (320 kbps) para preservar la mayor cantidad de detalles posible."
+      },
+      {
+        "question": "¿Mi archivo FLAC es seguro?",
+        "answer": "Por supuesto, todo sucede en tu dispositivo. Sin carga, no hay servidor."
+      },
+      {
+        "question": "¿Puedo convertir varios archivos a la vez?",
+        "answer": "Actualmente, un archivo a la vez, pero la conversión por lotes llegará pronto."
+      }
+    ]
+  },
+  "ogg-to-mp3": {
+    "title": "Convertidor de OGG a MP3",
+    "metaTitle": "Convertidor de OGG a MP3 – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte audio OGG a formato MP3 en tu navegador. Sin carga, totalmente privado. Funciona con archivos OGG Vorbis.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Subir tu archivo",
+        "text": "Seleccione un archivo de audio OGG (Vorbis) de su dispositivo."
+      },
+      {
+        "title": "CONVERTIR CD A MP3",
+        "text": "Nuestra herramienta transcodifica el audio a MP3 para una máxima compatibilidad."
+      },
+      {
+        "title": "Descarga el MP3",
+        "text": "Consigue un archivo MP3 reproducible universalmente."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Por qué convertir OGG a MP3?",
+        "answer": "El MP3 es más ampliamente compatible con hardware y software, especialmente con dispositivos más antiguos."
+      },
+      {
+        "question": "¿Cambiará el tamaño del archivo?",
+        "answer": "Puede aumentar ligeramente; MP3 a alta velocidad de bits es comparable en tamaño."
+      },
+      {
+        "question": "¿Realmente es gratuito?",
+        "answer": "Sí, sin registro, sin anuncios que bloqueen la conversión."
+      }
+    ]
+  },
+  "mp3-to-ogg": {
+    "title": "Convertidor de MP3 a OGG",
+    "metaTitle": "Convertidor de MP3 a OGG – Gratis en línea, sin carga | Dayront",
+    "metaDescription": "Convierte audio MP3 a formato OGG Vorbis en tu navegador. Sin carga, completamente privado. Formato de código abierto.",
+    "icon": "🎵",
+    "howTo": [
+      {
+        "title": "Seleccione su archivo",
+        "text": "Elige un archivo de audio MP3 de tu dispositivo."
+      },
+      {
+        "title": "Convertir en",
+        "text": "Nuestra herramienta vuelveacodificar el audio en OGG Vorbis."
+      },
+      {
+        "title": "Descargue el archivo",
+        "text": "Guarda el archivo OGG decódigo abierto, ideal para juegos y streaming."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Por qué convertir a OGG?",
+        "answer": "OGG es un formato abierto y gratuito con excelente calidad y tamaños de archivo más pequeños que el MP3 en muchos casos."
+      },
+      {
+        "question": "¿Se pierde calidad?",
+        "answer": "Hay cierta pérdida de calidad durante la transcodificación, pero utilizamos configuraciones de alta calidad para minimizarla."
+      },
+      {
+        "question": "¿Es seguro? ",
+        "answer": "Sí, todo se procesa localmente."
+      }
+    ]
+  },
+  "mp4-to-mp3": {
+    "title": "Convertidor de MP4 a MP3",
+    "metaTitle": "Convertidor de MP4 a MP3 – Extrae audio gratis en línea | Dayront",
+    "metaDescription": "Convierte vídeo MP4 a audio MP3 en tu navegador. Sin carga, totalmente privado. Rápido, gratuito y funciona en todas partes.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Subir un vídeo",
+        "text": "Arrastre y suelte un archivo MP4 en el convertidor."
+      },
+      {
+        "title": "CONVERTIR CD A MP3",
+        "text": "La pista de audio se extrae y codifica como MP3."
+      },
+      {
+        "title": "Descarga el MP3",
+        "text": "Obtenga el archivo MP3 – compatible con todos los dispositivos."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Funciona con vídeos HD?",
+        "answer": "Sí, se admite cualquier vídeo MP4 con pista de audio."
+      },
+      {
+        "question": "¿Se ha subido mi archivo?",
+        "answer": "No, la conversión se realiza completamente en tu dispositivo."
+      },
+      {
+        "question": "¿Puedo extraer solo parte del audio?",
+        "answer": "Para recortar, use nuestra herramienta Audio Cutter después de la conversión."
+      }
+    ]
+  },
+  "mov-to-mp3": {
+    "title": "Convertidor de MOV a MP3",
+    "metaTitle": "Convertidor de MOV a MP3 – Extrae audio gratis en línea | Dayront",
+    "metaDescription": "Convierte vídeo MOV a audio MP3 directamente en tu navegador. Sin carga, 100% privado. Funciona en todos los dispositivos.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Elija su archivo",
+        "text": "Seleccione un vídeo MOV QuickTime desde su dispositivo."
+      },
+      {
+        "title": "Extraer audio como MP3",
+        "text": "Nuestra herramienta extrae la pista de audio y la codifica en MP3."
+      },
+      {
+        "title": "Descarga el MP3",
+        "text": "Guarde el audio para usarlo en cualquier reproductor de música o teléfono."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Son compatibles los vídeos para iPhone?",
+        "answer": "Sí, los archivos MOV grabados en iPhones son totalmente compatibles."
+      },
+      {
+        "question": "¿Perderá calidad?",
+        "answer": "Utilizamos un codificador MP3 de alta calidad para preservar el sonido original tanto como sea posible."
+      },
+      {
+        "question": "¿Realmente es gratuito?",
+        "answer": "Sí, conversiones ilimitadas sin tarifas ocultas."
+      }
+    ]
+  },
+  "mkv-to-mp3": {
+    "title": "Convertidor de MKV a MP3",
+    "metaTitle": "Convertidor de MKV a MP3 – Extrae audio gratis en línea | Dayront",
+    "metaDescription": "Convierte vídeo MKV a audio MP3 en tu navegador. Sin carga, completamente privado. Rápido y gratis.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Subir un vídeo",
+        "text": "Arrastre y suelte o haga clic para seleccionar un archivo MKV."
+      },
+      {
+        "title": "CONVERTIR CD A MP3",
+        "text": "La pista de audio se extrae y se guarda como MP3."
+      },
+      {
+        "title": "Descarga tu MP3",
+        "text": "Obtenga el archivo de audio al instante, sin esperas."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Funciona con audiomulticanal?",
+        "answer": "Sí, reducimos la mezcla a estéreo de forma predeterminada por compatibilidad."
+      },
+      {
+        "question": "¿Qué pasa con subtítulos?",
+        "answer": "Los subtítulos se ignoran: solo se procesa el audio."
+      },
+      {
+        "question": "¿Hay un límite de tamaño de archivo?",
+        "answer": "Sin límite estricto; depende de la RAM de su dispositivo."
+      }
+    ]
+  },
+  "avi-to-mp3": {
+    "title": "Convertidor de AVI a MP3",
+    "metaTitle": "Convertidor de AVI a MP3 – Extraer audio gratis en línea | Dayront",
+    "metaDescription": "Convierte vídeo AVI a audio MP3 directamente en tu navegador. Sin carga, 100% privado. Funciona con todos los archivos AVI.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Seleccione su archivo",
+        "text": "Elige un vídeo AVI desde tu dispositivo."
+      },
+      {
+        "title": "Extraer audio a MP3",
+        "text": "Nuestra herramienta elimina el flujo de audio y lo codifica como MP3."
+      },
+      {
+        "title": "Descarga el MP3",
+        "text": "Guarda el archivo de audio, perfecto para escuchar sobre la marcha."
+      }
+    ],
+    "faq": [
+      {
+        "question": "¿Todos los archivos AVI son compatibles?",
+        "answer": "Sí, siempre y cuando contengan una pista de audio. Los códecs más antiguos pueden tardar un poco más."
+      },
+      {
+        "question": "¿Se subirá el vídeo?",
+        "answer": "No, todo ocurre localmente. Nunca vemos tu expediente."
+      },
+      {
+        "question": "¿Puedo convertir múltiples AVI?",
+        "answer": "Actualmente uno a la vez, pero se planea el soporte por lotes."
+      }
+    ]
+  },
+  "webm-to-mp3": {
+    "title": "Convertidor de WebM a MP3",
+    "metaTitle": "Convertidor de WebM a MP3 – Extrae audio MP3 gratis en línea | Dayront",
+    "metaDescription": "Convierte vídeo WebM a audio MP3 en tu navegador. Sin subida, privada y gratuita. Perfecto para guardar bandas sonoras.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Subir tu archivo",
+        "text": "Drag a WebM video or audio file into the box."
+      },
+      {
+        "title": "CONVERTIR CD A MP3",
+        "text": "El audio se extrae y codifica como un MP3 de alta calidad."
+      },
+      {
+        "title": "Descarga tu MP3",
+        "text": "Guarde el archivo MP3 en su dispositivo, que se puede reproducir en cualquier lugar."
+      }
+    ],
+    "faq": [
+      {
+        "question": "Can I convert WebM without video?",
+        "answer": "Yes, if your WebM is audio‑only, it still works perfectly."
+      },
+      {
+        "question": "What bitrate is the output MP3?",
+        "answer": "We use a high‑quality VBR setting for the best balance of size and quality."
+      },
+      {
+        "question": "Is this safe?",
+        "answer": "Yes, processing is 100% local. No upload."
+      }
+    ]
+  },
+  "mp4-to-wav": {
+    "title": "MP4 to WAV Converter",
+    "metaTitle": "MP4 to WAV Converter – Extract Audio Free Online | Dayront",
+    "metaDescription": "Convert MP4 video to WAV audio in your browser. No upload, fully private. Get lossless audio for editing.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Choose your MP4 video",
+        "text": "Drag & drop an MP4 file into the converter."
+      },
+      {
+        "title": "Extract audio as WAV",
+        "text": "Our engine strips the audio track and outputs an uncompressed WAV."
+      },
+      {
+        "title": "Download the WAV",
+        "text": "Save the high‑quality audio to your device."
+      }
+    ],
+    "faq": [
+      {
+        "question": "Why convert MP4 to WAV?",
+        "answer": "WAV files are ideal for audio editing, mixing, or archiving without quality loss."
+      },
+      {
+        "question": "Does it work with large files?",
+        "answer": "Yes, though processing time depends on your device’s speed."
+      },
+      {
+        "question": "Is my file safe?",
+        "answer": "Absolutely – everything stays on your computer."
+      }
+    ]
+  },
+  "webm-to-wav": {
+    "title": "WebM to WAV Converter",
+    "metaTitle": "WebM to WAV Converter – Free Online, No Upload | Dayront",
+    "metaDescription": "Extract lossless WAV audio from WebM video files directly in your browser. No upload, 100% private and free.",
+    "icon": "🎬",
+    "howTo": [
+      {
+        "title": "Upload your WebM file",
+        "text": "Select a WebM video or audio file from your device."
+      },
+      {
+        "title": "Convert to WAV",
+        "text": "Our tool extracts the audio and saves it as an uncompressed WAV."
+      },
+      {
+        "title": "Download the WAV",
+        "text": "Get a high‑quality WAV file for editing or archiving."
+      }
+    ],
+    "faq": [
+      {
+        "question": "Is the audio truly lossless?",
+        "answer": "WAV is a lossless container. It will preserve the original audio stream without adding compression."
+      },
+      {
+        "question": "Can I convert WebM videos?",
+        "answer": "Yes, any WebM file with an audio track works – video is ignored."
+      },
+      {
+        "question": "Is this free?",
+        "answer": "Completely free, no account needed."
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'FLAC to MP3 Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert FLAC audio files to MP3 format directly in your browser. 100% private, no server upload. Fast and free.',
+  toolName: 'FLAC to MP3 Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'flac',
+    to: 'mp3',
+    label: 'FLAC to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your FLAC file',
+      text: 'Drag & drop or click to select a FLAC audio file.',
+    },
+    {
+      title: 'Convert instantly',
+      text: 'Our browser‑based engine transcodes FLAC to MP3 in seconds.',
+    },
+    {
+      title: 'Download your MP3',
+      text: 'Save the compressed MP3 file to your device.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Will I lose audio quality?',
+      answer: 'MP3 is a lossy format, but we use high‑quality encoding (320kbps) to preserve as much detail as possible.',
+    },
+    {
+      question: 'Is my FLAC file safe?',
+      answer: 'Absolutely – everything happens on your device. No upload, no server.',
+    },
+    {
+      question: 'Can I convert multiple files at once?',
+      answer: 'Currently one file at a time, but batch conversion is coming soon.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
+    { href: '/convert/ogg-to-mp3', icon: '🎵', name: 'OGG to MP3' },
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

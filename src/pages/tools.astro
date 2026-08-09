@@ -1,0 +1,481 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { tools } from '../lib/tools';
+
+const toolsJson = JSON.stringify(
+  tools.map(t => ({
+    name: t.name,
+    category: t.category,
+    slug: t.slug,
+    icon: t.icon,
+    url: t.from && t.to ? `/convert/${t.slug}` : `/tools/${t.slug}`,
+  }))
+);
+
+const categoryLabels: Record<string, string> = {
+  'audio-utility': 'Audio Utilities',
+  'audio-conversion': 'Audio Conversion',
+  'video-to-audio': 'Video to Audio',
+};
+
+const categoryIcons: Record<string, string> = {
+  'audio-utility': '🛠️',
+  'audio-conversion': '🎵',
+  'video-to-audio': '🎬',
+};
+---
+
+<BaseLayout
+  title="All Media Tools – Free & Private | Dayront"
+  description="Browse all free online media tools. Convert, cut, merge, boost, and more – 100% private, no upload."
+>
+  <!-- ===== HERO ===== -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-sky/10 dark:bg-sky/10 blur-3xl"></div>
+      <div class="absolute top-20 -left-32 w-72 h-72 rounded-full bg-yellow-300/10 dark:bg-yellow-300/5 blur-3xl"></div>
+      <div class="absolute top-40 -right-32 w-72 h-72 rounded-full bg-sky/10 blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 pt-14 pb-10 sm:pt-20 sm:pb-14">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur text-xs font-semibold text-gray-600 dark:text-gray-300 mb-5">
+          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          Privacy-first media processing
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-black dark:text-white leading-tight">
+          All Your Media Tools
+          <span class="block text-sky">In One Place.</span>
+        </h1>
+
+        <p class="mt-5 text-lg sm:text-xl leading-relaxed text-gray-600 dark:text-gray-300 max-w-2xl">
+          Everything you need to convert, edit, combine, enhance, and process
+          audio and video files directly in your browser.
+        </p>
+
+        <div class="flex flex-wrap gap-3 mt-7">
+          <div class="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-2.5 shadow-sm">
+            <span class="text-sky">🔒</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">No uploads</span>
+          </div>
+          <div class="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-2.5 shadow-sm">
+            <span class="text-sky">⚡</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Fast processing</span>
+          </div>
+          <div class="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-2.5 shadow-sm">
+            <span class="text-sky">🆓</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Free to use</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STATS ===== -->
+  <section class="max-w-7xl mx-auto px-4 pb-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 reveal">
+        <p class="text-2xl sm:text-3xl font-extrabold text-sky">{tools.length}+</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Free tools</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 reveal">
+        <p class="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">100%</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Browser based</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 reveal">
+        <p class="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">0</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Server uploads</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 reveal">
+        <p class="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">24/7</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Available online</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SEARCH AREA ===== -->
+  <section class="max-w-7xl mx-auto px-4 py-8">
+    <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/70 p-5 sm:p-7 shadow-sm reveal">
+      <div class="flex flex-col lg:flex-row gap-5 lg:items-end lg:justify-between">
+        <div>
+          <p class="text-sm font-semibold text-sky mb-1">FIND A TOOL</p>
+          <h2 class="text-2xl font-extrabold text-black dark:text-white">
+            What do you want to do?
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Search by tool name or browse by category.
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <div class="relative w-full sm:w-80">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path stroke-linecap="round" d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input
+              id="tool-search"
+              type="text"
+              placeholder="Search tools..."
+              aria-label="Search tools"
+              class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm outline-none focus:border-sky focus:ring-2 focus:ring-sky/20 transition"
+              autocomplete="off"
+            />
+            <button
+              id="clear-search"
+              type="button"
+              aria-label="Clear search"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-white"
+            >
+              ×
+            </button>
+          </div>
+
+          <select
+            id="tool-filter"
+            aria-label="Filter tools by category"
+            class="px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-black dark:text-white text-sm outline-none focus:border-sky focus:ring-2 focus:ring-sky/20 transition"
+          >
+            <option value="all">All Categories</option>
+            <option value="audio-utility">Audio Utilities</option>
+            <option value="audio-conversion">Audio Conversion</option>
+            <option value="video-to-audio">Video to Audio</option>
+          </select>
+
+          <!-- View toggle buttons -->
+          <div class="flex gap-1">
+            <button id="view-grid" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white font-semibold text-xs active">Grid</button>
+            <button id="view-list" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs">List</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category pills -->
+      <div class="flex flex-wrap gap-2 mt-6">
+        <button type="button" data-category="all" class="category-pill active px-4 py-2 rounded-full text-xs font-semibold border transition">
+          All Tools
+        </button>
+        {Object.entries(categoryLabels).map(([value, label]) => (
+          <button
+            type="button"
+            data-category={value}
+            class="category-pill px-4 py-2 rounded-full text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400 hover:border-sky hover:text-sky transition"
+          >
+            {categoryIcons[value]} {label}
+          </button>
+        ))}
+      </div>
+
+      <div class="flex items-center justify-between mt-6 pt-5 border-t border-gray-200 dark:border-gray-800">
+        <p id="result-count" class="text-sm text-gray-500 dark:text-gray-400">
+          Showing {tools.length} tools
+        </p>
+        <span class="hidden sm:inline-flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+          <span class="w-2 h-2 rounded-full bg-green-500"></span>
+          Processing stays in your browser
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TOOL CARDS (grid/list container) ===== -->
+  <section class="max-w-7xl mx-auto px-4 pb-20">
+    <div id="tool-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {tools.map((t, index) => (
+        <a
+          href={t.from && t.to ? `/convert/${t.slug}` : `/tools/${t.slug}`}
+          class="tool-card group relative overflow-hidden flex flex-col min-h-[180px] rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 hover:border-sky dark:hover:border-sky hover:-translate-y-1.5 hover:shadow-xl dark:hover:shadow-black/30 transition-all duration-300"
+          data-tool-name={t.name}
+          data-tool-category={t.category}
+          style={`--delay: ${Math.min(index * 35, 350)}ms`}
+        >
+          <div class="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-sky/5 dark:bg-sky/10 group-hover:scale-150 transition-transform duration-500"></div>
+          <div class="relative flex items-center justify-between mb-5">
+            <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:bg-sky-light dark:group-hover:bg-sky/10 transition-all duration-300">
+              {t.icon}
+            </div>
+            <svg class="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:text-sky group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+          <div class="relative mt-auto">
+            <p class="font-bold text-sm sm:text-base text-black dark:text-white group-hover:text-sky transition-colors">
+              {t.name}
+            </p>
+            <div class="mt-2">
+              <span class="inline-flex px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                {categoryLabels[t.category] || t.category}
+              </span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden py-20 text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-2xl mb-5">🔎</div>
+      <h3 class="text-xl font-bold text-black dark:text-white">No tools found</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+        Try another search term or choose a different category.
+      </p>
+      <button id="reset-tools" type="button" class="mt-5 text-sm font-semibold text-sky hover:underline">
+        Show all tools
+      </button>
+    </div>
+  </section>
+
+  <!-- ===== PRIVACY CALLOUT ===== -->
+  <section class="max-w-7xl mx-auto px-4 pb-20">
+    <div class="relative overflow-hidden rounded-3xl bg-gray-950 dark:bg-black border border-gray-800 p-8 sm:p-12 reveal">
+      <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-sky/20 blur-3xl"></div>
+      <div class="relative max-w-3xl">
+        <div class="inline-flex items-center gap-2 text-sm font-semibold text-sky mb-4">
+          <span>🔒</span>
+          PRIVACY-FIRST BY DESIGN
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Your files belong to you.</h2>
+        <p class="mt-4 text-gray-300 text-base sm:text-lg leading-relaxed">
+          Dayront is designed to process media directly in your browser.
+          Your files don't need to be uploaded to a remote server just to
+          perform a simple conversion or edit.
+        </p>
+        <div class="flex flex-wrap gap-3 mt-7">
+          <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <p class="text-white text-sm font-semibold">No account</p>
+            <p class="text-gray-400 text-xs mt-1">Start immediately</p>
+          </div>
+          <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <p class="text-white text-sm font-semibold">No upload</p>
+            <p class="text-gray-400 text-xs mt-1">Local processing</p>
+          </div>
+          <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <p class="text-white text-sm font-semibold">Free tools</p>
+            <p class="text-gray-400 text-xs mt-1">No hidden fees</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translateY(25px);
+    transition:
+      opacity 650ms ease,
+      transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .category-pill.active {
+    background: rgb(14 165 233);
+    color: white;
+    border-color: rgb(14 165 233);
+  }
+  .tool-card {
+    animation: tool-enter 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--delay);
+  }
+  @keyframes tool-enter {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* List view styles */
+  .list-view #tool-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .list-view .tool-card {
+    flex-direction: row;
+    align-items: center;
+    min-height: auto;
+    padding: 1rem;
+    animation: none;
+  }
+  .list-view .tool-card .absolute {
+    display: none;
+  }
+  .list-view .tool-card .w-12.h-12 {
+    margin-right: 1rem;
+    flex-shrink: 0;
+  }
+  .list-view .tool-card .mt-auto {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .list-view .tool-card .mt-2 {
+    margin-top: 0.25rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .tool-card {
+      animation: none;
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<script define:vars={{ toolsData: toolsJson, categoryLabels, categoryIcons }}>
+  // Now categoryLabels and categoryIcons are available in the client script
+  const grid = document.getElementById('tool-grid');
+  const searchInput = document.getElementById('tool-search');
+  const filterSelect = document.getElementById('tool-filter');
+  const resultCount = document.getElementById('result-count');
+  const emptyState = document.getElementById('empty-state');
+  const clearSearch = document.getElementById('clear-search');
+  const resetTools = document.getElementById('reset-tools');
+  const categoryPills = document.querySelectorAll('.category-pill');
+  const viewGridBtn = document.getElementById('view-grid');
+  const viewListBtn = document.getElementById('view-list');
+
+  let activeCategory = 'all';
+  let currentView = 'grid'; // 'grid' or 'list'
+
+  const parsedTools = JSON.parse(toolsData);
+  // categoryLabels and categoryIcons are directly available as objects
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function renderTools(filtered) {
+    if (!grid || !emptyState) return;
+
+    if (!filtered.length) {
+      grid.innerHTML = '';
+      grid.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+    } else {
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      grid.innerHTML = filtered
+        .map(
+          (tool, index) => `
+            <a
+              href="${escapeHtml(tool.url)}"
+              class="tool-card group relative overflow-hidden flex flex-col min-h-[180px] rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 hover:border-sky dark:hover:border-sky hover:-translate-y-1.5 hover:shadow-xl dark:hover:shadow-black/30 transition-all duration-300"
+              style="--delay:${Math.min(index * 30, 300)}ms"
+            >
+              <div class="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-sky/5 dark:bg-sky/10 group-hover:scale-150 transition-transform duration-500"></div>
+              <div class="relative flex items-center justify-between mb-5">
+                <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-all duration-300">
+                  ${escapeHtml(tool.icon)}
+                </div>
+                <svg class="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:text-sky group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+              <div class="relative mt-auto">
+                <p class="font-bold text-sm sm:text-base text-black dark:text-white group-hover:text-sky transition-colors">
+                  ${escapeHtml(tool.name)}
+                </p>
+                <div class="mt-2">
+                  <span class="inline-flex px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    ${escapeHtml(categoryLabels[tool.category] || tool.category)}
+                  </span>
+                </div>
+              </div>
+            </a>
+          `
+        )
+        .join('');
+    }
+
+    if (resultCount) {
+      resultCount.textContent = `Showing ${filtered.length} of ${parsedTools.length} tools`;
+    }
+  }
+
+  function filterTools() {
+    const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+    const filtered = parsedTools.filter((tool) => {
+      const searchableText = `${tool.name} ${tool.category} ${categoryLabels[tool.category] || ''}`.toLowerCase();
+      const matchesSearch = !searchTerm || searchableText.includes(searchTerm);
+      const matchesCategory = activeCategory === 'all' || tool.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    if (clearSearch) {
+      clearSearch.classList.toggle('hidden', !searchTerm);
+    }
+    renderTools(filtered);
+  }
+
+  function setCategory(category) {
+    activeCategory = category;
+    if (filterSelect) filterSelect.value = category;
+    categoryPills.forEach((pill) => {
+      pill.classList.toggle('active', pill.dataset.category === category);
+    });
+    filterTools();
+  }
+
+  function setView(view) {
+    currentView = view;
+    const section = grid?.parentElement;
+    if (!section) return;
+    if (view === 'list') {
+      section.classList.add('list-view');
+      viewListBtn?.classList.add('bg-sky', 'text-white', 'border-sky');
+      viewListBtn?.classList.remove('bg-white', 'dark:bg-gray-800', 'border-gray-300', 'dark:border-gray-700', 'text-gray-500', 'dark:text-gray-400');
+      viewGridBtn?.classList.remove('bg-sky', 'text-white', 'border-sky');
+      viewGridBtn?.classList.add('bg-white', 'dark:bg-gray-800', 'border-gray-300', 'dark:border-gray-700', 'text-gray-500', 'dark:text-gray-400');
+    } else {
+      section.classList.remove('list-view');
+      viewGridBtn?.classList.add('bg-sky', 'text-white', 'border-sky');
+      viewGridBtn?.classList.remove('bg-white', 'dark:bg-gray-800', 'border-gray-300', 'dark:border-gray-700', 'text-gray-500', 'dark:text-gray-400');
+      viewListBtn?.classList.remove('bg-sky', 'text-white', 'border-sky');
+      viewListBtn?.classList.add('bg-white', 'dark:bg-gray-800', 'border-gray-300', 'dark:border-gray-700', 'text-gray-500', 'dark:text-gray-400');
+    }
+    // Re-render to apply list/grid styles (the DOM is already updated, CSS handles the rest)
+  }
+
+  // Event listeners
+  searchInput?.addEventListener('input', filterTools);
+  filterSelect?.addEventListener('change', () => setCategory(filterSelect.value));
+  categoryPills.forEach((pill) => {
+    pill.addEventListener('click', () => setCategory(pill.dataset.category || 'all'));
+  });
+  clearSearch?.addEventListener('click', () => {
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.focus();
+    }
+    filterTools();
+  });
+  resetTools?.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
+    setCategory('all');
+  });
+  viewGridBtn?.addEventListener('click', () => setView('grid'));
+  viewListBtn?.addEventListener('click', () => setView('list'));
+
+  // Scroll reveal
+  const revealElements = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('is-visible');
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -50px 0px' }
+  );
+  revealElements.forEach((element) => observer.observe(element));
+
+  // Initial active state for grid button
+  setView('grid');
+</script>

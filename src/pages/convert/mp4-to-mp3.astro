@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'MP4 to MP3 Converter – Extract Audio Free Online | Dayront',
+  metaDescription:
+    'Convert MP4 video to MP3 audio in your browser. No upload, fully private. Fast, free, and works everywhere.',
+  toolName: 'MP4 to MP3 Converter',
+  toolIcon: '🎬',
+  toolConfig: {
+    type: 'convert',
+    from: 'mp4',
+    to: 'mp3',
+    label: 'MP4 to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your MP4 video',
+      text: 'Drag & drop an MP4 file into the converter.',
+    },
+    {
+      title: 'Convert to MP3',
+      text: 'The audio track is extracted and encoded as MP3.',
+    },
+    {
+      title: 'Download the MP3',
+      text: 'Get the MP3 file – compatible with all devices.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Does it work with HD videos?',
+      answer: 'Yes, any MP4 video with an audio track is supported.',
+    },
+    {
+      question: 'Is my file uploaded?',
+      answer: 'No, conversion happens entirely on your device.',
+    },
+    {
+      question: 'Can I extract only part of the audio?',
+      answer: 'For trimming, use our Audio Cutter tool after conversion.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/mp4-to-wav', icon: '🎬', name: 'MP4 to WAV' },
+    { href: '/convert/webm-to-mp3', icon: '🎬', name: 'WebM to MP3' },
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

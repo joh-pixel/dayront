@@ -1,0 +1,31 @@
+{
+  "nav": {
+    "tools": "Tools",
+    "blog": "Blog",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "search": "Search"
+  },
+  "footer": {
+    "brand_description": "Privacy‑first media tools, processed locally.",
+    "tools": "Tools",
+    "all_tools": "All Tools",
+    "blog": "Blog",
+    "latest_articles": "Latest Articles",
+    "search": "Search",
+    "company": "Company",
+    "about": "About",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "rss_feed": "RSS Feed",
+    "connect": "Connect",
+    "github": "GitHub",
+    "contact": "Contact",
+    "copyright": "© {{year}} Dayront. All rights reserved. · Your files never leave your device."
+  },
+  "privacy_badge": "Your files never leave your device",
+  "theme_toggle": "Toggle theme",
+  "menu_open": "Open menu",
+  "version": "v1.0.0"
+}

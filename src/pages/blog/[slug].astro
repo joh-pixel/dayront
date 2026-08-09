@@ -1,0 +1,49 @@
+---
+// 1. Import 'render' from astro:content
+import { getCollection, render } from 'astro:content';
+import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+
+  return posts.map((post) => {
+    const rawSlug = post.id.replace(/\.(mdx|md)$/, '');
+    const slug = rawSlug.replace(/^en\//, ''); // remove locale prefix
+
+    return {  
+      params: { slug },  
+      props: { post },  
+    };
+  });
+}
+
+const { post } = Astro.props;
+
+if (!post) {
+  return new Response('Not Found', { status: 404 });
+}
+
+// 2. Use the standalone render() function here
+const { Content } = await render(post); 
+
+// Word count & reading time
+const rawBody = post.body || '';
+const wordCount = rawBody.split(/\s+/).filter(Boolean).length;
+const readingTime = `${Math.max(1, Math.ceil(wordCount / 225))} min read`;
+
+const postData = {
+  title: post.data.title,
+  description: post.data.description,
+  date: post.data.date,
+  author: post.data.author || 'Dayront Team',
+  categories: post.data.categories || [],
+  tags: post.data.tags || [],
+  relatedSlugs: post.data.relatedPosts || [],
+  readingTime,
+};
+
+// This is the "clean" slug without locale, same as used in the URL
+const displaySlug = post.id.replace(/\.(mdx|md)$/, '').replace(/^en\//, '');
+---
+
+<BlogPostLayout {...postData} content={Content} slug={displaySlug} />

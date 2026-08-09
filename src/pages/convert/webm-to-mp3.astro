@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'WebM to MP3 Converter – Extract MP3 Audio Free Online | Dayront',
+  metaDescription:
+    'Convert WebM video to MP3 audio in your browser. No upload, private, and free. Perfect for saving soundtracks.',
+  toolName: 'WebM to MP3 Converter',
+  toolIcon: '🎬',
+  toolConfig: {
+    type: 'convert',
+    from: 'webm',
+    to: 'mp3',
+    label: 'WebM to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your WebM file',
+      text: 'Drag a WebM video or audio file into the box.',
+    },
+    {
+      title: 'Convert to MP3',
+      text: 'The audio is extracted and encoded as a high‑quality MP3.',
+    },
+    {
+      title: 'Download your MP3',
+      text: 'Save the MP3 file to your device – playable everywhere.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Can I convert WebM without video?',
+      answer: 'Yes, if your WebM is audio‑only, it still works perfectly.',
+    },
+    {
+      question: 'What bitrate is the output MP3?',
+      answer: 'We use a high‑quality VBR setting for the best balance of size and quality.',
+    },
+    {
+      question: 'Is this safe?',
+      answer: 'Yes, processing is 100% local. No upload.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/webm-to-wav', icon: '🎬', name: 'WebM to WAV' },
+    { href: '/convert/mp4-to-mp3', icon: '🎬', name: 'MP4 to MP3' },
+    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

@@ -1,0 +1,66 @@
+---
+// This component provides a live search input for the blog index.
+// It expects the blog posts data as a JSON-serializable array.
+export interface Props {
+  posts: Array<{
+    title: string;
+    description: string;
+    slug: string;
+    date: string;
+    categories?: string[];
+    tags?: string[];
+  }>;
+}
+
+const { posts } = Astro.props;
+const postsJson = JSON.stringify(posts);
+---
+
+<div class="mb-8">
+  <input
+    id="blog-search-input"
+    type="text"
+    placeholder="Search articles..."
+    class="w-full sm:max-w-md px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+    autocomplete="off"
+  />
+</div>
+
+<div id="blog-posts-grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <!-- Posts rendered dynamically by JavaScript -->
+</div>
+
+<script>
+  const posts = JSON.parse(postsJson);
+  const searchInput = document.getElementById('blog-search-input');
+  const grid = document.getElementById('blog-posts-grid');
+
+  function renderPosts(filtered) {
+    grid.innerHTML = filtered.map(post => `
+      <article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-2 space-x-3">
+          <time datetime="${post.date}">${new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+        </div>
+        <a href="/blog/${post.slug}" class="block">
+          <h2 class="text-xl font-bold mb-1 text-gray-900 dark:text-white hover:text-lemon transition">${post.title}</h2>
+        </a>
+        <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">${post.description}</p>
+        ${post.categories?.length ? `<div class="flex flex-wrap gap-2 mt-2">${post.categories.map(cat => `<a href="/blog/category/${cat.toLowerCase()}" class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-1 rounded-full">${cat}</a>`).join('')}</div>` : ''}
+      </article>
+    `).join('');
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = posts.filter(post => 
+      post.title.toLowerCase().includes(query) ||
+      post.description.toLowerCase().includes(query) ||
+      post.categories?.some(cat => cat.toLowerCase().includes(query)) ||
+      post.tags?.some(tag => tag.toLowerCase().includes(query))
+    );
+    renderPosts(filtered);
+  });
+
+  // Initial render
+  renderPosts(posts);
+</script>

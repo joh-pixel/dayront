@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'MP3 to WAV Converter – Free Online, No Upload | Dayront',
+  metaDescription:
+    'Convert MP3 to lossless WAV format in your browser. No upload, 100% private. Perfect for editing or archiving.',
+  toolName: 'MP3 to WAV Converter',
+  toolIcon: '🎵',
+  toolConfig: {
+    type: 'convert',
+    from: 'mp3',
+    to: 'wav',
+    label: 'MP3 to WAV',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your MP3 file',
+      text: 'Drag & drop or click to select an MP3 audio file.',
+    },
+    {
+      title: 'Convert to WAV',
+      text: 'Our tool decodes MP3 to uncompressed WAV in seconds.',
+    },
+    {
+      title: 'Download the WAV file',
+      text: 'Get a lossless WAV file suitable for editing, CD burning, or archiving.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Does converting MP3 to WAV improve quality?',
+      answer: 'No – WAV is lossless, but it can only preserve the original MP3 quality. It does not restore lost data.',
+    },
+    {
+      question: 'Why convert to WAV?',
+      answer: 'WAV is preferred for audio editing, as it doesn’t have compression artifacts that multiply when re‑encoding.',
+    },
+    {
+      question: 'Is my file safe?',
+      answer: 'Yes, all processing is local. We never see your file.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/wav-to-mp3', icon: '🎵', name: 'WAV to MP3' },
+    { href: '/convert/mp3-to-m4a', icon: '🎵', name: 'MP3 to M4A' },
+    { href: '/tools/audio-merger', icon: '🔗', name: 'Audio Merger' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

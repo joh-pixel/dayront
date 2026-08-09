@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'MKV to MP3 Converter – Extract Audio Free Online | Dayront',
+  metaDescription:
+    'Convert MKV video to MP3 audio in your browser. No upload, completely private. Fast and free.',
+  toolName: 'MKV to MP3 Converter',
+  toolIcon: '🎬',
+  toolConfig: {
+    type: 'convert',
+    from: 'mkv',
+    to: 'mp3',
+    label: 'MKV to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your MKV video',
+      text: 'Drag & drop or click to select an MKV file.',
+    },
+    {
+      title: 'Convert to MP3',
+      text: 'The audio track is extracted and saved as MP3.',
+    },
+    {
+      title: 'Download your MP3',
+      text: 'Get the audio file instantly – no waiting.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Does it work with multi‑channel audio?',
+      answer: 'Yes, we downmix to stereo by default for compatibility.',
+    },
+    {
+      question: 'What about subtitles?',
+      answer: 'Subtitles are ignored – only the audio is processed.',
+    },
+    {
+      question: 'Is there a file size limit?',
+      answer: 'No hard limit; it depends on your device’s RAM.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/avi-to-mp3', icon: '🎬', name: 'AVI to MP3' },
+    { href: '/convert/mp4-to-mp3', icon: '🎬', name: 'MP4 to MP3' },
+    { href: '/tools/audio-merger', icon: '🔗', name: 'Audio Merger' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

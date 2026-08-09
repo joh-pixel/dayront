@@ -1,0 +1,51 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'Stereo to Mono Converter – Free Online Tool | Dayront',
+  metaDescription:
+    'Convert stereo audio to mono instantly in your browser. No upload, 100% private.',
+  toolName: 'Stereo to Mono',
+  toolIcon: '🔉',
+  toolConfig: {
+    type: 'stereo-to-mono',
+    outputFormat: 'mp3',
+    label: 'Stereo to Mono',
+  } as const,
+  howTo: [
+    {
+      title: 'Upload your stereo file',
+      text: 'Select an MP3, WAV, or other audio file.',
+    },
+    {
+      title: 'Convert automatically',
+      text: 'Our tool instantly mixes both channels into one mono track.',
+    },
+    {
+      title: 'Download your mono file',
+      text: 'Save the single‑channel audio to your device.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Why convert to mono?',
+      answer: 'Mono files are smaller and play the same audio in both ears. Useful for podcasts or voice recordings.',
+    },
+    {
+      question: 'Is quality lost?',
+      answer: 'No, the combined signal preserves the original clarity.',
+    },
+    {
+      question: 'Does it work with all formats?',
+      answer: 'Yes – MP3, WAV, M4A, FLAC, OGG, and more.',
+    },
+  ],
+  relatedTools: [
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+    { href: '/tools/volume-booster', icon: '🔊', name: 'Volume Booster' },
+    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
+  ],
+};
+---
+
+<ToolLayout {...page} />

@@ -1,0 +1,1044 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('blog', (entry) => entry.id.startsWith('en/'));
+
+const sortedPosts = allPosts
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .map(post => ({
+    title: post.data.title,
+    description: post.data.description,
+    slug: post.id.replace(/\.mdx$/, '').replace(/^en\//, ''),
+    date: post.data.date.toISOString(),
+    categories: post.data.categories || [],
+    tags: post.data.tags || [],
+    image: post.data.image || null,
+  }));
+
+// 1. Hero
+const heroFeatured = sortedPosts.slice(0, 3);
+// 2. Featured grid
+const gridFeatured = sortedPosts.slice(3, 7);
+// 3. Horizontal cards
+const horizontalPosts = sortedPosts.slice(7, 11);
+// 4. Editorial split
+const editorialPosts = sortedPosts.slice(11, 13);
+// 5. Magazine cards
+const magazinePosts = sortedPosts.slice(13, 17);
+// 6. Compact list
+const compactPosts = sortedPosts.slice(17, 22);
+// 7. Remaining articles
+const remainingPosts = sortedPosts.slice(22);
+
+const categories = [...new Set(allPosts.flatMap(post => post.data.categories || []))].sort();
+const tags = [...new Set(allPosts.flatMap(post => post.data.tags || []))].sort();
+---
+
+<BaseLayout
+  title="Blog – Dayront | Privacy‑First Media Tips & Guides"
+  description="Tips, guides, and news about media conversion, privacy, and Dayront tools."
+>
+  <main class="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white selection:bg-sky/30 font-sans">
+    
+    <!-- ===== BLOG HEADER & SEARCH ===== -->
+    <section class="relative overflow-hidden pt-24 pb-16 md:pt-32 md:pb-24 border-b border-gray-200 dark:border-gray-800">
+      <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-sky/10 dark:bg-sky/10 blur-[100px]"></div>
+        <div class="absolute top-[40%] -left-[10%] w-[600px] h-[600px] rounded-full bg-sky/10 dark:bg-sky/10 blur-[120px]"></div>
+      </div>
+
+      <div class="max-w-7xl mx-auto px-6 relative z-10">
+        <div class="max-w-3xl reveal">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-light dark:bg-sky/10 text-sky dark:text-sky-400 border border-sky/20 mb-6">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+            </span>
+            Dayront Journal
+          </div>
+
+          <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-black dark:text-white leading-[1.1]">
+            Ideas, guides &amp;
+            <span class="text-sky">useful tools.</span>
+          </h1>
+
+          <p class="mt-6 text-lg md:text-xl text-gray-600 dark:text-white max-w-2xl leading-relaxed font-medium">
+            Privacy guides, media tutorials, conversion tips, product updates, and practical information to help you work smarter with your files.
+          </p>
+        </div>
+
+        <!-- Live Search -->
+        <div class="mt-12 max-w-4xl reveal reveal-delay-1">
+          <div class="relative group">
+            <div class="absolute -inset-1 bg-gradient-to-r from-sky-500 to-sky-300 rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+            <div class="relative rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl shadow-sky-900/5 flex items-center">
+              <svg class="absolute left-6 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4" stroke-linecap="round"></path>
+              </svg>
+
+              <input
+                id="blog-search"
+                type="search"
+                placeholder="Search articles, topics, keywords..."
+                class="w-full pl-16 pr-14 py-5 rounded-2xl bg-transparent text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-0 text-lg font-medium"
+                autocomplete="off"
+              />
+
+              <button
+                id="clear-search"
+                type="button"
+                class="hidden absolute right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white items-center justify-center transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3 text-sm font-medium">
+            <span class="text-gray-500 dark:text-white">
+              <strong id="result-count" class="text-black dark:text-white">{sortedPosts.length}</strong> articles
+            </span>
+            <span class="text-gray-300 dark:text-gray-700">&bull;</span>
+            <span class="text-gray-500 dark:text-white">Real-time filtering</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FILTER BAR ===== -->
+    <section class="max-w-7xl mx-auto px-6 pt-10 reveal">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex gap-2 overflow-x-auto pb-3 scrollbar-hide snap-x">
+          <button class="category-filter active-filter" data-category="all">All</button>
+          {categories.map(category => (
+            <button class="category-filter" data-category={category}>{category}</button>
+          ))}
+        </div>
+        <select
+          id="tag-filter"
+          class="w-full md:w-auto px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-black dark:text-white focus:outline-none focus:border-sky focus:ring-1 focus:ring-sky transition-colors cursor-pointer"
+        >
+          <option value="all">Explore All Topics</option>
+          {tags.map(tag => (
+            <option value={tag}>{tag}</option>
+          ))}
+        </select>
+      </div>
+    </section>
+
+    <!-- ===== STYLE 1 – HERO FEATURED SLIDER ===== -->
+    {heroFeatured.length > 0 && (
+      <section class="max-w-7xl mx-auto px-6 pt-10 mb-24 reveal">
+        <div class="relative overflow-hidden rounded-[2.5rem] border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 shadow-2xl shadow-gray-200/50 dark:shadow-black/50">
+          <div id="slider-track" class="flex transition-transform duration-1000 cubic-bezier(.16,1,.3,1)">
+            {heroFeatured.map((post) => (
+              <article class="min-w-full relative searchable-post group" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+                <div class="grid lg:grid-cols-12 min-h-[500px]">
+                  <div class="lg:col-span-5 p-8 sm:p-12 lg:p-16 flex flex-col justify-center order-2 lg:order-1 relative z-10 bg-white dark:bg-gray-950">
+                    <div class="flex items-center gap-3 mb-6">
+                      <span class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-black dark:text-white text-xs font-black uppercase tracking-widest">
+                        Spotlight
+                      </span>
+                      {post.categories?.[0] && (
+                        <span class="text-xs font-bold uppercase tracking-widest text-sky">
+                          {post.categories[0]}
+                        </span>
+                      )}
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-black dark:text-white leading-[1.15]">
+                      <a href={`/blog/${post.slug}`} class="hover:text-sky transition-colors">
+                        {post.title}
+                      </a>
+                    </h2>
+                    <p class="mt-6 text-gray-600 dark:text-white leading-relaxed text-lg line-clamp-3">
+                      {post.description}
+                    </p>
+                    <div class="mt-10">
+                      <a href={`/blog/${post.slug}`} class="btn-primary group/btn">
+                        Read Story
+                        <svg class="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+                      </a>
+                    </div>
+                  </div>
+                  <div class="lg:col-span-7 relative min-h-[300px] lg:min-h-full order-1 lg:order-2 overflow-hidden bg-gray-100 dark:bg-gray-800">
+                    {post.image ? (
+                      <img src={post.image} alt={post.title} class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                    ) : (
+                      <div class="absolute inset-0 bg-gradient-to-br from-sky/20 to-gray-200 dark:to-gray-800 flex items-center justify-center">
+                        <span class="text-8xl opacity-20">✦</span>
+                      </div>
+                    )}
+                    <div class="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-white via-white/50 dark:from-gray-950 dark:via-gray-950/50 to-transparent w-full lg:w-3/4"></div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {heroFeatured.length > 1 && (
+            <>
+              <button id="slider-prev" class="slider-button left-6" aria-label="Previous">&larr;</button>
+              <button id="slider-next" class="slider-button right-6" aria-label="Next">&rarr;</button>
+              <div class="absolute bottom-6 left-6 lg:left-16 flex gap-3 z-20">
+                {heroFeatured.map((_, index) => (
+                  <button class="dot w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300" data-index={index} aria-label={`Slide ${index + 1}`}></button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+    )}
+
+    <!-- ===== STYLE 2 – FEATURED GRID ===== -->
+    {gridFeatured.length > 0 && (
+      <section class="max-w-7xl mx-auto px-6 mb-24 reveal">
+        <div class="section-heading">
+          <span class="section-kicker">CURATED</span>
+          <h2 class="section-title">Editor's Picks</h2>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {gridFeatured.map(post => (
+            <article class="rich-card searchable-post" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+              {post.image && (
+                <a href={`/blog/${post.slug}`} class="block overflow-hidden relative">
+                  <div class="absolute inset-0 bg-gray-900/10 dark:bg-black/20 z-10 pointer-events-none mix-blend-overlay"></div>
+                  <img src={post.image} alt={post.title} class="card-image" loading="lazy" />
+                </a>
+              )}
+              <div class="p-6 flex flex-col h-full">
+                <div class="card-meta">
+                  <span class="font-bold text-sky">{post.categories?.[0] || 'Article'}</span>
+                  <span>&mdash;</span>
+                  {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+                <h3 class="card-title">
+                  <a href={`/blog/${post.slug}`}>{post.title}</a>
+                </h3>
+                <p class="card-description flex-grow">{post.description}</p>
+                <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <a href={`/blog/${post.slug}`} class="read-link group">
+                    Explore <span class="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ===== STYLE 3 – HORIZONTAL STORIES ===== -->
+    {horizontalPosts.length > 0 && (
+      <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 mb-24 reveal">
+        <div class="max-w-7xl mx-auto px-6">
+          <div class="section-heading">
+            <span class="section-kicker">LATEST</span>
+            <h2 class="section-title">Fresh from the Journal</h2>
+          </div>
+          <div class="flex gap-6 overflow-x-auto pb-8 pt-2 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0">
+            {horizontalPosts.map(post => (
+              <article class="horizontal-card searchable-post" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+                {post.image ? (
+                  <a href={`/blog/${post.slug}`} class="block overflow-hidden shrink-0 w-32 h-32 sm:w-40 sm:h-40">
+                    <img src={post.image} alt={post.title} class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" loading="lazy" />
+                  </a>
+                ) : (
+                  <div class="shrink-0 w-32 h-32 sm:w-40 sm:h-40 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                    <span class="text-3xl text-gray-400 dark:text-gray-600">✦</span>
+                  </div>
+                )}
+                <div class="p-5 flex flex-col justify-center">
+                  <time class="text-xs font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-2">
+                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </time>
+                  <h3 class="font-bold text-lg sm:text-xl text-black dark:text-white leading-tight line-clamp-2 hover:text-sky transition-colors">
+                    <a href={`/blog/${post.slug}`}>{post.title}</a>
+                  </h3>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ===== STYLE 4 – EDITORIAL SPLIT ===== -->
+    {editorialPosts.length > 0 && (
+      <section class="max-w-7xl mx-auto px-6 mb-24 reveal">
+        <div class="grid lg:grid-cols-2 gap-8">
+          {editorialPosts.map(post => (
+            <article class="editorial-card searchable-post" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+              <div class="flex flex-col sm:flex-row h-full">
+                {post.image && (
+                  <a href={`/blog/${post.slug}`} class="sm:w-2/5 min-h-[250px] sm:min-h-full overflow-hidden relative group">
+                    <img src={post.image} alt={post.title} class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                  </a>
+                )}
+                <div class="flex-1 p-8 flex flex-col justify-center">
+                  <span class="section-kicker mb-3">{post.categories?.[0] || 'INSIGHT'}</span>
+                  <h3 class="text-2xl font-black text-black dark:text-white leading-tight mb-4">
+                    <a href={`/blog/${post.slug}`} class="hover:text-sky transition-colors">
+                      {post.title}
+                    </a>
+                  </h3>
+                  <p class="text-gray-600 dark:text-white line-clamp-3 mb-6">
+                    {post.description}
+                  </p>
+                  <a href={`/blog/${post.slug}`} class="text-sm font-bold tracking-wide uppercase text-sky hover:text-black dark:hover:text-white transition-colors mt-auto w-fit">
+                    Read Story &rarr;
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ===== STYLE 5 – MAGAZINE GRID ===== -->
+    {magazinePosts.length > 0 && (
+      <section class="max-w-7xl mx-auto px-6 mb-24 reveal">
+        <div class="section-heading">
+          <span class="section-kicker">DEEP DIVES</span>
+          <h2 class="section-title">Recommended Reading</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+          {magazinePosts.map(post => (
+            <article class="searchable-post group cursor-pointer" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+              {post.image && (
+                <div class="overflow-hidden rounded-3xl mb-6 shadow-lg shadow-gray-200/20 dark:shadow-none bg-gray-100 dark:bg-gray-800">
+                  <img src={post.image} alt={post.title} class="w-full h-64 sm:h-80 object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                </div>
+              )}
+              <div>
+                <div class="flex flex-wrap gap-2 mb-4">
+                  {(post.tags || []).slice(0, 3).map(tag => (
+                    <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md bg-gray-100 dark:bg-gray-800 text-black dark:text-white">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <h3 class="text-3xl font-black text-black dark:text-white leading-[1.2] mb-4 group-hover:text-sky transition-colors">
+                  <a href={`/blog/${post.slug}`}>{post.title}</a>
+                </h3>
+                <p class="text-lg text-gray-600 dark:text-white leading-relaxed line-clamp-2 mb-4">
+                  {post.description}
+                </p>
+                <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+                  <time class="text-sm font-medium text-gray-400 dark:text-gray-500">
+                    {new Date(post.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </time>
+                  <a href={`/blog/${post.slug}`} class="btn-secondary">
+                    View
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ===== STYLE 6 – COMPACT TIMELINE ===== -->
+    {compactPosts.length > 0 && (
+      <section class="max-w-4xl mx-auto px-6 mb-24 reveal">
+        <div class="section-heading mb-10">
+          <span class="section-kicker">ARCHIVE</span>
+          <h2 class="section-title">Timeline</h2>
+        </div>
+        <div class="relative border-l-2 border-gray-200 dark:border-gray-800 ml-4 py-4">
+          {compactPosts.map(post => (
+            <article class="timeline-item searchable-post group" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+              <div class="timeline-dot group-hover:bg-sky group-hover:scale-125 transition-transform duration-300"></div>
+              <time class="text-sm font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 block mb-2">
+                {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </time>
+              <h3 class="font-black text-xl text-black dark:text-white mb-2">
+                <a href={`/blog/${post.slug}`} class="hover:text-sky transition-colors">
+                  {post.title}
+                </a>
+              </h3>
+              <p class="text-gray-600 dark:text-white line-clamp-2 max-w-2xl">
+                {post.description}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ===== STYLE 7 – REMAINING ARTICLES ===== -->
+    {remainingPosts.length > 0 && (
+      <section class="max-w-7xl mx-auto px-6 mb-24 reveal">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {remainingPosts.map(post => (
+            <article class="simple-post searchable-post group" data-title={post.title.toLowerCase()} data-description={post.description.toLowerCase()} data-category={(post.categories || []).join('|').toLowerCase()} data-tags={(post.tags || []).join('|').toLowerCase()}>
+              <div class="flex items-start gap-5">
+                {post.image ? (
+                  <a href={`/blog/${post.slug}`} class="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-gray-200 dark:border-gray-800">
+                    <img src={post.image} alt={post.title} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                  </a>
+                ) : (
+                  <div class="w-24 h-24 rounded-2xl bg-gray-100 dark:bg-gray-800 shrink-0 border border-gray-200 dark:border-gray-700"></div>
+                )}
+                <div class="min-w-0 flex flex-col justify-center h-24">
+                  <time class="text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400 mb-1">
+                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </time>
+                  <h3 class="font-bold text-black dark:text-white line-clamp-2 leading-snug group-hover:text-sky transition-colors">
+                    <a href={`/blog/${post.slug}`}>
+                      {post.title}
+                    </a>
+                  </h3>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ===== SIDEBAR / DISCOVER (Categories & Tags) ===== -->
+    <section class="max-w-7xl mx-auto px-6 pb-24 reveal">
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Categories -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+          <span class="section-kicker">DISCOVER</span>
+          <h2 class="text-xl font-black text-black dark:text-white mt-2 mb-5">Categories</h2>
+          <div class="flex flex-wrap gap-2">
+            {categories.map(category => (
+              <a
+                href={`/blog/category/${category.toLowerCase()}`}
+                class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-sky hover:text-sky transition-all"
+              >
+                {category}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+          <span class="section-kicker">TOPICS</span>
+          <h2 class="text-xl font-black text-black dark:text-white mt-2 mb-5">Explore Tags</h2>
+          <div class="flex flex-wrap gap-2">
+            {tags.slice(0, 18).map(tag => (
+              <a
+                href={`/blog/tag/${tag.toLowerCase()}`}
+                class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-sky hover:text-sky transition-all"
+              >
+                #{tag}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="bg-gradient-to-br from-sky/10 to-transparent border border-sky/20 rounded-2xl p-6 flex flex-col justify-center">
+          <span class="text-3xl">✦</span>
+          <h2 class="text-xl font-black text-black dark:text-white mt-3">More useful guides</h2>
+          <p class="text-sm text-gray-600 dark:text-white mt-2 leading-relaxed">
+            Explore Dayront's tools and learn how to convert, edit, and process your media privately.
+          </p>
+          <a href="/tools" class="mt-5 inline-flex items-center gap-2 text-sky font-bold text-sm hover:underline">
+            Explore tools &rarr;
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== NO RESULTS ===== -->
+    <section id="no-results" class="hidden max-w-2xl mx-auto px-6 py-32 text-center reveal">
+      <div class="w-20 h-20 mx-auto rounded-3xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-3xl mb-6 shadow-inner">
+        &#128269;
+      </div>
+      <h2 class="text-3xl font-black text-black dark:text-white mb-3">No articles found</h2>
+      <p class="text-lg text-gray-500 dark:text-white mb-8">Adjust your filters or try a different search term.</p>
+      <button id="reset-search" class="btn-primary">Clear all filters</button>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<script>
+  // =====================================================
+  // LIVE SEARCH + FILTERING
+  // =====================================================
+  const searchInput = document.getElementById('blog-search') as HTMLInputElement | null;
+  const clearSearch = document.getElementById('clear-search');
+  const tagFilter = document.getElementById('tag-filter') as HTMLSelectElement | null;
+  const resultCount = document.getElementById('result-count');
+  const noResults = document.getElementById('no-results');
+  const resetSearch = document.getElementById('reset-search');
+
+  const posts = Array.from(
+    document.querySelectorAll('.searchable-post')
+  );
+
+  let activeCategory = 'all';
+
+  function filterPosts() {
+    const query = searchInput?.value.toLowerCase().trim() || '';
+    const selectedTag = tagFilter?.value.toLowerCase() || 'all';
+
+    let visible = 0;
+
+    posts.forEach((post) => {
+      const title = post.getAttribute('data-title') || '';
+      const description = post.getAttribute('data-description') || '';
+      const category = post.getAttribute('data-category') || '';
+      const tags = post.getAttribute('data-tags') || '';
+
+      const matchesSearch =
+        !query ||
+        title.includes(query) ||
+        description.includes(query) ||
+        category.includes(query) ||
+        tags.includes(query);
+
+      const matchesCategory =
+        activeCategory === 'all' ||
+        category.split('|').includes(activeCategory);
+
+      const matchesTag =
+        selectedTag === 'all' ||
+        tags.split('|').includes(selectedTag);
+
+      const matches =
+        matchesSearch &&
+        matchesCategory &&
+        matchesTag;
+
+      post.classList.toggle('search-hidden', !matches);
+
+      if (matches) {
+        visible++;
+      }
+    });
+
+    if (resultCount) {
+      resultCount.textContent = String(visible);
+    }
+
+    if (clearSearch) {
+      clearSearch.classList.toggle(
+        'hidden',
+        !query
+      );
+
+      clearSearch.classList.toggle(
+        'flex',
+        !!query
+      );
+    }
+
+    noResults?.classList.toggle(
+      'hidden',
+      visible !== 0
+    );
+  }
+
+  searchInput?.addEventListener('input', filterPosts);
+  tagFilter?.addEventListener('change', filterPosts);
+
+  // =====================================================
+  // CATEGORY FILTERS
+  // =====================================================
+
+  document.querySelectorAll('.category-filter').forEach((button) => {
+    button.addEventListener('click', () => {
+      activeCategory =
+        button.getAttribute('data-category')?.toLowerCase() || 'all';
+
+      document
+        .querySelectorAll('.category-filter')
+        .forEach((item) => {
+          item.classList.remove('active-filter');
+        });
+
+      button.classList.add('active-filter');
+
+      filterPosts();
+    });
+  });
+
+  // =====================================================
+  // CLEAR / RESET
+  // =====================================================
+
+  function resetAll() {
+    if (searchInput) {
+      searchInput.value = '';
+    }
+
+    if (tagFilter) {
+      tagFilter.value = 'all';
+    }
+
+    activeCategory = 'all';
+
+    document
+      .querySelectorAll('.category-filter')
+      .forEach((item) => {
+        item.classList.remove('active-filter');
+      });
+
+    document
+      .querySelector('.category-filter[data-category="all"]')
+      ?.classList.add('active-filter');
+
+    filterPosts();
+  }
+
+  clearSearch?.addEventListener('click', resetAll);
+  resetSearch?.addEventListener('click', resetAll);
+
+  // =====================================================
+  // HERO SLIDER
+  // =====================================================
+
+  const track = document.getElementById('slider-track') as HTMLElement | null;
+  const prev = document.getElementById('slider-prev');
+  const next = document.getElementById('slider-next');
+  const dots = Array.from(document.querySelectorAll('.dot'));
+
+  let current = 0;
+
+  function updateSlider(index: number) {
+    if (!track || dots.length === 0) return;
+
+    current = (index + dots.length) % dots.length;
+
+    track.style.transform = `translateX(-${current * 100}%)`;
+
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('bg-sky', i === current);
+      dot.classList.toggle('dark:bg-sky-400', i === current);
+      dot.classList.toggle('w-8', i === current);
+      dot.classList.toggle('bg-gray-300', i !== current);
+      dot.classList.toggle('dark:bg-gray-700', i !== current);
+      dot.classList.toggle('w-3', i !== current);
+    });
+  }
+
+  prev?.addEventListener('click', () => updateSlider(current - 1));
+  next?.addEventListener('click', () => updateSlider(current + 1));
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => updateSlider(index));
+  });
+
+  updateSlider(0);
+
+  if (dots.length > 1) {
+    let sliderTimer: NodeJS.Timeout = setInterval(
+      () => updateSlider(current + 1),
+      7000
+    );
+
+    track?.parentElement?.addEventListener(
+      'mouseenter',
+      () => clearInterval(sliderTimer)
+    );
+
+    track?.parentElement?.addEventListener(
+      'mouseleave',
+      () => {
+        sliderTimer = setInterval(
+          () => updateSlider(current + 1),
+          7000
+        );
+      }
+    );
+  }
+
+  // =====================================================
+  // SCROLL REVEAL
+  // =====================================================
+
+  const revealElements = document.querySelectorAll('.reveal');
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.08,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    revealElements.forEach(element => observer.observe(element));
+  } else {
+    revealElements.forEach(element => element.classList.add('reveal-visible'));
+  }
+
+  // =====================================================
+  // CARD HOVER / 3D POINTER MOTION
+  // =====================================================
+
+  document
+    .querySelectorAll('.rich-card, .editorial-card')
+    .forEach((card) => {
+      const htmlCard = card as HTMLElement;
+
+      htmlCard.addEventListener('pointermove', (event) => {
+        const rect = htmlCard.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const rotateX = ((y / rect.height) - 0.5) * -4;
+        const rotateY = ((x / rect.width) - 0.5) * 4;
+
+        htmlCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px) scale(1.01)`;
+      });
+
+      htmlCard.addEventListener('pointerleave', () => {
+        htmlCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px) scale(1)';
+      });
+    });
+
+  // =====================================================
+  // KEYBOARD SHORTCUT ("/" focuses search)
+  // =====================================================
+
+  document.addEventListener('keydown', (event) => {
+    if (
+      event.key === '/' &&
+      document.activeElement?.tagName !== 'INPUT' &&
+      document.activeElement?.tagName !== 'TEXTAREA'
+    ) {
+      event.preventDefault();
+      searchInput?.focus();
+    }
+
+    if (
+      event.key === 'Escape' &&
+      document.activeElement === searchInput
+    ) {
+      resetAll();
+    }
+  });
+</script>
+
+<style>
+  /* =====================================================
+     GLOBAL / UTILITIES
+  ====================================================== */
+  .search-hidden { display: none !important; }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* =====================================================
+     BUTTONS & PILLS
+  ====================================================== */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.875rem 1.75rem;
+    border-radius: 9999px;
+    background: #38bdf8; /* sky-400 */
+    color: black;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 250ms ease;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+  }
+  .btn-primary:hover {
+    background: #7dd3fc; /* sky-300 */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 1.25rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(229 231 235);
+    background: white;
+    color: black;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 200ms ease;
+  }
+  .dark .btn-secondary {
+    border-color: rgb(55 65 81);
+    background: rgb(17 24 39);
+    color: white;
+  }
+  .btn-secondary:hover {
+    border-color: #38bdf8;
+    color: #38bdf8;
+  }
+  .dark .btn-secondary:hover {
+    border-color: #7dd3fc;
+    color: #7dd3fc;
+  }
+
+  .category-filter {
+    flex-shrink: 0;
+    padding: 0.6rem 1.25rem;
+    border-radius: 9999px;
+    background: transparent;
+    color: rgb(107 114 128);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 200ms ease;
+    border: 1px solid transparent;
+  }
+  .dark .category-filter { color: rgb(156 163 175); }
+  .category-filter:hover { color: black; }
+  .dark .category-filter:hover { color: white; }
+  .active-filter {
+    background: black !important;
+    color: white !important;
+  }
+  .dark .active-filter {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* =====================================================
+     TYPOGRAPHY / HEADINGS
+  ====================================================== */
+  .section-heading {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+  }
+  .section-kicker {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: #38bdf8; /* sky-400 */
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .dark .section-kicker { color: #7dd3fc; /* sky-300 */ }
+  .section-title {
+    font-size: 2.25rem;
+    line-height: 1.1;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: black;
+  }
+  .dark .section-title { color: white; }
+
+  /* =====================================================
+     CARDS
+  ====================================================== */
+  .rich-card, .editorial-card, .simple-post {
+    border-radius: 1.5rem;
+    background: white;
+    border: 1px solid rgb(243 244 246);
+    transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 300ms ease, box-shadow 300ms ease;
+    will-change: transform;
+  }
+  .dark .rich-card, .dark .editorial-card, .dark .simple-post {
+    background: rgb(17 24 39);
+    border-color: rgb(31 41 55);
+  }
+
+  .rich-card { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
+  .dark .rich-card { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3); }
+
+  .rich-card:hover, .editorial-card:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 20px 40px -10px rgba(56, 189, 248, 0.1);
+    z-index: 10;
+  }
+  .dark .rich-card:hover, .dark .editorial-card:hover {
+    border-color: #7dd3fc;
+    box-shadow: 0 20px 40px -10px rgba(125, 211, 252, 0.2);
+  }
+
+  .simple-post { padding: 1.25rem; }
+  .simple-post:hover { border-color: #38bdf8; transform: translateY(-2px); }
+  .dark .simple-post:hover { border-color: #7dd3fc; }
+
+  .card-image {
+    width: 100%;
+    height: 14rem;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+  .rich-card:hover .card-image { transform: scale(1.05); }
+
+  .card-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: rgb(156 163 175);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  .card-title {
+    color: black;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 900;
+    margin-bottom: 0.75rem;
+  }
+  .dark .card-title { color: white; }
+  .card-description {
+    color: rgb(75 85 99);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .dark .card-description { color: white; }
+
+  .read-link {
+    color: black;
+    font-size: 0.875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .dark .read-link { color: white; }
+  .rich-card:hover .read-link { color: #38bdf8; }
+  .dark .rich-card:hover .read-link { color: #7dd3fc; }
+
+  /* =====================================================
+     HORIZONTAL CARDS (Snapping)
+  ====================================================== */
+  .horizontal-card {
+    display: flex;
+    min-width: 300px;
+    max-width: 380px;
+    background: white;
+    border: 1px solid rgb(243 244 246);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    scroll-snap-align: start;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  }
+  .dark .horizontal-card {
+    background: rgb(17 24 39);
+    border-color: rgb(31 41 55);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+
+  /* =====================================================
+     TIMELINE
+  ====================================================== */
+  .timeline-item {
+    position: relative;
+    padding: 0 0 3rem 2.5rem;
+  }
+  .timeline-dot {
+    position: absolute;
+    left: -7px;
+    top: 0.3rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background: rgb(209 213 219);
+    box-shadow: 0 0 0 6px white;
+    transition: all 300ms ease;
+  }
+  .dark .timeline-dot {
+    background: rgb(55 65 81);
+    box-shadow: 0 0 0 6px rgb(10 10 12);
+  }
+
+  /* =====================================================
+     SLIDER CONTROLS
+  ====================================================== */
+  .slider-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    width: 48px;
+    height: 48px;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.95);
+    color: black;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    transition: all 200ms ease;
+    border: 1px solid rgb(229 231 235);
+  }
+  .dark .slider-button {
+    background: rgba(17,24,39,0.8);
+    backdrop-filter: blur(8px);
+    color: white;
+    border-color: rgb(55 65 81);
+  }
+  .slider-button:hover { transform: translateY(-50%) scale(1.1); color: #38bdf8; }
+  .dark .slider-button:hover { color: #7dd3fc; }
+
+  /* =====================================================
+     SCROLL REVEAL ANIMATIONS
+  ====================================================== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+    transition: opacity 800ms ease, transform 800ms cubic-bezier(.16,1,.3,1);
+  }
+  .reveal-visible { opacity: 1; transform: translateY(0) scale(1); }
+  .reveal-delay-1 { transition-delay: 150ms; }
+
+  /* ACCESSIBILITY */
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .rich-card, .editorial-card, .simple-post, .card-image, .slider-button, .timeline-dot, .group-hover\:scale-105 {
+      transition: none !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
+  }
+
+  /* =====================================================
+     DARK MODE – FORCE WHITE TEXT ON ALL GRAY ELEMENTS
+  ====================================================== */
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-400,
+  .dark .text-gray-300 {
+    color: #ffffff !important;
+  }
+
+  .dark .card-description,
+  .dark .simple-post time,
+  .dark .discover-card p,
+  .dark .editorial-card p,
+  .dark .timeline-item p,
+  .dark .magazine-card p {
+    color: #ffffff !important;
+  }
+
+  .dark .card-meta,
+  .dark .horizontal-card time,
+  .dark .magazine-card time,
+  .dark .timeline-item time {
+    color: #e5e7eb !important; /* lighter gray for meta, still visible */
+  }
+</style>

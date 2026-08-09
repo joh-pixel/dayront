@@ -1,0 +1,72 @@
+{
+  "about": {
+    "metaTitle": "Acerca de Dayront – Privacy‑First Media Tools",
+    "metaDescription": "Dayront procesa sus archivos completamente en su navegador. Sin cargas, sin servidores, solo herramientas multimedia rápidas y privadas.",
+    "heading": "Acerca de Dayront",
+    "paragraphs": [
+      "Dayront es una colección de herramientas multimedia en línea gratuitas que se ejecutan al 100% en tu navegador. Nunca subimos tus archivos a ningún servidor. Todo se queda en tu dispositivo.",
+      "Construido con la privacidad y la velocidad como principios básicos, Dayront utiliza tecnologías web modernas como FFmpeg.wasm para procesar audio y video localmente. No se requiere instalación de software.",
+      "Nuestra misión: hacer que la potente edición de medios sea accesible para todos, sin comprometer sus datos."
+    ]
+  },
+  "terms": {
+    "metaTitle": "Términos de servicio – Dayront",
+    "metaDescription": "Términos de servicio para el uso de las herramientas de medios en línea gratuitas de Dayront.",
+    "heading": "Términos del servicio",
+    "lastUpdated": "2025-01-01",
+    "sections": [
+      {
+        "title": "Aceptación de los Términos",
+        "body": "Al acceder o utilizar Dayront, aceptas estar sujeto a estos Términos de Servicio. Si no está de acuerdo, no utilice el servicio."
+      },
+      {
+        "title": "El «servicio» incluye: el sitio,",
+        "body": "Dayront proporciona herramientas de conversión y edición de medios basadas en navegador. Todo el procesamiento se realiza localmente en su dispositivo. No tenemos acceso a sus archivos."
+      },
+      {
+        "title": "Responsabilidades del usuario",
+        "body": "Usted es el único responsable de los archivos que procesa. No debe utilizar Dayront para ningún propósito ilegal o no autorizado."
+      },
+      {
+        "title": "Propiedad Intelectual",
+        "body": "El nombre, el logotipo y el código del sitio web de Dayront son de nuestra propiedad. No puede copiarlos ni modificarlos sin permiso."
+      },
+      {
+        "title": "Exclusión de garantías",
+        "body": "El servicio se presta \"tal cual\" sin garantías de ningún tipo. No garantizamos que las herramientas cumplan con sus requisitos o que estén libres de errores."
+      },
+      {
+        "title": "Limitación de responsabilidad",
+        "body": "Dayront no será responsable de los daños derivados del uso o la imposibilidad de utilizar el servicio."
+      },
+      {
+        "title": "CAMBIOS EN LOS TÉRMINOS ",
+        "body": "Nos reservamos el derecho de actualizar estos términos en cualquier momento. El uso continuado después de los cambios constituye la aceptación."
+      }
+    ]
+  },
+  "privacy": {
+    "metaTitle": "Política de privacidad – Dayront",
+    "metaDescription": "Política de privacidad de Dayront: tus archivos nunca salen de tu dispositivo. Descubre cómo protegemos tus datos.",
+    "heading": "Política de privacidad",
+    "lastUpdated": "2025-01-01",
+    "sections": [
+      {
+        "title": "Tus archivos permanecen en tu dispositivo",
+        "body": "Todas las conversiones y ediciones se realizan dentro de su navegador utilizando WebAssembly. No subimos, almacenamos ni vemos tus archivos. Nunca."
+      },
+      {
+        "title": "Datos que recogemos",
+        "body": "Podemos utilizar análisis anónimos (sin cookies) para comprender cómo se utilizan nuestras herramientas. No se recopilan datos personales."
+      },
+      {
+        "title": "Anuncios.",
+        "body": "Los anuncios pueden mostrarse a través de redes de terceros que podrían utilizar cookies. Consulte sus respectivas políticas de privacidad para obtener más información."
+      },
+      {
+        "title": "Contáctanos",
+        "body": "Si tiene alguna pregunta sobre esta política, póngase en contacto con nosotros en privacy@dayront.com."
+      }
+    ]
+  }
+}

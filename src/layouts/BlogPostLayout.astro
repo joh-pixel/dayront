@@ -1,0 +1,143 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import TableOfContents from '../components/blog/TableOfContents.astro';
+import AdSlot from '../components/layout/AdSlot.astro';
+import { getCollection } from 'astro:content';
+
+export interface Props {
+  title: string;
+  description: string;
+  date: Date;
+  author?: string;
+  categories?: string[];
+  tags?: string[];
+  relatedSlugs?: string[];
+  readingTime?: string;
+  content: any;
+  slug?: string;
+}
+
+const {
+  title,
+  description,
+  date,
+  author = 'Dayront Team',
+  categories = [],
+  tags = [],
+  relatedSlugs = [],
+  readingTime = '5 min read',
+  content: Content,
+  slug,
+} = Astro.props;
+
+const formattedDate = new Date(date).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+// Fetch related posts
+let relatedPosts: any[] = [];
+if (relatedSlugs.length > 0) {
+  const allPosts = await getCollection('blog', (entry) => entry.id.startsWith('en/'));
+  relatedPosts = allPosts
+    .filter(p => relatedSlugs.includes(p.slug))
+    .map(p => ({
+      title: p.data.title,
+      description: p.data.description,
+      slug: p.slug,
+      date: p.data.date.toISOString(),
+      image: p.data.image || null,
+    }));
+}
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="max-w-7xl mx-auto px-4 py-8 sm:py-12 lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
+    <div>
+      <!-- Breadcrumbs -->
+      <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
+        <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
+          <li><a href="/" class="hover:text-sky transition">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="/blog" class="hover:text-sky transition">Blog</a></li>
+          {categories[0] && (
+            <>
+              <li aria-hidden="true">/</li>
+              <li>
+                <a href={`/blog/category/${categories[0].toLowerCase()}`} class="hover:text-sky transition">{categories[0]}</a>
+              </li>
+            </>
+          )}
+          <li aria-hidden="true">/</li>
+          <li class="text-gray-900 dark:text-white font-medium truncate">{title}</li>
+        </ol>
+      </nav>
+
+      <article>
+        <header class="mb-8">
+          <h1 class="text-4xl font-extrabold text-black dark:text-white mb-4">{title}</h1>
+          <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <span>{author}</span>
+            <span aria-hidden="true">·</span>
+            <time datetime={date.toISOString()}>{formattedDate}</time>
+            <span aria-hidden="true">·</span>
+            <span>{readingTime}</span>
+          </div>
+          {categories.length > 0 && (
+            <div class="flex flex-wrap gap-2 mb-3">
+              {categories.map(cat => (
+                <a href={`/blog/category/${cat.toLowerCase()}`} class="bg-sky-light dark:bg-sky/20 text-sky dark:text-sky-bright text-xs px-2.5 py-1 rounded-full hover:bg-sky/20 transition">{cat}</a>
+              ))}
+            </div>
+          )}
+          {tags.length > 0 && (
+            <div class="flex flex-wrap gap-2">
+              {tags.map(tag => (
+                <a href={`/blog/tag/${tag.toLowerCase()}`} class="text-xs text-gray-500 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full hover:border-sky transition">#{tag}</a>
+              ))}
+            </div>
+          )}
+        </header>
+
+        <div class="prose dark:prose-invert max-w-none mb-12">
+          <Content />
+        </div>
+      </article>
+
+      <AdSlot position="in-content" class="mb-12" />
+
+      <!-- Related Posts Slider -->
+      {relatedPosts.length > 0 && (
+        <section class="mt-16">
+          <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Related Articles</h2>
+          <div class="relative">
+            <div id="related-slider" class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+              {relatedPosts.map(post => (
+                <div class="min-w-[250px] max-w-[300px] flex-shrink-0 snap-start bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+                  {post.image && (
+                    <img src={post.image} alt={post.title} class="w-full h-32 object-cover" loading="lazy" />
+                  )}
+                  <div class="p-4">
+                    <time class="text-xs text-gray-500" datetime={post.date}>
+                      {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </time>
+                    <h3 class="font-semibold text-black dark:text-white mt-1 mb-2 line-clamp-2">{post.title}</h3>
+                    <a href={`/blog/${post.slug}`} class="text-sky text-sm font-medium hover:underline">Read →</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+
+    <aside class="hidden lg:block">
+      <div class="sticky top-24 space-y-8">
+        <TableOfContents />
+        <AdSlot position="in-content" />
+      </div>
+    </aside>
+  </div>
+</BaseLayout>

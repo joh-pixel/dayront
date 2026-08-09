@@ -1,0 +1,28 @@
+---
+// No props – it will extract headings from the page content at runtime
+---
+
+<nav class="toc text-sm" aria-label="Table of Contents">
+  <h2 class="font-semibold text-lg mb-2">On this page</h2>
+  <ul id="toc-list" class="space-y-1 list-none pl-0">
+    <!-- Populated by JS -->
+  </ul>
+</nav>
+
+<script>
+  const article = document.querySelector('article.prose');
+  if (article) {
+    const headings = article.querySelectorAll('h2, h3');
+    const tocList = document.getElementById('toc-list');
+    headings.forEach(heading => {
+      // Add id if missing (Astro/MDX usually auto-generates ids from text)
+      if (!heading.id) {
+        heading.id = heading.textContent?.toLowerCase().replace(/\s+/g, '-') || '';
+      }
+      const li = document.createElement('li');
+      li.style.paddingLeft = heading.tagName === 'H3' ? '1rem' : '0';
+      li.innerHTML = `<a href="#${heading.id}" class="text-gray-600 dark:text-gray-400 hover:text-lemon">${heading.textContent}</a>`;
+      tocList?.appendChild(li);
+    });
+  }
+</script>

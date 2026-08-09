@@ -1,0 +1,52 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const page = {
+  metaTitle: 'AVI to MP3 Converter – Extract Audio Free Online | Dayront',
+  metaDescription:
+    'Convert AVI video to MP3 audio directly in your browser. No upload, 100% private. Works with all AVI files.',
+  toolName: 'AVI to MP3 Converter',
+  toolIcon: '🎬',
+  toolConfig: {
+    type: 'convert',
+    from: 'avi',
+    to: 'mp3',
+    label: 'AVI to MP3',
+  } as const,
+  howTo: [
+    {
+      title: 'Select your AVI file',
+      text: 'Choose an AVI video from your device.',
+    },
+    {
+      title: 'Extract audio to MP3',
+      text: 'Our tool strips the audio stream and encodes it as MP3.',
+    },
+    {
+      title: 'Download the MP3',
+      text: 'Save the audio file – perfect for listening on the go.',
+    },
+  ],
+  faq: [
+    {
+      question: 'Are all AVI files supported?',
+      answer: 'Yes, as long as they contain an audio track. Older codecs may take a bit longer.',
+    },
+    {
+      question: 'Will the video be uploaded?',
+      answer: 'No – everything happens locally. We never see your file.',
+    },
+    {
+      question: 'Can I convert multiple AVIs?',
+      answer: 'Currently one at a time, but batch support is planned.',
+    },
+  ],
+  relatedTools: [
+    { href: '/convert/mkv-to-mp3', icon: '🎬', name: 'MKV to MP3' },
+    { href: '/convert/mov-to-mp3', icon: '🎬', name: 'MOV to MP3' },
+    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
+  ],
+};
+---
+
+<ToolLayout {...page} />
