@@ -10,7 +10,7 @@ export default defineConfig({
   site: "https://dayront.com",
   integrations: [
     tailwind(),
-    preact({ compat: true }), // Preact with React compat
+    preact({ compat: true }),
     mdx(),
     sitemap({
       i18n: {
@@ -37,21 +37,40 @@ export default defineConfig({
       },
     },
     plugins: [
-      // Required for FFmpeg.wasm (SharedArrayBuffer)
+      // Required for FFmpeg.wasm (SharedArrayBuffer + correct MIME types)
       {
         name: 'configure-response-headers',
         configureServer: (server) => {
           server.middlewares.use((_req, res, next) => {
+            // SharedArrayBuffer headers (needed by ffmpeg.wasm)
             res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
             res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+
+            // Force correct MIME types for ffmpeg core files
+            if (_req.url?.startsWith('/ffmpeg/')) {
+              if (_req.url.endsWith('.js')) {
+                res.setHeader('Content-Type', 'text/javascript');
+              } else if (_req.url.endsWith('.wasm')) {
+                res.setHeader('Content-Type', 'application/wasm');
+              }
+            }
+
             next();
           });
         },
-        // Also apply headers when running `astro preview`
         configurePreviewServer: (server) => {
           server.middlewares.use((_req, res, next) => {
             res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
             res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+
+            if (_req.url?.startsWith('/ffmpeg/')) {
+              if (_req.url.endsWith('.js')) {
+                res.setHeader('Content-Type', 'text/javascript');
+              } else if (_req.url.endsWith('.wasm')) {
+                res.setHeader('Content-Type', 'application/wasm');
+              }
+            }
+
             next();
           });
         },
