@@ -76,7 +76,7 @@ const allSearchItems = [...toolItems, ...blogItems];
       })();
     </script>
 
-    <!-- Preload critical font (optional — remove if not using Inter) -->
+    <!-- Preload critical font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -85,9 +85,6 @@ const allSearchItems = [...toolItems, ...blogItems];
     <link rel="manifest" href="/manifest.json" />
   </head>
   <body class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200">
-    <!-- TEMPORARY DEBUG BANNER (remove after testing) -->
-    <div id="coi-check" style="position:fixed;bottom:0;left:0;background:red;color:white;padding:4px 8px;font-size:12px;z-index:9999"></div>
-
     <Header />
 
     <!-- Small ad block below header -->
@@ -105,13 +102,52 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <!-- Real‑time search modal (hidden by default) -->
     <SearchModal items={allSearchItems} />
+
+    <!-- PWA Install Button (hidden by default, shown when installable) -->
+    <button
+      id="pwa-install-btn"
+      class="fixed bottom-20 right-4 z-50 bg-sky text-black font-semibold px-4 py-2 rounded-full shadow-lg hover:bg-sky-bright transition-all duration-300 hidden items-center gap-2"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+      Install
+    </button>
+
+    <!-- Service Worker Registration -->
     <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js');
-    });
-  }
-</script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
+
+    <!-- PWA Install Prompt Logic -->
+    <script>
+      let deferredPrompt;
+      const installBtn = document.getElementById('pwa-install-btn');
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn?.classList.remove('hidden');
+        installBtn?.classList.add('inline-flex');
+      });
+
+      installBtn?.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.classList.add('hidden');
+        }
+        deferredPrompt = null;
+      });
+
+      window.addEventListener('appinstalled', () => {
+        installBtn?.classList.add('hidden');
+        deferredPrompt = null;
+      });
+    </script>
   </body>
 </html>
 
