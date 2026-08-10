@@ -1,19 +1,30 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile } from '@ffmpeg/util';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 let ffmpeg: FFmpeg | null = null;
 let loadingPromise: Promise<FFmpeg> | null = null;
 
-// FFmpeg has a shared virtual filesystem.
-// Queue operations so multiple conversions don't interfere.
+/**
+ * FFmpeg uses one shared virtual filesystem.
+ * Queue all operations so conversions cannot collide.
+ */
 let operationQueue: Promise<void> = Promise.resolve();
 
 /* -------------------------------------------------------------------------- */
-/* MIME TYPES                                                                  */
+/* CONFIGURATION                                                              */
+/* -------------------------------------------------------------------------- */
+
+const FFMPEG_CORE_PATH = '/ffmpeg/ffmpeg-core.js';
+const FFMPEG_WASM_PATH = '/ffmpeg/ffmpeg-core.wasm';
+
+/* -------------------------------------------------------------------------- */
+/* MIME TYPES                                                                 */
 /* -------------------------------------------------------------------------- */
 
 function getMimeType(format: string): string {
-  const ext = format.toLowerCase().replace(/^\./, '');
+  const ext = format
+    .toLowerCase()
+    .replace(/^\./, '');
 
   const mimeTypes: Record<string, string> = {
     // Audio
@@ -34,15 +45,18 @@ function getMimeType(format: string): string {
     mpeg: 'video/mpeg',
     mpg: 'video/mpeg',
 
-    // Generic
+    // Fallback
     bin: 'application/octet-stream',
   };
 
-  return mimeTypes[ext] || 'application/octet-stream';
+  return (
+    mimeTypes[ext] ||
+    'application/octet-stream'
+  );
 }
 
 /* -------------------------------------------------------------------------- */
-/* HELPERS                                                                     */
+/* HELPERS                                                                    */
 /* -------------------------------------------------------------------------- */
 
 function normalizeFormat(format: string): string {
@@ -56,17 +70,20 @@ function getExtension(
   filename: string,
   fallback = 'bin',
 ): string {
-  const cleanName = filename.split(/[?#]/)[0];
+  const cleanName =
+    filename.split(/[?#]/)[0];
+
   const parts = cleanName.split('.');
 
   if (parts.length < 2) {
     return fallback;
   }
 
-  const extension = parts
-    .pop()
-    ?.toLowerCase()
-    .trim();
+  const extension =
+    parts
+      .pop()
+      ?.toLowerCase()
+      .trim();
 
   return extension || fallback;
 }
@@ -75,13 +92,19 @@ function makeName(
   prefix: string,
   extension: string,
 ): string {
-  const random =
+  let random: string;
+
+  if (
     typeof crypto !== 'undefined' &&
-    'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2)}`;
+    typeof crypto.randomUUID === 'function'
+  ) {
+    random = crypto.randomUUID();
+  } else {
+    random =
+      `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`;
+  }
 
   return `${prefix}-${random}.${extension}`;
 }
@@ -93,8 +116,42 @@ async function deleteFile(
   try {
     await ff.deleteFile(filename);
   } catch {
-    // Ignore cleanup errors.
+    // Cleanup failure should never hide the real result.
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* CHECK CORE FILES                                                            */
+/* -------------------------------------------------------------------------- */
+
+async function checkCoreFile(
+  url: string,
+  name: string,
+): Promise<void> {
+  const response = await fetch(url, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `${name} could not be loaded (${response.status} ${response.statusText}). ` +
+      `Expected file at ${url}`,
+    );
+  }
+
+  const contentType =
+    response.headers.get('content-type') || '';
+
+  console.log(
+    `[Dayront FFmpeg] ${name}:`,
+    {
+      url,
+      status: response.status,
+      contentType,
+      size: response.headers.get('content-length'),
+    },
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -102,20 +159,23 @@ async function deleteFile(
 /* -------------------------------------------------------------------------- */
 
 /**
- * Loads the LOCAL ESM FFmpeg core.
+ * Load FFmpeg in the browser.
  *
  * IMPORTANT:
+ *
+ * The files must exist at:
  *
  * public/ffmpeg/ffmpeg-core.js
  * public/ffmpeg/ffmpeg-core.wasm
  *
- * must come from:
+ * which become:
  *
- * node_modules/@ffmpeg/core/dist/esm/
+ * /ffmpeg/ffmpeg-core.js
+ * /ffmpeg/ffmpeg-core.wasm
  *
- * We intentionally DO NOT use toBlobURL().
- *
- * We also DO NOT use the multi-thread core here.
+ * We use toBlobURL() because ffmpeg-core.js is an ESM WebAssembly loader.
+ * This prevents the browser from treating the core as an application module
+ * belonging to the Astro/Vite source graph.
  */
 async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpeg) {
@@ -136,26 +196,45 @@ async function getFFmpeg(): Promise<FFmpeg> {
     const instance = new FFmpeg();
 
     try {
-      /*
-       * IMPORTANT:
-       *
-       * These are runtime URLs.
-       * They are NOT imported by Vite.
-       */
-      const coreURL =
-        `${window.location.origin}/ffmpeg/ffmpeg-core.js`;
-
-      const wasmURL =
-        `${window.location.origin}/ffmpeg/ffmpeg-core.wasm`;
-
       console.log(
-        '[Dayront FFmpeg] Loading core:',
-        coreURL,
+        '[Dayront FFmpeg] Checking local core files...',
+      );
+
+      await checkCoreFile(
+        FFMPEG_CORE_PATH,
+        'FFmpeg core JavaScript',
+      );
+
+      await checkCoreFile(
+        FFMPEG_WASM_PATH,
+        'FFmpeg WASM',
       );
 
       console.log(
-        '[Dayront FFmpeg] Loading WASM:',
-        wasmURL,
+        '[Dayront FFmpeg] Local core files found.',
+      );
+
+      /**
+       * Convert the local files to blob URLs.
+       *
+       * This is the important part.
+       */
+      const coreURL = await toBlobURL(
+        FFMPEG_CORE_PATH,
+        'text/javascript',
+      );
+
+      const wasmURL = await toBlobURL(
+        FFMPEG_WASM_PATH,
+        'application/wasm',
+      );
+
+      console.log(
+        '[Dayront FFmpeg] Blob URLs created.',
+      );
+
+      console.log(
+        '[Dayront FFmpeg] Loading FFmpeg core...',
       );
 
       await instance.load({
@@ -164,7 +243,7 @@ async function getFFmpeg(): Promise<FFmpeg> {
       });
 
       console.log(
-        '[Dayront FFmpeg] Core loaded successfully.',
+        '[Dayront FFmpeg] FFmpeg loaded successfully.',
       );
 
       ffmpeg = instance;
@@ -174,7 +253,7 @@ async function getFFmpeg(): Promise<FFmpeg> {
       ffmpeg = null;
 
       console.error(
-        '[Dayront FFmpeg] Load error:',
+        '[Dayront FFmpeg] Complete load error:',
         error,
       );
 
@@ -195,18 +274,20 @@ async function getFFmpeg(): Promise<FFmpeg> {
 }
 
 /* -------------------------------------------------------------------------- */
-/* SERIALIZED FFmpeg EXECUTION                                                 */
+/* SERIALIZED EXECUTION                                                       */
 /* -------------------------------------------------------------------------- */
 
 async function execute(
   args: string[],
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<FFmpeg> {
   let result: FFmpeg | null = null;
   let failure: unknown = null;
 
-  const job = operationQueue.then(
-    async () => {
+  const job =
+    operationQueue.then(async () => {
       const ff = await getFFmpeg();
 
       const progressHandler = ({
@@ -218,7 +299,9 @@ async function execute(
           0,
           Math.min(
             100,
-            Math.round(progress * 100),
+            Math.round(
+              progress * 100,
+            ),
           ),
         );
 
@@ -248,8 +331,7 @@ async function execute(
           );
         }
       }
-    },
-  );
+    });
 
   operationQueue = job.then(
     () => undefined,
@@ -272,13 +354,35 @@ async function execute(
 }
 
 /* -------------------------------------------------------------------------- */
-/* GENERAL MEDIA CONVERTER                                                     */
+/* READ OUTPUT                                                                */
+/* -------------------------------------------------------------------------- */
+
+async function readBlob(
+  ff: FFmpeg,
+  filename: string,
+  format: string,
+): Promise<Blob> {
+  const data =
+    await ff.readFile(filename);
+
+  return new Blob(
+    [data],
+    {
+      type: getMimeType(format),
+    },
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* GENERAL CONVERTER                                                          */
 /* -------------------------------------------------------------------------- */
 
 export async function convertFile(
   inputFile: File,
   outputFormat: string,
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
   if (
     !inputFile ||
@@ -289,11 +393,6 @@ export async function convertFile(
     );
   }
 
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(inputFile.name);
-
   const format =
     normalizeFormat(outputFormat);
 
@@ -303,20 +402,32 @@ export async function convertFile(
     );
   }
 
-  const inputName = makeName(
-    'input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'output',
-    format,
-  );
+  const inputExtension =
+    getExtension(
+      inputFile.name,
+    );
+
+  const inputName =
+    makeName(
+      'input',
+      inputExtension,
+    );
+
+  const outputName =
+    makeName(
+      'output',
+      format,
+    );
 
   try {
     await ff.writeFile(
       inputName,
-      await fetchFile(inputFile),
+      await fetchFile(
+        inputFile,
+      ),
     );
 
     await execute(
@@ -329,12 +440,11 @@ export async function convertFile(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(outputName);
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -349,7 +459,7 @@ export async function convertFile(
 }
 
 /* -------------------------------------------------------------------------- */
-/* AUDIO CUTTER                                                                */
+/* AUDIO CUTTER                                                               */
 /* -------------------------------------------------------------------------- */
 
 export async function cutAudio(
@@ -357,37 +467,49 @@ export async function cutAudio(
   startSec: number,
   durationSec: number,
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
-  if (startSec < 0) {
+  if (
+    !Number.isFinite(startSec) ||
+    startSec < 0
+  ) {
     throw new Error(
       'Start time cannot be negative.',
     );
   }
 
-  if (durationSec <= 0) {
+  if (
+    !Number.isFinite(durationSec) ||
+    durationSec <= 0
+  ) {
     throw new Error(
       'Duration must be greater than zero.',
     );
   }
 
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(file.name);
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const inputName = makeName(
-    'cut-input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'cut-output',
-    format,
-  );
+  const inputName =
+    makeName(
+      'cut-input',
+      getExtension(
+        file.name,
+      ),
+    );
+
+  const outputName =
+    makeName(
+      'cut-output',
+      format,
+    );
 
   try {
     await ff.writeFile(
@@ -411,12 +533,11 @@ export async function cutAudio(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(outputName);
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -431,28 +552,36 @@ export async function cutAudio(
 }
 
 /* -------------------------------------------------------------------------- */
-/* AUDIO MERGER                                                                */
+/* AUDIO MERGER                                                               */
 /* -------------------------------------------------------------------------- */
 
 export async function mergeAudio(
   files: File[],
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
-  if (!files.length) {
+  if (
+    !files.length
+  ) {
     throw new Error(
       'No audio files were provided.',
     );
   }
 
-  const ff = await getFFmpeg();
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const timestamp = Date.now();
+  const ff =
+    await getFFmpeg();
 
   const inputs: string[] = [];
+
+  const timestamp =
+    Date.now();
 
   try {
     for (
@@ -460,17 +589,19 @@ export async function mergeAudio(
       i < files.length;
       i++
     ) {
-      const extension =
-        getExtension(files[i].name);
-
-      const name = makeName(
-        `merge-${timestamp}-${i}`,
-        extension,
-      );
+      const name =
+        makeName(
+          `merge-${timestamp}-${i}`,
+          getExtension(
+            files[i].name,
+          ),
+        );
 
       await ff.writeFile(
         name,
-        await fetchFile(files[i]),
+        await fetchFile(
+          files[i],
+        ),
       );
 
       inputs.push(name);
@@ -511,21 +642,15 @@ export async function mergeAudio(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    await deleteFile(
+    return await readBlob(
       ff,
       outputName,
+      format,
     );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
   } finally {
-    for (const input of inputs) {
+    for (
+      const input of inputs
+    ) {
       await deleteFile(
         ff,
         input,
@@ -535,43 +660,51 @@ export async function mergeAudio(
 }
 
 /* -------------------------------------------------------------------------- */
-/* AUDIO COMPRESSION                                                           */
+/* AUDIO COMPRESSION                                                          */
 /* -------------------------------------------------------------------------- */
 
 export async function compressAudio(
   file: File,
   quality = 3,
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(file.name);
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const inputName = makeName(
-    'compress-input',
-    inputExtension,
-  );
+  const safeQuality =
+    Math.max(
+      0,
+      Math.min(
+        9,
+        Math.round(
+          quality,
+        ),
+      ),
+    );
 
-  const outputName = makeName(
-    'compressed',
-    format,
-  );
+  const ff =
+    await getFFmpeg();
+
+  const inputName =
+    makeName(
+      'compress-input',
+      getExtension(
+        file.name,
+      ),
+    );
+
+  const outputName =
+    makeName(
+      'compressed',
+      format,
+    );
 
   try {
-    const safeQuality =
-      Math.max(
-        0,
-        Math.min(
-          9,
-          Math.round(quality),
-        ),
-      );
-
     await ff.writeFile(
       inputName,
       await fetchFile(file),
@@ -584,21 +717,20 @@ export async function compressAudio(
         '-c:a',
         'libmp3lame',
         '-q:a',
-        String(safeQuality),
+        String(
+          safeQuality,
+        ),
         '-y',
         outputName,
       ],
       onProgress,
     );
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -613,38 +745,46 @@ export async function compressAudio(
 }
 
 /* -------------------------------------------------------------------------- */
-/* VOLUME BOOST                                                                */
+/* VOLUME BOOST                                                               */
 /* -------------------------------------------------------------------------- */
 
 export async function boostVolume(
   file: File,
   gainDb = 6,
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
-  if (!Number.isFinite(gainDb)) {
+  if (
+    !Number.isFinite(gainDb)
+  ) {
     throw new Error(
       'Volume gain must be a valid number.',
     );
   }
 
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(file.name);
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const inputName = makeName(
-    'volume-input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'boosted',
-    format,
-  );
+  const inputName =
+    makeName(
+      'volume-input',
+      getExtension(
+        file.name,
+      ),
+    );
+
+  const outputName =
+    makeName(
+      'boosted',
+      format,
+    );
 
   try {
     await ff.writeFile(
@@ -664,14 +804,11 @@ export async function boostVolume(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -686,14 +823,16 @@ export async function boostVolume(
 }
 
 /* -------------------------------------------------------------------------- */
-/* SPEED CHANGER                                                               */
+/* SPEED CHANGER                                                              */
 /* -------------------------------------------------------------------------- */
 
 export async function changeSpeed(
   file: File,
   factor = 1.5,
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
   if (
     !Number.isFinite(factor) ||
@@ -704,30 +843,38 @@ export async function changeSpeed(
     );
   }
 
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(file.name);
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const inputName = makeName(
-    'speed-input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'speed-output',
-    format,
-  );
+  const inputName =
+    makeName(
+      'speed-input',
+      getExtension(
+        file.name,
+      ),
+    );
+
+  const outputName =
+    makeName(
+      'speed-output',
+      format,
+    );
 
   try {
-    let remaining = factor;
+    let remaining =
+      factor;
 
-    const filters: string[] = [];
+    const filters: string[] =
+      [];
 
-    while (remaining > 2) {
+    while (
+      remaining > 2
+    ) {
       filters.push(
         'atempo=2',
       );
@@ -735,7 +882,9 @@ export async function changeSpeed(
       remaining /= 2;
     }
 
-    while (remaining < 0.5) {
+    while (
+      remaining < 0.5
+    ) {
       filters.push(
         'atempo=0.5',
       );
@@ -764,14 +913,11 @@ export async function changeSpeed(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -786,31 +932,37 @@ export async function changeSpeed(
 }
 
 /* -------------------------------------------------------------------------- */
-/* REVERSE AUDIO                                                               */
+/* REVERSE AUDIO                                                              */
 /* -------------------------------------------------------------------------- */
 
 export async function reverseAudio(
   file: File,
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(file.name);
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const inputName = makeName(
-    'reverse-input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'reversed',
-    format,
-  );
+  const inputName =
+    makeName(
+      'reverse-input',
+      getExtension(
+        file.name,
+      ),
+    );
+
+  const outputName =
+    makeName(
+      'reversed',
+      format,
+    );
 
   try {
     await ff.writeFile(
@@ -830,14 +982,11 @@ export async function reverseAudio(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -852,31 +1001,37 @@ export async function reverseAudio(
 }
 
 /* -------------------------------------------------------------------------- */
-/* STEREO TO MONO                                                              */
+/* STEREO TO MONO                                                            */
 /* -------------------------------------------------------------------------- */
 
 export async function stereoToMono(
   file: File,
   outputFormat = 'mp3',
-  onProgress?: (percent: number) => void,
+  onProgress?: (
+    percent: number,
+  ) => void,
 ): Promise<Blob> {
-  const ff = await getFFmpeg();
-
-  const inputExtension =
-    getExtension(file.name);
-
   const format =
-    normalizeFormat(outputFormat);
+    normalizeFormat(
+      outputFormat,
+    );
 
-  const inputName = makeName(
-    'mono-input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'mono-output',
-    format,
-  );
+  const inputName =
+    makeName(
+      'mono-input',
+      getExtension(
+        file.name,
+      ),
+    );
+
+  const outputName =
+    makeName(
+      'mono-output',
+      format,
+    );
 
   try {
     await ff.writeFile(
@@ -896,14 +1051,11 @@ export async function stereoToMono(
       onProgress,
     );
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
@@ -918,33 +1070,38 @@ export async function stereoToMono(
 }
 
 /* -------------------------------------------------------------------------- */
-/* REMOVE METADATA                                                            */
+/* REMOVE METADATA                                                           */
 /* -------------------------------------------------------------------------- */
 
 export async function stripMetadata(
   file: File,
   outputFormat?: string,
 ): Promise<Blob> {
-  const ff = await getFFmpeg();
-
   const inputExtension =
-    getExtension(file.name);
+    getExtension(
+      file.name,
+    );
 
   const format =
     normalizeFormat(
       outputFormat ||
-        inputExtension,
+      inputExtension,
     );
 
-  const inputName = makeName(
-    'metadata-input',
-    inputExtension,
-  );
+  const ff =
+    await getFFmpeg();
 
-  const outputName = makeName(
-    'clean',
-    format,
-  );
+  const inputName =
+    makeName(
+      'metadata-input',
+      inputExtension,
+    );
+
+  const outputName =
+    makeName(
+      'clean',
+      format,
+    );
 
   try {
     await ff.writeFile(
@@ -963,14 +1120,11 @@ export async function stripMetadata(
       outputName,
     ]);
 
-    const data =
-      await ff.readFile(
-        outputName,
-      );
-
-    return new Blob([data], {
-      type: getMimeType(format),
-    });
+    return await readBlob(
+      ff,
+      outputName,
+      format,
+    );
   } finally {
     await deleteFile(
       ff,
