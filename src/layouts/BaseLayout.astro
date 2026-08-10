@@ -82,6 +82,7 @@ const allSearchItems = [...toolItems, ...blogItems];
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200">
     <!-- TEMPORARY DEBUG BANNER (remove after testing) -->
@@ -104,6 +105,13 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <!-- Real‑time search modal (hidden by default) -->
     <SearchModal items={allSearchItems} />
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js');
+    });
+  }
+</script>
   </body>
 </html>
 
