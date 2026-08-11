@@ -2,371 +2,3162 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const stats = [
-  { value: '100%', label: 'Private Processing' },
-  { value: '0', label: 'Server Uploads' },
-  { value: '22+', label: 'Free Tools' },
-  { value: '24/7', label: 'Available Offline' },
-];
-
-const testimonials = [
-  {
-    quote: "Finally, a converter that respects my privacy. No uploads, no waiting — just works.",
-    name: "Sarah Chen",
-    role: "Video Editor",
-    avatar: "SC",
-  },
-  {
-    quote: "I use Dayront daily for podcast editing. The audio cutter is incredibly fast and stays in my browser.",
-    name: "Marcus Rivera",
-    role: "Podcast Host",
-    avatar: "MR",
-  },
-  {
-    quote: "As a journalist, I need tools that keep my sources safe. Dayront's local processing is exactly that.",
-    name: "Emma Johansson",
-    role: "Investigative Journalist",
-    avatar: "EJ",
-  },
+  { value: 22, suffix: '+', label: 'Media Tools', icon: '🛠️' },
+  { value: 0, suffix: '', label: 'Required Uploads', icon: '☁️' },
+  { value: 100, suffix: '%', label: 'Browser Processing', icon: '🔐' },
+  { value: 24, suffix: '/7', label: 'Available', icon: '⚡' },
 ];
 
 const features = [
   {
-    icon: "🔒",
-    title: "100% Private",
-    description: "All processing happens locally in your browser. Your files never touch a server.",
-    link: "/privacy",
+    icon: '🔐',
+    title: 'Private by Design',
+    description:
+      'For supported tools, processing happens directly inside your browser. Your working files do not need to be sent to a conversion server.',
+    link: '/privacy',
   },
   {
-    icon: "⚡",
-    title: "Lightning Fast",
-    description: "Powered by FFmpeg.wasm. No uploads, no waiting — convert files in seconds.",
-    link: "/tools",
+    icon: '⚡',
+    title: 'Fast Local Processing',
+    description:
+      'Modern browser technologies and WebAssembly make it possible to process many media tasks without waiting for a remote upload.',
+    link: '/tools',
   },
   {
-    icon: "📱",
-    title: "Works Everywhere",
-    description: "Mobile, tablet, or desktop. Dayront works on any modern browser.",
-    link: "/tools",
+    icon: '📱',
+    title: 'Works on Your Devices',
+    description:
+      'Use Dayront on phones, tablets, laptops and desktops with a responsive interface designed for real-world use.',
+    link: '/tools',
   },
   {
-    icon: "🆓",
-    title: "Completely Free",
-    description: "All 22+ tools are free forever. No accounts, no hidden fees.",
-    link: "/tools",
+    icon: '🆓',
+    title: 'Free to Start',
+    description:
+      'Choose a tool, select your file and get started without creating an account or entering payment information.',
+    link: '/tools',
   },
   {
-    icon: "🌐",
-    title: "Multi-Language",
-    description: "Available in English, Spanish, Portuguese, German, French, and Japanese.",
-    link: "/about",
+    icon: '🌍',
+    title: 'Built for Everyone',
+    description:
+      'Simple controls, clear instructions and a lightweight interface make media conversion easier for beginners and experienced creators.',
+    link: '/about',
   },
   {
-    icon: "🎨",
-    title: "Clean Design",
-    description: "Minimal, accessible interface. Dark mode included. No distractions.",
-    link: "/about",
+    icon: '✨',
+    title: 'No Clutter',
+    description:
+      'No complicated dashboard. Pick a tool, upload a file locally, adjust what you need and download the result.',
+    link: '/tools',
   },
 ];
 
 const popularTools = [
-  { name: 'MP4 to MP3', url: '/convert/mp4-to-mp3', icon: '🎬', desc: 'Extract audio from videos' },
-  { name: 'Audio Cutter', url: '/tools/audio-cutter', icon: '✂️', desc: 'Trim audio files precisely' },
-  { name: 'MP3 to WAV', url: '/convert/mp3-to-wav', icon: '🎵', desc: 'Convert to lossless format' },
-  { name: 'Audio Merger', url: '/tools/audio-merger', icon: '🔗', desc: 'Combine multiple tracks' },
-  { name: 'Volume Booster', url: '/tools/volume-booster', icon: '🔊', desc: 'Make audio louder' },
-  { name: 'Speed Changer', url: '/tools/speed-changer', icon: '⏩', desc: 'Speed up or slow down' },
+  {
+    name: 'MP4 to MP3',
+    url: '/convert/mp4-to-mp3',
+    icon: '🎬',
+    desc: 'Extract audio',
+    category: 'Video',
+  },
+  {
+    name: 'Audio Cutter',
+    url: '/tools/audio-cutter',
+    icon: '✂️',
+    desc: 'Trim audio',
+    category: 'Audio',
+  },
+  {
+    name: 'MP3 to WAV',
+    url: '/convert/mp3-to-wav',
+    icon: '🎵',
+    desc: 'Change format',
+    category: 'Audio',
+  },
+  {
+    name: 'Audio Merger',
+    url: '/tools/audio-merger',
+    icon: '🔗',
+    desc: 'Join tracks',
+    category: 'Audio',
+  },
+  {
+    name: 'Video Compressor',
+    url: '/tools/video-compressor',
+    icon: '📦',
+    desc: 'Reduce size',
+    category: 'Video',
+  },
+  {
+    name: 'Video Cutter',
+    url: '/tools/video-cutter',
+    icon: '🎞️',
+    desc: 'Trim video',
+    category: 'Video',
+  },
+  {
+    name: 'GIF to Video',
+    url: '/tools/gif-to-video',
+    icon: '🔄',
+    desc: 'Convert GIFs',
+    category: 'Video',
+  },
+  {
+    name: 'Speed Changer',
+    url: '/tools/speed-changer',
+    icon: '⏩',
+    desc: 'Change speed',
+    category: 'Audio',
+  },
+];
+
+const testimonials = [
+  {
+    quote:
+      'The biggest thing for me is not having to upload a private recording just to change its format.',
+    name: 'Sarah',
+    role: 'Video Editor',
+    avatar: 'S',
+  },
+  {
+    quote:
+      'I wanted something simple. Choose the file, choose the format and get the result. Dayront gets out of the way.',
+    name: 'Marcus',
+    role: 'Podcast Creator',
+    avatar: 'M',
+  },
+  {
+    quote:
+      'The interface feels much cleaner than most online converters. It is especially nice on my phone.',
+    name: 'Emma',
+    role: 'Content Creator',
+    avatar: 'E',
+  },
 ];
 
 const faqs = [
   {
-    q: 'How does Dayront keep my files private?',
-    a: 'All processing happens inside your browser using WebAssembly technology. Your files are never uploaded to any server — we couldn\'t see them even if we wanted to.',
+    q: 'Does Dayront upload my files?',
+    a:
+      'Dayront is designed around browser-based processing for supported tools. When a tool performs local processing, your selected media stays on your device instead of being uploaded to a conversion server. The exact processing method can depend on the tool and browser.',
   },
   {
-    q: 'Is Dayront really free?',
-    a: 'Yes! All 22+ tools are completely free with no limits. We sustain through privacy-friendly ads that never block your conversion.',
+    q: 'What does “browser processing” actually mean?',
+    a:
+      'It means the browser running Dayront performs the media operation on your device. Technologies such as WebAssembly allow complex media processing to run inside modern browsers instead of automatically sending the file to a remote server.',
   },
   {
-    q: 'Do I need to install anything?',
-    a: 'Nothing at all. Dayront works directly in your browser. Just open the site and start converting.',
+    q: 'Can I use Dayront on Android?',
+    a:
+      'Yes. Dayront is designed to work with modern mobile browsers. For larger video files, performance depends on your phone hardware, available memory, browser capabilities and the complexity of the conversion.',
   },
   {
-    q: 'What file formats are supported?',
-    a: 'We support MP3, WAV, M4A, FLAC, OGG, MP4, MOV, MKV, AVI, WebM, and more. New formats are added regularly.',
+    q: 'Why can a large video take longer on my phone?',
+    a:
+      'Local processing uses your own device resources. A powerful desktop may process a large video faster than an entry-level phone. This is one of the trade-offs of keeping processing local rather than sending your file to a powerful remote server.',
+  },
+  {
+    q: 'Do I need to install an application?',
+    a:
+      'No installation is required for the web tools. Open Dayront in a supported browser, select a tool and begin. Some advanced browser features may work differently depending on your device and browser.',
+  },
+  {
+    q: 'What formats can I work with?',
+    a:
+      'The project currently includes converters and tools covering formats such as MP3, WAV, M4A, OGG, FLAC, AAC, AIFF, AMR, APE, MP4, MOV, MKV, AVI, WebM and FLV, along with editing utilities.',
+  },
+  {
+    q: 'Can I convert MP4 to MP3?',
+    a:
+      'Yes. Use the MP4 to MP3 converter to extract the audio track from a compatible MP4 video. For the quickest start, use the dedicated converter from the Popular Tools section above.',
+  },
+  {
+    q: 'Can I compress a video?',
+    a:
+      'Yes. Dayront includes a Video Compressor tool. Compression can reduce file size, although the final size and quality depend on the source video and the selected settings.',
+  },
+  {
+    q: 'Can I cut audio without installing an editor?',
+    a:
+      'Yes. The Audio Cutter lets you work with an audio file directly from the browser. This is useful for trimming recordings, music clips, voice notes and other audio.',
+  },
+  {
+    q: 'Does Dayront require an account?',
+    a:
+      'The core tools are designed to be usable without requiring an account. You can open a tool and begin working without going through a traditional registration flow.',
+  },
+  {
+    q: 'Why should I use a local converter instead of an online upload converter?',
+    a:
+      'Local processing can reduce the need to transfer personal media to a third-party server. It can also eliminate upload and download waiting time. The trade-off is that processing performance depends on your own device.',
+  },
+  {
+    q: 'Will every browser perform exactly the same?',
+    a:
+      'No. Browser support, available memory, CPU performance and WebAssembly capabilities can vary. If a large file is slow on one device, trying a modern desktop browser may provide better performance.',
+  },
+];
+
+const tips = [
+  {
+    icon: '💡',
+    title: 'Quick tip',
+    text: 'For large videos, keep your phone connected to power and close unnecessary browser tabs.',
+  },
+  {
+    icon: '🔒',
+    title: 'Privacy tip',
+    text: 'For sensitive recordings, prefer tools that clearly indicate local browser processing before selecting your file.',
+  },
+  {
+    icon: '⚡',
+    title: 'Speed tip',
+    text: 'Smaller source files usually finish faster because your device has less media data to process.',
+  },
+];
+
+const workflow = [
+  {
+    number: '01',
+    title: 'Choose your tool',
+    text: 'Find the exact converter or editor you need from the media toolbox.',
+  },
+  {
+    number: '02',
+    title: 'Add your file',
+    text: 'Select or drag your media into the tool. Supported local tools process it in your browser.',
+  },
+  {
+    number: '03',
+    title: 'Adjust & process',
+    text: 'Choose your settings and let your device handle the media operation.',
+  },
+  {
+    number: '04',
+    title: 'Download',
+    text: 'Save the finished file directly to your device when processing is complete.',
   },
 ];
 ---
 
 <BaseLayout
-  title="Dayront – Free Media Tools, 100% Private & No Upload"
-  description="Convert, cut, merge, and edit audio & video files directly in your browser. 22+ free tools, no uploads, no servers. Your privacy guaranteed."
+  title="Dayront – Free Media Tools, Private Browser Processing"
+  description="Convert, cut, merge, compress and edit audio and video with Dayront's browser-based media tools."
 >
-  <!-- ========== HERO ========== -->
-  <section class="relative overflow-hidden bg-gradient-to-b from-sky-light/50 via-white to-white dark:from-sky/10 dark:via-gray-950 dark:to-gray-950">
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-72 sm:w-96 sm:h-96 bg-sky/10 dark:bg-sky/15 rounded-full blur-3xl"></div>
-      <div class="absolute top-40 left-0 w-40 h-40 bg-yellow-300/10 dark:bg-yellow-300/5 rounded-full blur-3xl"></div>
-    </div>
 
-    <div class="max-w-7xl mx-auto px-4 pt-16 pb-24 md:pt-24 md:pb-32 text-center relative z-10">
-      <div class="inline-flex items-center gap-2 bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 mb-6 shadow-sm backdrop-blur animate-fade-in-down">
-        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-        Your files never leave your device
+  <!-- =========================================================
+       HERO
+  ========================================================== -->
+  <section class="hero relative overflow-hidden">
+    <div class="hero-grid"></div>
+
+    <div class="hero-glow hero-glow-one"></div>
+    <div class="hero-glow hero-glow-two"></div>
+
+    <div class="max-w-7xl mx-auto px-4 pt-16 sm:pt-20 lg:pt-28 pb-20 relative z-10">
+      <div class="max-w-4xl mx-auto text-center">
+
+        <div class="hero-pill reveal">
+          <span class="status-dot"></span>
+          <span>Private media processing in your browser</span>
+          <span class="pill-arrow">↗</span>
+        </div>
+
+        <h1 class="hero-title reveal reveal-delay-1">
+          Your media.
+          <br />
+          <span class="gradient-text">Your device.</span>
+          <br class="sm:hidden" />
+          <span class="hero-last">Your control.</span>
+        </h1>
+
+        <p class="hero-description reveal reveal-delay-2">
+          Convert, cut, compress, merge and edit audio & video without
+          turning every file into a trip to a remote server.
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 reveal reveal-delay-3">
+          <a href="/tools" class="premium-button primary-button">
+            <span>Explore all tools</span>
+            <span class="button-icon">→</span>
+          </a>
+
+          <a href="/convert/mp4-to-mp3" class="premium-button secondary-button">
+            <span>Try MP4 → MP3</span>
+            <span class="button-icon">↗</span>
+          </a>
+        </div>
+
+        <div class="hero-trust reveal reveal-delay-4">
+          <div><span>✓</span> No account required</div>
+          <div><span>✓</span> Browser-first workflow</div>
+          <div><span>✓</span> Mobile friendly</div>
+        </div>
       </div>
 
-      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-black dark:text-white mb-6 animate-fade-in-up">
-        Media Tools That<br class="sm:hidden" />
-        <span class="text-sky">Respect Your Privacy</span>
-      </h1>
+      <!-- Premium visual demo -->
+      <div class="hero-dashboard reveal reveal-delay-5">
 
-      <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10 animate-fade-in-up">
-        Convert, edit, and process audio & video files directly in your browser.
-        No uploads, no servers, no tracking — just fast, private tools that work.
-      </p>
+        <div class="dashboard-top">
+          <div class="window-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
 
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up">
-        <a href="/tools" class="btn-primary text-lg px-8 py-3.5 inline-flex items-center gap-2 hover:-translate-y-1 transition-transform duration-300">
-          Explore All Tools
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-        </a>
-        <a href="/about" class="btn-secondary text-lg px-8 py-3.5 hover:-translate-y-1 transition-transform duration-300">
-          Learn More
-        </a>
+          <div class="dashboard-title">
+            Dayront <span>/</span> Media Workspace
+          </div>
+
+          <div class="live-indicator">
+            <span></span>
+            LIVE
+          </div>
+        </div>
+
+        <div class="dashboard-body">
+
+          <div class="workspace-sidebar">
+            <div class="mini-brand">D</div>
+
+            <div class="side-item active">
+              <span>⌂</span>
+              <span>Home</span>
+            </div>
+
+            <div class="side-item">
+              <span>♫</span>
+              <span>Audio</span>
+            </div>
+
+            <div class="side-item">
+              <span>▣</span>
+              <span>Video</span>
+            </div>
+
+            <div class="side-item">
+              <span>⚙</span>
+              <span>Tools</span>
+            </div>
+          </div>
+
+          <div class="workspace-main">
+
+            <div class="workspace-header">
+              <div>
+                <span class="eyebrow">WORKSPACE</span>
+                <h3>MP4 to MP3</h3>
+              </div>
+
+              <span class="secure-chip">
+                <span>●</span> Local
+              </span>
+            </div>
+
+            <div class="file-card">
+
+              <div class="file-preview">
+                <div class="play-circle">▶</div>
+                <div class="preview-bars">
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+
+              <div class="file-info">
+                <strong>my-video.mp4</strong>
+                <span>128.4 MB · 04:32</span>
+              </div>
+
+              <div class="file-status">
+                <span class="check">✓</span>
+                Ready
+              </div>
+            </div>
+
+            <div class="dashboard-chart">
+              <div class="chart-heading">
+                <div>
+                  <span>PROCESSING ACTIVITY</span>
+                  <strong>Local performance</strong>
+                </div>
+
+                <div class="chart-live">
+                  <i></i>
+                  Live
+                </div>
+              </div>
+
+              <div class="chart-area">
+                <div class="chart-y">
+                  <span>100</span>
+                  <span>75</span>
+                  <span>50</span>
+                  <span>25</span>
+                  <span>0</span>
+                </div>
+
+                <svg viewBox="0 0 700 190" preserveAspectRatio="none" class="activity-chart">
+                  <defs>
+                    <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="#38bdf8" stop-opacity=".35" />
+                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+
+                  <path
+                    class="chart-area-fill"
+                    d="M0 160 C35 145 45 125 78 135 C110 145 130 92 165 108 C198 123 215 72 250 87 C286 104 304 48 338 67 C370 84 389 34 424 53 C455 71 474 95 508 76 C542 57 564 87 595 65 C625 44 660 55 700 25 L700 190 L0 190 Z"
+                  />
+
+                  <path
+                    class="chart-line"
+                    d="M0 160 C35 145 45 125 78 135 C110 145 130 92 165 108 C198 123 215 72 250 87 C286 104 304 48 338 67 C370 84 389 34 424 53 C455 71 474 95 508 76 C542 57 564 87 595 65 C625 44 660 55 700 25"
+                  />
+
+                  <circle class="chart-dot" cx="700" cy="25" r="5" />
+                </svg>
+              </div>
+
+              <div class="chart-labels">
+                <span>0s</span>
+                <span>10s</span>
+                <span>20s</span>
+                <span>30s</span>
+                <span>40s</span>
+                <span>50s</span>
+              </div>
+            </div>
+
+            <div class="dashboard-bottom">
+              <div>
+                <span>OUTPUT</span>
+                <strong>MP3 · 320 kbps</strong>
+              </div>
+
+              <button type="button" class="fake-process">
+                Process file →
+              </button>
+            </div>
+
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ========== STATS BAR ========== -->
-  <section class="max-w-5xl mx-auto px-4 -mt-12 relative z-20 reveal">
-    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg dark:shadow-black/30 p-6 sm:p-8 hover:shadow-xl dark:hover:shadow-black/40 transition-shadow duration-500">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        {stats.map(stat => (
-          <div class="space-y-1">
-            <p class="text-3xl sm:text-4xl font-extrabold text-sky">{stat.value}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
+  <!-- =========================================================
+       STATS
+  ========================================================== -->
+  <section class="stats-section">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="stats-card reveal">
+
+        {stats.map((stat) => (
+          <div class="stat-item">
+            <div class="stat-icon">{stat.icon}</div>
+            <div>
+              <div
+                class="stat-number"
+                data-counter={stat.value}
+                data-suffix={stat.suffix}
+              >
+                0
+              </div>
+              <div class="stat-label">{stat.label}</div>
+            </div>
           </div>
         ))}
+
       </div>
     </div>
   </section>
 
-  <!-- ========== LIVE DEMO SECTION ========== -->
-  <section class="max-w-4xl mx-auto px-4 py-20 reveal">
-    <div class="text-center mb-12">
-      <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Try It Right Now</h2>
-      <p class="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
-        Drop a file below and see how fast local processing really is. This demo converts MP4 to MP3 instantly.
-      </p>
-    </div>
+  <!-- =========================================================
+       LIVE CHARTS
+  ========================================================== -->
+  <section class="section">
+    <div class="max-w-6xl mx-auto px-4">
 
-    <div
-      class="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-sky dark:hover:border-sky rounded-3xl p-8 sm:p-12 text-center transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-black/30"
-      id="demo-dropzone"
-    >
-      <div class="mb-4">
-        <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 group-hover:text-sky transition-colors" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16"/></svg>
-      </div>
-
-      <p class="text-xl font-semibold text-black dark:text-white mb-2">Drop your MP4 file here</p>
-      <p class="text-gray-500 dark:text-gray-400 mb-6">or click to browse · Max 500MB</p>
-
-      <span class="btn-primary inline-flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-        Choose File
-      </span>
-
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-4 flex items-center justify-center gap-1">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        100% local processing — no upload
-      </p>
-    </div>
-  </section>
-
-  <!-- ========== FEATURES GRID ========== -->
-  <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 reveal">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Why Choose Dayront?</h2>
-        <p class="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
-          Built from the ground up for privacy, speed, and simplicity.
+      <div class="section-heading reveal">
+        <span class="section-kicker">A closer look</span>
+        <h2>See what happens behind the interface.</h2>
+        <p>
+          Dayront is designed to make media processing feel simple.
+          Underneath that simplicity, your browser is doing the heavy lifting.
         </p>
       </div>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {features.map(feature => (
-          <a
-            href={feature.link}
-            class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 hover:border-sky hover:shadow-lg dark:hover:shadow-black/30 hover:-translate-y-1 transition-all duration-300 group"
-          >
-            <span class="text-3xl mb-3 block transition-transform duration-300 group-hover:scale-110">{feature.icon}</span>
-            <h3 class="text-lg font-semibold text-black dark:text-white mb-2 group-hover:text-sky transition-colors">{feature.title}</h3>
-            <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{feature.description}</p>
-          </a>
-        ))}
+      <div class="charts-grid">
+
+        <div class="chart-card large reveal">
+
+          <div class="chart-card-head">
+            <div>
+              <span class="chart-kicker">PROCESSING LOAD</span>
+              <h3>Device activity</h3>
+            </div>
+
+            <div class="chart-value">
+              <strong id="load-value">68%</strong>
+              <span class="positive">● Active</span>
+            </div>
+          </div>
+
+          <div class="big-live-chart">
+            <div class="horizontal-lines">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <svg viewBox="0 0 900 260" preserveAspectRatio="none">
+              <path
+                id="live-area"
+                d="M0 205 C40 195 55 170 90 184 C130 200 155 122 195 145 C235 166 255 98 300 121 C345 143 365 84 405 110 C450 140 470 65 510 91 C550 117 575 135 615 92 C655 48 690 96 730 72 C775 45 820 68 900 28 L900 260 L0 260 Z"
+              />
+
+              <path
+                id="live-line"
+                d="M0 205 C40 195 55 170 90 184 C130 200 155 122 195 145 C235 166 255 98 300 121 C345 143 365 84 405 110 C450 140 470 65 510 91 C550 117 575 135 615 92 C655 48 690 96 730 72 C775 45 820 68 900 28"
+              />
+
+              <circle id="live-dot" cx="900" cy="28" r="7" />
+            </svg>
+
+            <div class="chart-axis">
+              <span>10:00</span>
+              <span>10:10</span>
+              <span>10:20</span>
+              <span>10:30</span>
+              <span>10:40</span>
+              <span>Now</span>
+            </div>
+          </div>
+
+          <div class="chart-footer">
+            <span><i class="legend-dot"></i> Browser processing</span>
+            <span>Updates automatically</span>
+          </div>
+
+        </div>
+
+        <div class="chart-card reveal">
+
+          <div class="chart-card-head">
+            <div>
+              <span class="chart-kicker">WORKFLOW</span>
+              <h3>Typical session</h3>
+            </div>
+            <span class="mini-live">LIVE</span>
+          </div>
+
+          <div class="donut-wrapper">
+            <div class="donut">
+              <div class="donut-center">
+                <strong>4</strong>
+                <span>steps</span>
+              </div>
+            </div>
+
+            <div class="donut-list">
+              <div>
+                <i></i>
+                <span>Select file</span>
+                <strong>20%</strong>
+              </div>
+              <div>
+                <i></i>
+                <span>Processing</span>
+                <strong>55%</strong>
+              </div>
+              <div>
+                <i></i>
+                <span>Finishing</span>
+                <strong>15%</strong>
+              </div>
+              <div>
+                <i></i>
+                <span>Download</span>
+                <strong>10%</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ========== POPULAR TOOLS ========== -->
-  <section class="py-20 reveal">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="flex items-center justify-between mb-10">
-        <div>
-          <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-2">Popular Tools</h2>
-          <p class="text-gray-600 dark:text-gray-400">Start with these most-used converters and editors.</p>
+  <!-- =========================================================
+       INTERACTIVE HINTS
+  ========================================================== -->
+  <section class="hint-section">
+    <div class="max-w-6xl mx-auto px-4">
+
+      <div class="hint-box reveal">
+
+        <div class="hint-icon">✦</div>
+
+        <div class="hint-content">
+          <span>SMART TIP</span>
+          <h3 id="tip-title">Keep large files comfortable.</h3>
+          <p id="tip-text">
+            For large videos, close unnecessary browser tabs so your device has
+            more memory available for processing.
+          </p>
         </div>
 
-        <a href="/tools" class="hidden sm:inline-flex items-center gap-2 text-sky font-medium hover:underline">
-          View All 22+ Tools
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <button id="next-tip" type="button" aria-label="Show another tip">
+          ↻
+        </button>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================
+       TOOL SHOWCASE
+  ========================================================== -->
+  <section class="section tools-section">
+    <div class="max-w-7xl mx-auto px-4">
+
+      <div class="section-heading split-heading reveal">
+        <div>
+          <span class="section-kicker">The toolbox</span>
+          <h2>Everything you need for everyday media work.</h2>
+        </div>
+
+        <a href="/tools" class="text-link">
+          Browse all tools →
         </a>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {popularTools.map(tool => (
-          <a
-            href={tool.url}
-            class="tool-card text-center py-6 hover:-translate-y-2 transition-transform duration-300"
-          >
-            <span class="text-3xl mb-2 block">{tool.icon}</span>
-            <p class="font-semibold text-sm text-black dark:text-white">{tool.name}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{tool.desc}</p>
+      <div class="tool-grid">
+
+        {popularTools.map((tool, index) => (
+          <a href={tool.url} class={`premium-tool-card reveal reveal-delay-${Math.min(index + 1, 5)}`}>
+
+            <div class="tool-card-top">
+              <span class="tool-icon">{tool.icon}</span>
+              <span class="tool-category">{tool.category}</span>
+            </div>
+
+            <h3>{tool.name}</h3>
+            <p>{tool.desc}</p>
+
+            <div class="tool-arrow">↗</div>
+
           </a>
         ))}
+
       </div>
 
-      <div class="text-center mt-8 sm:hidden">
-        <a href="/tools" class="text-sky font-medium hover:underline">View All 22+ Tools →</a>
+      <div class="center-button reveal">
+        <a href="/tools" class="premium-button secondary-button">
+          Explore the complete toolbox
+          <span>→</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================
+       EMBEDDED TUTORIAL / VIDEO
+  ========================================================== -->
+  <section class="video-section">
+    <div class="max-w-6xl mx-auto px-4">
+
+      <div class="video-layout">
+
+        <div class="video-copy reveal">
+
+          <span class="section-kicker">WATCH & LEARN</span>
+
+          <h2>
+            Not sure where to start?
+            <span>Watch it in action.</span>
+          </h2>
+
+          <p>
+            Learn the basic Dayront workflow before touching your files.
+            Pick a tool, select your media, adjust the options and download
+            the finished result.
+          </p>
+
+          <div class="video-points">
+            <div>
+              <span>01</span>
+              <strong>Choose a converter</strong>
+            </div>
+            <div>
+              <span>02</span>
+              <strong>Select your media</strong>
+            </div>
+            <div>
+              <span>03</span>
+              <strong>Process and download</strong>
+            </div>
+          </div>
+
+          <a href="/blog" class="text-link">
+            Read the tutorials →
+          </a>
+
+        </div>
+
+        <div class="video-frame reveal">
+
+          <!--
+            Replace the iframe src below with your own YouTube tutorial URL
+            when you publish the Dayront tutorial.
+          -->
+          <div class="video-placeholder">
+
+            <div class="video-background-art">
+              <div class="video-orb orb-one"></div>
+              <div class="video-orb orb-two"></div>
+
+              <div class="video-window">
+                <div class="video-window-top">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+
+                <div class="video-window-body">
+                  <div class="fake-wave"></div>
+                  <div class="fake-wave small"></div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              id="tutorial-play"
+              type="button"
+              class="video-play"
+              aria-label="Play tutorial"
+            >
+              <span>▶</span>
+            </button>
+
+            <div class="video-label">
+              <span>DAYRONT TUTORIAL</span>
+              <strong>How to convert a video in your browser</strong>
+            </div>
+
+          </div>
+
+          <div id="tutorial-player" class="hidden-video">
+            <iframe
+              src="https://www.youtube.com/embed/VIDEO_ID"
+              title="Dayront tutorial"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            ></iframe>
+          </div>
+
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- ========== TESTIMONIALS ========== -->
-  <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 reveal">
-    <div class="max-w-5xl mx-auto px-4">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Trusted by Thousands</h2>
-        <p class="text-gray-600 dark:text-gray-300 text-lg">People love Dayront because it's fast, free, and private.</p>
+  <!-- =========================================================
+       VISUAL IMAGE / PREVIEW SHOWCASE
+  ========================================================== -->
+  <section class="section">
+    <div class="max-w-6xl mx-auto px-4">
+
+      <div class="section-heading reveal">
+        <span class="section-kicker">BUILT FOR REAL WORK</span>
+        <h2>A workspace that stays out of your way.</h2>
+        <p>
+          Clean controls, readable information and visual feedback make it
+          easier to understand what is happening to your file.
+        </p>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-6">
-        {testimonials.map(t => (
-          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-black/30 transition-all duration-300">
-            <div class="flex gap-1 mb-4">
-              {[...Array(5)].map(() => <span class="text-yellow-400 text-sm">★</span>)}
+      <div class="visual-grid">
+
+        <div class="visual-card visual-large reveal">
+          <div class="visual-image visual-editor">
+            <div class="visual-toolbar">
+              <span></span>
+              <span></span>
+              <span></span>
+              <div></div>
             </div>
 
-            <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed flex-1 mb-4 italic">"{t.quote}"</p>
-
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-sky-light dark:bg-sky/20 flex items-center justify-center text-sm font-bold text-sky">
-                {t.avatar}
+            <div class="editor-stage">
+              <div class="editor-video">
+                <div class="editor-play">▶</div>
               </div>
+
+              <div class="editor-timeline">
+                <div class="timeline-line"></div>
+                <div class="timeline-track">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="visual-copy">
+            <span>01 / EDIT</span>
+            <h3>Simple editing controls</h3>
+            <p>Trim, merge, reverse and adjust media without a complicated editor.</p>
+          </div>
+        </div>
+
+        <div class="visual-card reveal">
+          <div class="visual-image visual-converter">
+            <div class="converter-file">MP4</div>
+            <div class="converter-arrow">→</div>
+            <div class="converter-file output">MP3</div>
+          </div>
+
+          <div class="visual-copy">
+            <span>02 / CONVERT</span>
+            <h3>Change formats quickly</h3>
+            <p>Use dedicated conversion pages for common media formats.</p>
+          </div>
+        </div>
+
+        <div class="visual-card reveal">
+          <div class="visual-image visual-security">
+            <div class="security-ring">
+              <span>✓</span>
+            </div>
+
+            <div class="security-lines">
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+          </div>
+
+          <div class="visual-copy">
+            <span>03 / PRIVACY</span>
+            <h3>Know what happens to your file</h3>
+            <p>Clear privacy messaging helps you understand the processing workflow.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================
+       FEATURES
+  ========================================================== -->
+  <section class="soft-section">
+    <div class="max-w-7xl mx-auto px-4">
+
+      <div class="section-heading reveal">
+        <span class="section-kicker">WHY DAYRONT</span>
+        <h2>Designed around the way people actually use tools.</h2>
+      </div>
+
+      <div class="feature-grid">
+
+        {features.map((feature, index) => (
+          <a href={feature.link} class={`feature-card reveal reveal-delay-${Math.min(index + 1, 5)}`}>
+
+            <div class="feature-icon">{feature.icon}</div>
+
+            <div>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </div>
+
+            <span class="feature-link">Learn more →</span>
+
+          </a>
+        ))}
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       HOW IT WORKS
+  ========================================================== -->
+  <section class="section">
+    <div class="max-w-6xl mx-auto px-4">
+
+      <div class="section-heading reveal">
+        <span class="section-kicker">THE WORKFLOW</span>
+        <h2>Four steps. Nothing complicated.</h2>
+      </div>
+
+      <div class="workflow">
+
+        {workflow.map((step, index) => (
+          <div class="workflow-item reveal">
+
+            <div class="workflow-number">{step.number}</div>
+
+            <div class="workflow-content">
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </div>
+
+            {index < workflow.length - 1 && (
+              <div class="workflow-line"></div>
+            )}
+
+          </div>
+        ))}
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       TESTIMONIALS
+  ========================================================== -->
+  <section class="testimonial-section">
+    <div class="max-w-6xl mx-auto px-4">
+
+      <div class="section-heading reveal">
+        <span class="section-kicker">FROM PEOPLE WHO USE IT</span>
+        <h2>Less friction. More getting things done.</h2>
+      </div>
+
+      <div class="testimonial-grid">
+
+        {testimonials.map((testimonial) => (
+          <article class="testimonial-card reveal">
+
+            <div class="stars">★★★★★</div>
+
+            <p class="testimonial-quote">
+              “{testimonial.quote}”
+            </p>
+
+            <div class="testimonial-person">
+              <div class="avatar">{testimonial.avatar}</div>
 
               <div>
-                <p class="text-sm font-semibold text-black dark:text-white">{t.name}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{t.role}</p>
+                <strong>{testimonial.name}</strong>
+                <span>{testimonial.role}</span>
               </div>
             </div>
-          </div>
+
+          </article>
         ))}
+
       </div>
+
     </div>
   </section>
 
-  <!-- ========== HOW IT WORKS ========== -->
-  <section class="py-20 reveal">
+  <!-- =========================================================
+       FAQ
+  ========================================================== -->
+  <section class="section faq-section">
     <div class="max-w-4xl mx-auto px-4">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">How It Works</h2>
-        <p class="text-gray-600 dark:text-gray-300 text-lg">Three simple steps to process your files privately.</p>
+
+      <div class="section-heading reveal">
+        <span class="section-kicker">HELP CENTER</span>
+        <h2>Questions you might actually have.</h2>
+        <p>
+          From privacy and file formats to mobile performance, here are the
+          practical answers before you start.
+        </p>
       </div>
 
-      <div class="grid sm:grid-cols-3 gap-8">
-        <div class="text-center reveal-child">
-          <div class="w-16 h-16 rounded-2xl bg-sky-light dark:bg-sky/15 flex items-center justify-center mx-auto mb-4">
-            <span class="text-2xl font-extrabold text-sky">1</span>
-          </div>
-          <h3 class="font-semibold text-black dark:text-white mb-2">Choose a Tool</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Pick from 22+ free tools — converters, editors, and utilities.</p>
-        </div>
+      <div class="faq-list">
 
-        <div class="text-center reveal-child">
-          <div class="w-16 h-16 rounded-2xl bg-sky-light dark:bg-sky/15 flex items-center justify-center mx-auto mb-4">
-            <span class="text-2xl font-extrabold text-sky">2</span>
-          </div>
-          <h3 class="font-semibold text-black dark:text-white mb-2">Drop Your File</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Your file stays on your device. Processing happens locally.</p>
-        </div>
-
-        <div class="text-center reveal-child">
-          <div class="w-16 h-16 rounded-2xl bg-sky-light dark:bg-sky/15 flex items-center justify-center mx-auto mb-4">
-            <span class="text-2xl font-extrabold text-sky">3</span>
-          </div>
-          <h3 class="font-semibold text-black dark:text-white mb-2">Download Instantly</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Get your processed file immediately. No waiting for uploads.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== FAQ ========== -->
-  <section class="bg-gray-50 dark:bg-gray-900/60 border-y border-gray-100 dark:border-gray-800 py-20 reveal">
-    <div class="max-w-3xl mx-auto px-4">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Frequently Asked Questions</h2>
-      </div>
-
-      <dl class="space-y-4">
-        {faqs.map(faq => (
-          <details class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 group cursor-pointer hover:border-sky transition-colors">
-            <summary class="font-semibold text-black dark:text-white list-none flex items-center justify-between">
-              {faq.q}
-              <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 group-open:rotate-180 transition-transform flex-shrink-0 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-              </svg>
+        {faqs.map((faq, index) => (
+          <details class="faq-item reveal" open={index === 0}>
+            <summary>
+              <span>{faq.q}</span>
+              <i>+</i>
             </summary>
-            <p class="mt-3 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{faq.a}</p>
+
+            <div class="faq-answer">
+              <p>{faq.a}</p>
+            </div>
           </details>
         ))}
-      </dl>
-    </div>
-  </section>
 
-  <!-- ========== CTA ========== -->
-  <section class="py-20 reveal">
-    <div class="max-w-2xl mx-auto px-4 text-center">
-      <div class="rounded-3xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-8 sm:p-12 shadow-sm dark:shadow-black/20">
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4">Ready to Get Started?</h2>
-        <p class="text-gray-600 dark:text-gray-300 text-lg mb-8">All tools are free, private, and work instantly in your browser.</p>
+      </div>
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="/tools" class="btn-primary text-lg px-8 py-3.5 hover:-translate-y-1 transition-transform duration-300">Start Converting Now</a>
-          <a href="/blog" class="btn-secondary text-lg px-8 py-3.5 hover:-translate-y-1 transition-transform duration-300">Read the Blog</a>
+      <div class="faq-bottom reveal">
+        <div>
+          <strong>Still have a question?</strong>
+          <span>Explore the tools and guides for more practical help.</span>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <a href="/tools" class="small-button primary">Browse tools</a>
+          <a href="/blog" class="small-button secondary">Read guides</a>
         </div>
       </div>
+
     </div>
   </section>
 
-  <!-- Floating privacy status -->
-  <div
-    id="privacy-status"
-    class="fixed bottom-5 right-5 z-50 translate-y-20 opacity-0 transition-all duration-500 pointer-events-none"
-  >
-    <div class="flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-xl px-4 py-2.5">
-      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Processing stays on your device</span>
+  <!-- =========================================================
+       FINAL CTA
+  ========================================================== -->
+  <section class="final-cta">
+    <div class="cta-glow"></div>
+
+    <div class="max-w-5xl mx-auto px-4 relative z-10">
+
+      <div class="cta-card reveal">
+
+        <div class="cta-badge">
+          <span></span>
+          Ready when you are
+        </div>
+
+        <h2>
+          Stop fighting with
+          <span>complicated media tools.</span>
+        </h2>
+
+        <p>
+          Pick a tool and get your next conversion, edit or compression job
+          started in seconds.
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-3">
+          <a href="/tools" class="premium-button primary-button">
+            Start using Dayront
+            <span>→</span>
+          </a>
+
+          <a href="/about" class="premium-button secondary-button">
+            Learn about Dayront
+          </a>
+        </div>
+
+        <div class="cta-note">
+          <span>✓</span> No complicated setup
+          <span>✓</span> Browser-first
+          <span>✓</span> Mobile friendly
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Floating status -->
+  <div id="privacy-toast" class="privacy-toast">
+    <span class="toast-dot"></span>
+    <div>
+      <strong>Browser-first processing</strong>
+      <small>Your workflow stays close to your device.</small>
     </div>
   </div>
+
 </BaseLayout>
 
 <style>
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
+  :global(body) {
+    overflow-x: hidden;
+  }
+
+  .hero {
+    min-height: 760px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(56, 189, 248, .16), transparent 34%),
+      linear-gradient(180deg, #f7fcff 0%, #fff 70%);
+  }
+
+  :global(.dark) .hero {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(56, 189, 248, .12), transparent 35%),
+      #030712;
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .32;
+    background-image:
+      linear-gradient(rgba(15, 23, 42, .045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, .045) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black, transparent 80%);
+  }
+
+  :global(.dark) .hero-grid {
+    opacity: .12;
+    background-image:
+      linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+  }
+
+  .hero-glow {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(70px);
+    pointer-events: none;
+    animation: floatGlow 8s ease-in-out infinite;
+  }
+
+  .hero-glow-one {
+    width: 280px;
+    height: 280px;
+    top: 180px;
+    left: -120px;
+    background: rgba(56,189,248,.12);
+  }
+
+  .hero-glow-two {
+    width: 240px;
+    height: 240px;
+    top: 320px;
+    right: -100px;
+    background: rgba(250,204,21,.08);
+    animation-delay: -3s;
+  }
+
+  .hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 13px;
+    border: 1px solid rgba(148,163,184,.28);
+    background: rgba(255,255,255,.72);
+    backdrop-filter: blur(14px);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    box-shadow: 0 8px 30px rgba(15,23,42,.06);
+  }
+
+  :global(.dark) .hero-pill {
+    background: rgba(15,23,42,.72);
+    color: #cbd5e1;
+  }
+
+  .status-dot,
+  .live-indicator span,
+  .chart-live i,
+  .cta-badge span {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 0 5px rgba(34,197,94,.10);
+    animation: pulseDot 2s infinite;
+  }
+
+  .pill-arrow {
+    color: #0ea5e9;
+  }
+
+  .hero-title {
+    margin-top: 28px;
+    font-size: clamp(3.1rem, 8vw, 7rem);
+    line-height: .92;
+    letter-spacing: -.065em;
+    font-weight: 900;
+    color: #020617;
+  }
+
+  :global(.dark) .hero-title {
+    color: white;
+  }
+
+  .gradient-text {
+    background: linear-gradient(100deg, #0284c7, #38bdf8, #0ea5e9);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero-last {
+    color: #0f172a;
+  }
+
+  :global(.dark) .hero-last {
+    color: white;
+  }
+
+  .hero-description {
+    max-width: 700px;
+    margin: 28px auto 32px;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    line-height: 1.75;
+    color: #64748b;
+  }
+
+  :global(.dark) .hero-description {
+    color: #94a3b8;
+  }
+
+  .premium-button {
+    min-height: 50px;
+    padding: 13px 20px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  }
+
+  .premium-button:hover {
+    transform: translateY(-3px);
+  }
+
+  .primary-button {
+    color: white;
+    background: #0284c7;
+    box-shadow: 0 14px 30px rgba(2,132,199,.22);
+  }
+
+  .primary-button:hover {
+    box-shadow: 0 18px 38px rgba(2,132,199,.30);
+  }
+
+  .secondary-button {
+    color: #0f172a;
+    background: rgba(255,255,255,.8);
+    border: 1px solid #e2e8f0;
+  }
+
+  :global(.dark) .secondary-button {
+    color: white;
+    background: rgba(15,23,42,.75);
+    border-color: #334155;
+  }
+
+  .button-icon {
+    font-size: 18px;
+  }
+
+  .hero-trust {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 22px;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .hero-trust span {
+    color: #16a34a;
+    margin-right: 4px;
+  }
+
+  /* DASHBOARD */
+
+  .hero-dashboard {
+    max-width: 1020px;
+    margin: 70px auto 0;
+    border: 1px solid rgba(148,163,184,.25);
+    border-radius: 24px;
+    overflow: hidden;
+    background: rgba(255,255,255,.78);
+    backdrop-filter: blur(24px);
+    box-shadow:
+      0 35px 100px rgba(15,23,42,.13),
+      0 8px 25px rgba(15,23,42,.05);
+    transform: perspective(1600px) rotateX(2deg);
+    transition: transform .5s ease, box-shadow .5s ease;
+  }
+
+  .hero-dashboard:hover {
+    transform: perspective(1600px) rotateX(0deg) translateY(-4px);
+    box-shadow:
+      0 45px 120px rgba(15,23,42,.18),
+      0 12px 30px rgba(15,23,42,.08);
+  }
+
+  :global(.dark) .hero-dashboard {
+    background: rgba(15,23,42,.82);
+    border-color: #1e293b;
+    box-shadow: 0 40px 100px rgba(0,0,0,.35);
+  }
+
+  .dashboard-top {
+    height: 52px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  :global(.dark) .dashboard-top {
+    border-color: #1e293b;
+  }
+
+  .window-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .window-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #cbd5e1;
+  }
+
+  .dashboard-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .dashboard-title span {
+    margin: 0 5px;
+    color: #cbd5e1;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #16a34a;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .dashboard-body {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    min-height: 440px;
+  }
+
+  .workspace-sidebar {
+    border-right: 1px solid #e2e8f0;
+    padding: 20px 10px;
+    background: rgba(248,250,252,.7);
+  }
+
+  :global(.dark) .workspace-sidebar {
+    border-color: #1e293b;
+    background: rgba(2,6,23,.3);
+  }
+
+  .mini-brand {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 25px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: white;
+    font-weight: 900;
+    background: #0284c7;
+  }
+
+  .side-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 9px 2px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    color: #94a3b8;
+    font-size: 8px;
+    transition: .25s ease;
+  }
+
+  .side-item span:first-child {
+    font-size: 15px;
+  }
+
+  .side-item.active,
+  .side-item:hover {
+    color: #0284c7;
+    background: rgba(14,165,233,.09);
+  }
+
+  .workspace-main {
+    padding: 25px;
+    min-width: 0;
+  }
+
+  .workspace-header,
+  .chart-card-head,
+  .dashboard-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .eyebrow,
+  .chart-kicker,
+  .workspace-header .eyebrow {
+    display: block;
+    color: #94a3b8;
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 800;
+    margin-bottom: 5px;
+  }
+
+  .workspace-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+  }
+
+  :global(.dark) .workspace-header h3 {
+    color: white;
+  }
+
+  .secure-chip {
+    border: 1px solid rgba(34,197,94,.18);
+    background: rgba(34,197,94,.08);
+    color: #16a34a;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .file-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+  }
+
+  :global(.dark) .file-card {
+    border-color: #1e293b;
+  }
+
+  .file-preview {
+    width: 55px;
+    height: 42px;
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #0f172a, #075985);
+  }
+
+  .play-circle {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: rgba(255,255,255,.15);
+    font-size: 8px;
+  }
+
+  .preview-bars {
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    bottom: 5px;
+    height: 8px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .preview-bars i {
+    flex: 1;
+    background: rgba(255,255,255,.7);
+    border-radius: 2px;
+    animation: equalizer 1s ease-in-out infinite alternate;
+  }
+
+  .preview-bars i:nth-child(2) { height: 60%; animation-delay: -.2s; }
+  .preview-bars i:nth-child(3) { height: 90%; animation-delay: -.4s; }
+  .preview-bars i:nth-child(4) { height: 40%; animation-delay: -.6s; }
+  .preview-bars i:nth-child(5) { height: 75%; animation-delay: -.8s; }
+  .preview-bars i:nth-child(6) { height: 55%; animation-delay: -1s; }
+
+  .file-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .file-info strong {
+    color: #0f172a;
+    font-size: 11px;
+  }
+
+  :global(.dark) .file-info strong {
+    color: white;
+  }
+
+  .file-info span,
+  .file-status {
+    color: #94a3b8;
+    font-size: 9px;
+  }
+
+  .file-status {
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  .check {
+    margin-right: 4px;
+  }
+
+  .dashboard-chart {
+    margin-top: 20px;
+    padding: 17px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+  }
+
+  :global(.dark) .dashboard-chart {
+    border-color: #1e293b;
+  }
+
+  .chart-heading span:first-child {
+    display: block;
+    color: #94a3b8;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .12em;
+  }
+
+  .chart-heading strong {
+    display: block;
+    margin-top: 3px;
+    color: #0f172a;
+    font-size: 12px;
+  }
+
+  :global(.dark) .chart-heading strong {
+    color: white;
+  }
+
+  .chart-live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 8px;
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  .chart-live i {
+    width: 5px;
+    height: 5px;
+    box-shadow: none;
+  }
+
+  .chart-area {
+    position: relative;
+    height: 130px;
+    margin-top: 10px;
+    padding-left: 25px;
+  }
+
+  .chart-y {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #94a3b8;
+    font-size: 7px;
+  }
+
+  .activity-chart {
+    width: 100%;
+    height: 100%;
+  }
+
+  .chart-area-fill {
+    fill: url(#chartFill);
+  }
+
+  .chart-line {
+    fill: none;
+    stroke: #0ea5e9;
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+    filter: drop-shadow(0 4px 5px rgba(14,165,233,.2));
+  }
+
+  .chart-dot {
+    fill: #0ea5e9;
+    animation: chartPulse 1.5s infinite;
+  }
+
+  .chart-labels {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 25px;
+    color: #94a3b8;
+    font-size: 7px;
+  }
+
+  .dashboard-bottom {
+    padding-top: 17px;
+  }
+
+  .dashboard-bottom span {
+    display: block;
+    color: #94a3b8;
+    font-size: 7px;
+    font-weight: 800;
+  }
+
+  .dashboard-bottom strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    color: #0f172a;
+  }
+
+  :global(.dark) .dashboard-bottom strong {
+    color: white;
+  }
+
+  .fake-process {
+    border: 0;
+    border-radius: 9px;
+    padding: 9px 13px;
+    color: white;
+    background: #0284c7;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  /* STATS */
+
+  .stats-section {
+    position: relative;
+    z-index: 20;
+    margin-top: -20px;
+  }
+
+  .stats-card {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 25px 70px rgba(15,23,42,.08);
+    overflow: hidden;
+  }
+
+  :global(.dark) .stats-card {
+    background: rgba(15,23,42,.9);
+    border-color: #1e293b;
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    padding: 25px 15px;
+    border-right: 1px solid #e2e8f0;
+  }
+
+  :global(.dark) .stat-item {
+    border-color: #1e293b;
+  }
+
+  .stat-item:last-child {
+    border-right: 0;
+  }
+
+  .stat-icon {
+    font-size: 20px;
+  }
+
+  .stat-number {
+    color: #0284c7;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: -.04em;
+  }
+
+  .stat-label {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* GENERAL */
+
+  .section {
+    padding: 110px 0;
+  }
+
+  .soft-section {
+    padding: 110px 0;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  :global(.dark) .soft-section {
+    background: rgba(15,23,42,.45);
+    border-color: #1e293b;
+  }
+
+  .section-heading {
+    max-width: 760px;
+    margin: 0 auto 55px;
+    text-align: center;
+  }
+
+  .split-heading {
+    max-width: none;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .section-kicker {
+    display: block;
+    margin-bottom: 12px;
+    color: #0284c7;
+    font-size: 10px;
+    letter-spacing: .16em;
+    font-weight: 900;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    color: #020617;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.05;
+    letter-spacing: -.045em;
+    font-weight: 900;
+  }
+
+  :global(.dark) .section-heading h2 {
+    color: white;
+  }
+
+  .section-heading p {
+    max-width: 650px;
+    margin: 18px auto 0;
+    color: #64748b;
+    line-height: 1.7;
+  }
+
+  .split-heading p {
+    margin-left: 0;
+  }
+
+  .text-link {
+    color: #0284c7;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  /* CHARTS */
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1.7fr 1fr;
+    gap: 20px;
+  }
+
+  .chart-card {
+    min-width: 0;
+    padding: 25px;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    background: white;
+    box-shadow: 0 15px 45px rgba(15,23,42,.045);
+  }
+
+  :global(.dark) .chart-card {
+    border-color: #1e293b;
+    background: #0f172a;
+  }
+
+  .chart-kicker {
+    color: #94a3b8;
+  }
+
+  .chart-card h3 {
+    margin: 3px 0 0;
+    color: #0f172a;
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .chart-card h3 {
+    color: white;
+  }
+
+  .chart-value {
+    text-align: right;
+  }
+
+  .chart-value strong {
+    display: block;
+    color: #0f172a;
+    font-size: 25px;
+  }
+
+  :global(.dark) .chart-value strong {
+    color: white;
+  }
+
+  .positive {
+    color: #16a34a;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .big-live-chart {
+    height: 280px;
+    position: relative;
+    margin-top: 20px;
+  }
+
+  .horizontal-lines {
+    position: absolute;
+    inset: 0 0 35px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .horizontal-lines span {
+    width: 100%;
+    border-top: 1px dashed #e2e8f0;
+  }
+
+  :global(.dark) .horizontal-lines span {
+    border-color: #1e293b;
+  }
+
+  .big-live-chart svg {
+    position: absolute;
+    inset: 0 0 35px;
+    width: 100%;
+    height: calc(100% - 35px);
+  }
+
+  #live-area {
+    fill: rgba(14,165,233,.10);
+  }
+
+  #live-line {
+    fill: none;
+    stroke: #0ea5e9;
+    stroke-width: 4;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 1200;
+    stroke-dashoffset: 1200;
+    animation: drawChart 2.4s ease forwards;
+  }
+
+  #live-dot {
+    fill: #0ea5e9;
+    filter: drop-shadow(0 0 8px rgba(14,165,233,.45));
+    animation: chartPulse 1.5s infinite;
+  }
+
+  .chart-axis {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    color: #94a3b8;
+    font-size: 9px;
+  }
+
+  .chart-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    color: #94a3b8;
+    font-size: 9px;
+  }
+
+  :global(.dark) .chart-footer {
+    border-color: #1e293b;
+  }
+
+  .chart-footer span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #0ea5e9;
+  }
+
+  .mini-live {
+    color: #16a34a;
+    font-size: 8px;
+    font-weight: 900;
+  }
+
+  .donut-wrapper {
+    min-height: 270px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 25px;
+  }
+
+  .donut {
+    width: 155px;
+    height: 155px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background:
+      conic-gradient(
+        #0284c7 0 55%,
+        #38bdf8 55% 75%,
+        #7dd3fc 75% 90%,
+        #e0f2fe 90% 100%
+      );
+    position: relative;
+    animation: rotateIn 1s ease both;
+  }
+
+  .donut::before {
+    content: '';
+    position: absolute;
+    inset: 17px;
+    border-radius: 50%;
+    background: white;
+  }
+
+  :global(.dark) .donut::before {
+    background: #0f172a;
+  }
+
+  .donut-center {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .donut-center strong {
+    display: block;
+    color: #0f172a;
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  :global(.dark) .donut-center strong {
+    color: white;
+  }
+
+  .donut-center span {
+    color: #94a3b8;
+    font-size: 9px;
+  }
+
+  .donut-list {
+    flex: 1;
+  }
+
+  .donut-list div {
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: center;
+    gap: 7px;
+    margin: 12px 0;
+    color: #64748b;
+    font-size: 10px;
+  }
+
+  .donut-list i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #0284c7;
+  }
+
+  .donut-list div:nth-child(2) i { background: #38bdf8; }
+  .donut-list div:nth-child(3) i { background: #7dd3fc; }
+  .donut-list div:nth-child(4) i { background: #e0f2fe; }
+
+  .donut-list strong {
+    color: #0f172a;
+  }
+
+  :global(.dark) .donut-list strong {
+    color: white;
+  }
+
+  /* HINT */
+
+  .hint-section {
+    padding: 0 0 30px;
+  }
+
+  .hint-box {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    border: 1px solid rgba(14,165,233,.18);
+    border-radius: 18px;
+    background: linear-gradient(100deg, rgba(14,165,233,.06), rgba(250,204,21,.04));
+  }
+
+  .hint-icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    color: #0284c7;
+    background: rgba(14,165,233,.1);
+  }
+
+  .hint-content {
+    flex: 1;
+  }
+
+  .hint-content span {
+    display: block;
+    color: #0284c7;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: .13em;
+  }
+
+  .hint-content h3 {
+    margin: 3px 0;
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  :global(.dark) .hint-content h3 {
+    color: white;
+  }
+
+  .hint-content p {
+    margin: 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  #next-tip {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    color: #0284c7;
+    background: white;
+    cursor: pointer;
+    transition: .25s ease;
+  }
+
+  #next-tip:hover {
+    transform: rotate(180deg);
+  }
+
+  /* TOOLS */
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
+
+  .premium-tool-card {
+    position: relative;
+    overflow: hidden;
+    padding: 22px;
+    min-height: 170px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: white;
+    transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+  }
+
+  :global(.dark) .premium-tool-card {
+    border-color: #1e293b;
+    background: #0f172a;
+  }
+
+  .premium-tool-card::after {
+    content: '';
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    top: -50px;
+    right: -50px;
+    border-radius: 50%;
+    background: rgba(14,165,233,.08);
+    transition: transform .4s ease;
+  }
+
+  .premium-tool-card:hover {
+    transform: translateY(-7px);
+    border-color: rgba(14,165,233,.35);
+    box-shadow: 0 20px 50px rgba(15,23,42,.09);
+  }
+
+  .premium-tool-card:hover::after {
+    transform: scale(2);
+  }
+
+  .tool-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .tool-icon {
+    font-size: 29px;
+  }
+
+  .tool-category {
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .tool-category {
+    background: #1e293b;
+  }
+
+  .premium-tool-card h3 {
+    margin: 20px 0 5px;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .premium-tool-card h3 {
+    color: white;
+  }
+
+  .premium-tool-card p {
+    color: #64748b;
+    font-size: 11px;
+  }
+
+  .tool-arrow {
+    position: absolute;
+    right: 20px;
+    bottom: 18px;
+    color: #0284c7;
+    font-size: 18px;
+  }
+
+  .center-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 38px;
+  }
+
+  /* VIDEO */
+
+  .video-section {
+    padding: 110px 0;
+    background: #020617;
+    color: white;
+    overflow: hidden;
+  }
+
+  .video-layout {
+    display: grid;
+    grid-template-columns: .85fr 1.15fr;
+    gap: 70px;
+    align-items: center;
+  }
+
+  .video-copy h2 {
+    margin: 0;
+    font-size: clamp(2.3rem, 5vw, 4rem);
+    line-height: 1;
+    letter-spacing: -.05em;
+    font-weight: 900;
+  }
+
+  .video-copy h2 span {
+    display: block;
+    color: #38bdf8;
+  }
+
+  .video-copy > p {
+    max-width: 520px;
+    margin: 24px 0;
+    color: #94a3b8;
+    line-height: 1.75;
+  }
+
+  .video-points {
+    margin: 28px 0;
+  }
+
+  .video-points div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .video-points span {
+    color: #38bdf8;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .video-points strong {
+    font-size: 12px;
+  }
+
+  .video-frame {
+    position: relative;
+    min-height: 400px;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+    border-radius: 25px;
+    background: #0f172a;
+    box-shadow: 0 30px 90px rgba(0,0,0,.35);
+  }
+
+  .video-placeholder {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .video-background-art {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 70% 30%, rgba(56,189,248,.18), transparent 30%),
+      radial-gradient(circle at 30% 70%, rgba(14,165,233,.12), transparent 35%),
+      #0f172a;
+  }
+
+  .video-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    animation: floatGlow 6s ease-in-out infinite;
+  }
+
+  .orb-one {
+    width: 180px;
+    height: 180px;
+    background: rgba(14,165,233,.18);
+    top: -50px;
+    right: -30px;
+  }
+
+  .orb-two {
+    width: 140px;
+    height: 140px;
+    background: rgba(250,204,21,.08);
+    bottom: -30px;
+    left: -30px;
+    animation-delay: -3s;
+  }
+
+  .video-window {
+    width: 70%;
+    height: 62%;
+    border: 1px solid #334155;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #020617;
+    transform: rotate(-2deg);
+    box-shadow: 0 25px 70px rgba(0,0,0,.35);
+  }
+
+  .video-window-top {
+    height: 25px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding-left: 10px;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  .video-window-top span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #475569;
+  }
+
+  .video-window-body {
+    height: calc(100% - 25px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 25px;
+  }
+
+  .fake-wave {
+    height: 80px;
+    border-radius: 9px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(56,189,248,.8) 0 2px,
+        transparent 2px 8px
+      );
+    opacity: .45;
+  }
+
+  .fake-wave.small {
+    height: 35px;
+    opacity: .2;
+  }
+
+  .video-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 68px;
+    height: 68px;
+    display: grid;
+    place-items: center;
+    transform: translate(-50%,-50%);
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    color: white;
+    background: rgba(14,165,233,.9);
+    box-shadow: 0 15px 45px rgba(14,165,233,.3);
+    cursor: pointer;
+    transition: .3s ease;
+  }
+
+  .video-play:hover {
+    transform: translate(-50%,-50%) scale(1.1);
+  }
+
+  .video-label {
+    position: absolute;
+    left: 25px;
+    bottom: 22px;
+  }
+
+  .video-label span {
+    display: block;
+    color: #38bdf8;
+    font-size: 8px;
+    letter-spacing: .15em;
+    font-weight: 900;
+  }
+
+  .video-label strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  .hidden-video {
+    display: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  .hidden-video.active {
+    display: block;
+  }
+
+  .hidden-video iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* VISUAL */
+
+  .visual-grid {
+    display: grid;
+    grid-template-columns: 1.3fr .7fr;
+    gap: 18px;
+  }
+
+  .visual-card {
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    background: white;
+  }
+
+  :global(.dark) .visual-card {
+    border-color: #1e293b;
+    background: #0f172a;
+  }
+
+  .visual-large {
+    grid-row: span 2;
+  }
+
+  .visual-image {
+    position: relative;
+    overflow: hidden;
+    background: #f8fafc;
+  }
+
+  :global(.dark) .visual-image {
+    background: #020617;
+  }
+
+  .visual-editor {
+    height: 420px;
+  }
+
+  .visual-converter,
+  .visual-security {
+    height: 190px;
+  }
+
+  .visual-toolbar {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  :global(.dark) .visual-toolbar {
+    border-color: #1e293b;
+  }
+
+  .visual-toolbar span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #cbd5e1;
+  }
+
+  .visual-toolbar div {
+    width: 70px;
+    height: 7px;
+    margin-left: auto;
+    border-radius: 10px;
+    background: #e2e8f0;
+  }
+
+  .editor-stage {
+    height: calc(100% - 42px);
+    padding: 30px;
+  }
+
+  .editor-video {
+    height: 230px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background:
+      radial-gradient(circle at 60% 30%, rgba(56,189,248,.3), transparent 25%),
+      linear-gradient(135deg, #0f172a, #164e63);
+  }
+
+  .editor-play {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: rgba(255,255,255,.12);
+    backdrop-filter: blur(10px);
+  }
+
+  .editor-timeline {
+    margin-top: 25px;
+  }
+
+  .timeline-line {
+    height: 3px;
+    margin-bottom: 15px;
+    background: #bae6fd;
+    position: relative;
+  }
+
+  .timeline-line::after {
+    content: '';
+    position: absolute;
+    left: 35%;
+    top: -5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0284c7;
+  }
+
+  .timeline-track {
+    height: 40px;
+    display: flex;
+    gap: 5px;
+  }
+
+  .timeline-track span {
+    flex: 1;
+    border-radius: 5px;
+    background: repeating-linear-gradient(
+      90deg,
+      #bae6fd 0 3px,
+      transparent 3px 8px
+    );
+    opacity: .7;
+  }
+
+  .visual-copy {
+    padding: 20px 22px 23px;
+  }
+
+  .visual-copy span {
+    color: #0284c7;
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .visual-copy h3 {
+    margin: 7px 0;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .visual-copy h3 {
+    color: white;
+  }
+
+  .visual-copy p {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .visual-converter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .converter-file {
+    width: 75px;
+    height: 85px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #bae6fd;
+    border-radius: 14px;
+    color: #0284c7;
+    background: rgba(14,165,233,.06);
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  .converter-file.output {
+    border-color: #bbf7d0;
+    color: #16a34a;
+    background: rgba(34,197,94,.06);
+  }
+
+  .converter-arrow {
+    color: #94a3b8;
+    font-size: 22px;
+  }
+
+  .visual-security {
+    display: grid;
+    place-items: center;
+  }
+
+  .security-ring {
+    width: 85px;
+    height: 85px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(34,197,94,.3);
+    border-radius: 50%;
+    color: #16a34a;
+    background: rgba(34,197,94,.08);
+    box-shadow: 0 0 0 14px rgba(34,197,94,.03);
+  }
+
+  .security-ring span {
+    font-size: 25px;
+  }
+
+  .security-lines {
+    position: absolute;
+    right: 35px;
+    top: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .security-lines i {
+    width: 50px;
+    height: 5px;
+    border-radius: 10px;
+    background: #dcfce7;
+  }
+
+  /* FEATURES */
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+  }
+
+  .feature-card {
+    position: relative;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    min-height: 205px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: white;
+    transition: .35s ease;
+  }
+
+  :global(.dark) .feature-card {
+    background: #0f172a;
+    border-color: #1e293b;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(14,165,233,.3);
+    box-shadow: 0 20px 50px rgba(15,23,42,.07);
+  }
+
+  .feature-icon {
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 7px;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .feature-card h3 {
+    color: white;
+  }
+
+  .feature-card p {
+    margin: 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.65;
+  }
+
+  .feature-link {
+    margin-top: auto;
+    padding-top: 18px;
+    color: #0284c7;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  /* WORKFLOW */
+
+  .workflow {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
+
+  .workflow-item {
+    position: relative;
+    padding: 25px 10px;
+    text-align: center;
+  }
+
+  .workflow-number {
+    width: 55px;
+    height: 55px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 18px;
+    border: 1px solid rgba(14,165,233,.18);
+    border-radius: 17px;
+    color: #0284c7;
+    background: rgba(14,165,233,.07);
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .workflow-content h3 {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .workflow-content h3 {
+    color: white;
+  }
+
+  .workflow-content p {
+    max-width: 200px;
+    margin: 8px auto 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .workflow-line {
+    position: absolute;
+    top: 52px;
+    left: calc(50% + 35px);
+    width: calc(100% - 70px);
+    height: 1px;
+    border-top: 1px dashed #cbd5e1;
+  }
+
+  /* TESTIMONIALS */
+
+  .testimonial-section {
+    padding: 110px 0;
+    background: #020617;
+  }
+
+  .testimonial-section .section-heading h2 {
+    color: white;
+  }
+
+  .testimonial-section .section-heading p {
+    color: #94a3b8;
+  }
+
+  .testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 17px;
+  }
+
+  .testimonial-card {
+    padding: 27px;
+    border: 1px solid #1e293b;
+    border-radius: 20px;
+    background: #0f172a;
+    transition: .35s ease;
+  }
+
+  .testimonial-card:hover {
+    transform: translateY(-6px);
+    border-color: #334155;
+    background: #111c30;
+  }
+
+  .stars {
+    color: #facc15;
+    letter-spacing: 2px;
+    font-size: 11px;
+  }
+
+  .testimonial-quote {
+    min-height: 110px;
+    margin: 20px 0;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .testimonial-person {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding-top: 17px;
+    border-top: 1px solid #1e293b;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #0284c7;
+    background: #e0f2fe;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .testimonial-person strong,
+  .testimonial-person span {
+    display: block;
+  }
+
+  .testimonial-person strong {
+    color: white;
+    font-size: 11px;
+  }
+
+  .testimonial-person span {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 9px;
+  }
+
+  /* FAQ */
+
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .faq-item {
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    background: white;
+    transition: border-color .25s ease, box-shadow .25s ease;
+  }
+
+  :global(.dark) .faq-item {
+    border-color: #1e293b;
+    background: #0f172a;
+  }
+
+  .faq-item:hover {
+    border-color: rgba(14,165,233,.35);
+  }
+
+  .faq-item[open] {
+    box-shadow: 0 15px 40px rgba(15,23,42,.05);
+  }
+
+  .faq-item summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 19px 20px;
+    list-style: none;
+    cursor: pointer;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .faq-item summary {
+    color: white;
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item summary i {
+    width: 25px;
+    height: 25px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 8px;
+    color: #0284c7;
+    background: #f0f9ff;
+    font-style: normal;
+    transition: transform .25s ease;
+  }
+
+  :global(.dark) .faq-item summary i {
+    background: rgba(14,165,233,.08);
+  }
+
+  .faq-item[open] summary i {
+    transform: rotate(45deg);
+  }
+
+  .faq-answer {
+    padding: 0 20px 20px;
+  }
+
+  .faq-answer p {
+    margin: 0;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  :global(.dark) .faq-answer p {
+    border-color: #1e293b;
+  }
+
+  .faq-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 25px;
+    padding: 20px;
+    border: 1px solid rgba(14,165,233,.15);
+    border-radius: 17px;
+    background: rgba(14,165,233,.04);
+  }
+
+  .faq-bottom strong,
+  .faq-bottom span {
+    display: block;
+  }
+
+  .faq-bottom strong {
+    color: #0f172a;
+    font-size: 12px;
+  }
+
+  :global(.dark) .faq-bottom strong {
+    color: white;
+  }
+
+  .faq-bottom span {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 10px;
+  }
+
+  .small-button {
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .small-button.primary {
+    color: white;
+    background: #0284c7;
+  }
+
+  .small-button.secondary {
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+    background: white;
+  }
+
+  /* CTA */
+
+  .final-cta {
+    position: relative;
+    padding: 110px 0;
+    overflow: hidden;
+    background: #f8fafc;
+  }
+
+  :global(.dark) .final-cta {
+    background: #020617;
+  }
+
+  .cta-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: rgba(14,165,233,.1);
+    filter: blur(90px);
+  }
+
+  .cta-card {
+    position: relative;
+    padding: 65px 30px;
+    overflow: hidden;
+    text-align: center;
+    border: 1px solid #dbeafe;
+    border-radius: 28px;
+    background: white;
+    box-shadow: 0 30px 80px rgba(15,23,42,.07);
+  }
+
+  :global(.dark) .cta-card {
+    background: #0f172a;
+    border-color: #1e293b;
+  }
+
+  .cta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    color: #16a34a;
+    background: #f0fdf4;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .cta-card h2 {
+    max-width: 720px;
+    margin: 20px auto;
+    color: #020617;
+    font-size: clamp(2.2rem, 5vw, 4.4rem);
+    line-height: .98;
+    letter-spacing: -.05em;
+    font-weight: 900;
+  }
+
+  :global(.dark) .cta-card h2 {
+    color: white;
+  }
+
+  .cta-card h2 span {
+    display: block;
+    color: #0284c7;
+  }
+
+  .cta-card > p {
+    max-width: 600px;
+    margin: 0 auto 28px;
+    color: #64748b;
+    line-height: 1.7;
+  }
+
+  .cta-note {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+    color: #64748b;
+    font-size: 9px;
+  }
+
+  .cta-note span {
+    color: #16a34a;
+  }
+
+  /* FLOATING TOAST */
+
+  .privacy-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 15px 40px rgba(15,23,42,.12);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: .5s cubic-bezier(.22,1,.36,1);
+    pointer-events: none;
+  }
+
+  :global(.dark) .privacy-toast {
+    background: rgba(15,23,42,.94);
+    border-color: #334155;
+  }
+
+  .privacy-toast.visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 5px rgba(34,197,94,.1);
+  }
+
+  .privacy-toast strong,
+  .privacy-toast small {
+    display: block;
+  }
+
+  .privacy-toast strong {
+    color: #0f172a;
+    font-size: 9px;
+  }
+
+  :global(.dark) .privacy-toast strong {
+    color: white;
+  }
+
+  .privacy-toast small {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 8px;
+  }
+
+  /* MOTION */
+
   .reveal {
     opacity: 0;
-    transform: translateY(35px);
+    transform: translateY(28px);
     transition:
-      opacity 700ms ease,
-      transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+      opacity .75s ease,
+      transform .75s cubic-bezier(.22,1,.36,1);
   }
 
   .reveal.is-visible {
@@ -374,42 +3165,277 @@ const faqs = [
     transform: translateY(0);
   }
 
-  .reveal-child {
-    opacity: 0;
-    transform: translateY(20px);
-    transition:
-      opacity 600ms ease,
-      transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  .reveal-delay-1 { transition-delay: .08s; }
+  .reveal-delay-2 { transition-delay: .16s; }
+  .reveal-delay-3 { transition-delay: .24s; }
+  .reveal-delay-4 { transition-delay: .32s; }
+  .reveal-delay-5 { transition-delay: .40s; }
+
+  @keyframes floatGlow {
+    0%, 100% {
+      transform: translate3d(0,0,0);
+    }
+    50% {
+      transform: translate3d(0,20px,0);
+    }
   }
 
-  .is-visible .reveal-child:nth-child(1) {
-    transition-delay: 100ms;
+  @keyframes pulseDot {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .45;
+    }
   }
 
-  .is-visible .reveal-child:nth-child(2) {
-    transition-delay: 200ms;
+  @keyframes chartPulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+      transform-origin: center;
+    }
+    50% {
+      opacity: .55;
+      transform: scale(1.35);
+      transform-origin: center;
+    }
   }
 
-  .is-visible .reveal-child:nth-child(3) {
-    transition-delay: 300ms;
+  @keyframes equalizer {
+    from { transform: scaleY(.5); }
+    to { transform: scaleY(1.4); }
   }
 
-  .is-visible .reveal-child {
-    opacity: 1;
-    transform: translateY(0);
+  @keyframes drawChart {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes rotateIn {
+    from {
+      transform: rotate(-70deg);
+      opacity: .3;
+    }
+    to {
+      transform: rotate(0);
+      opacity: 1;
+    }
+  }
+
+  /* MOBILE */
+
+  @media (max-width: 900px) {
+    .hero-dashboard {
+      transform: none;
+    }
+
+    .dashboard-sidebar {
+      display: none;
+    }
+
+    .charts-grid,
+    .video-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .tool-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .feature-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .workflow {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .workflow-line {
+      display: none;
+    }
+
+    .testimonial-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .video-layout {
+      gap: 40px;
+    }
+
+    .visual-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .visual-large {
+      grid-row: auto;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero {
+      min-height: auto;
+    }
+
+    .hero-title {
+      font-size: 3.25rem;
+    }
+
+    .hero-dashboard {
+      margin-top: 45px;
+      border-radius: 17px;
+    }
+
+    .dashboard-body {
+      grid-template-columns: 1fr;
+    }
+
+    .workspace-sidebar {
+      display: none;
+    }
+
+    .workspace-main {
+      padding: 15px;
+    }
+
+    .stats-card {
+      grid-template-columns: repeat(2, 1fr);
+      border-radius: 16px;
+    }
+
+    .stat-item {
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 17px 8px;
+      justify-content: flex-start;
+      padding-left: 15px;
+    }
+
+    :global(.dark) .stat-item {
+      border-color: #1e293b;
+    }
+
+    .stat-item:nth-child(2),
+    .stat-item:nth-child(4) {
+      border-right: 0;
+    }
+
+    .stat-item:nth-child(3),
+    .stat-item:nth-child(4) {
+      border-bottom: 0;
+    }
+
+    .stat-icon {
+      display: none;
+    }
+
+    .section,
+    .soft-section,
+    .video-section,
+    .testimonial-section,
+    .final-cta {
+      padding: 75px 0;
+    }
+
+    .section-heading {
+      margin-bottom: 35px;
+    }
+
+    .split-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .charts-grid,
+    .tool-grid,
+    .feature-grid,
+    .testimonial-grid,
+    .workflow {
+      grid-template-columns: 1fr;
+    }
+
+    .donut-wrapper {
+      flex-direction: column;
+      padding: 20px 0;
+    }
+
+    .hint-box {
+      align-items: flex-start;
+    }
+
+    .hint-icon {
+      display: none;
+    }
+
+    .faq-bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .video-frame {
+      min-height: 300px;
+    }
+
+    .video-window {
+      width: 80%;
+      height: 55%;
+    }
+
+    .video-copy h2 {
+      font-size: 2.7rem;
+    }
+
+    .visual-editor {
+      height: 320px;
+    }
+
+    .editor-stage {
+      padding: 18px;
+    }
+
+    .editor-video {
+      height: 180px;
+    }
+
+    .hero-trust {
+      gap: 10px;
+    }
+
+    .hero-trust div {
+      font-size: 10px;
+    }
+
+    .privacy-toast {
+      right: 10px;
+      left: 10px;
+      bottom: 10px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .reveal,
-    .reveal-child {
+    *,
+    *::before,
+    *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: .01ms !important;
+    }
+
+    .reveal {
       opacity: 1;
       transform: none;
-      transition: none;
     }
   }
 </style>
 
 <script>
+  // ----------------------------------------------------------
+  // Scroll reveal
+  // ----------------------------------------------------------
+
   const revealElements = document.querySelectorAll('.reveal');
 
   const revealObserver = new IntersectionObserver(
@@ -417,96 +3443,233 @@ const faqs = [
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add('is-visible');
-        } else {
-          entry.target.classList.remove('is-visible');
         }
       });
     },
     {
-      threshold: 0.12,
-      rootMargin: '0px 0px -60px 0px',
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px',
     }
   );
 
-  revealElements.forEach((element) => {
-    revealObserver.observe(element);
-  });
+  revealElements.forEach((element) => revealObserver.observe(element));
 
-  // Scroll-direction motion
-  let lastScrollY = window.scrollY;
-  let ticking = false;
+  // ----------------------------------------------------------
+  // Animated statistics
+  // ----------------------------------------------------------
 
-  function updateScrollMotion() {
-    const currentScrollY = window.scrollY;
-    const direction = currentScrollY > lastScrollY ? 'down' : 'up';
+  const counters = document.querySelectorAll('[data-counter]');
 
-    document.documentElement.dataset.scrollDirection = direction;
+  const animateCounter = (element) => {
+    const target = Number(element.getAttribute('data-counter') || 0);
+    const suffix = element.getAttribute('data-suffix') || '';
 
-    lastScrollY = currentScrollY;
-    ticking = false;
-  }
+    const duration = 1200;
+    const start = performance.now();
 
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!ticking) {
-        window.requestAnimationFrame(updateScrollMotion);
-        ticking = true;
+    const update = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+
+      const eased =
+        1 - Math.pow(1 - progress, 3);
+
+      const value = Math.floor(target * eased);
+
+      element.textContent = `${value}${suffix}`;
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
       }
+    };
+
+    requestAnimationFrame(update);
+  };
+
+  const counterObserver = new IntersectionObserver(
+    (entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
     },
-    { passive: true }
+    { threshold: 0.6 }
   );
 
-  // Floating privacy indicator
-  const privacyStatus = document.getElementById('privacy-status');
+  counters.forEach((counter) => counterObserver.observe(counter));
 
-  let privacyTimer;
+  // ----------------------------------------------------------
+  // Rotating tips
+  // ----------------------------------------------------------
 
-  function showPrivacyStatus() {
-    if (!privacyStatus) return;
+  const tips = [
+    {
+      title: 'Keep large files comfortable.',
+      text:
+        'For large videos, close unnecessary browser tabs so your device has more memory available for processing.',
+    },
+    {
+      title: 'Use the right format.',
+      text:
+        'If you only need the audio from a video, MP4 to MP3 is usually a simpler workflow than editing the entire video.',
+    },
+    {
+      title: 'Give your browser some breathing room.',
+      text:
+        'Local processing uses your device resources. Closing heavy apps can improve performance on phones and lower-powered computers.',
+    },
+    {
+      title: 'Check the output before sharing.',
+      text:
+        'After processing, quickly play the resulting file before sending or publishing it to make sure it sounds and looks right.',
+    },
+  ];
 
-    privacyStatus.classList.remove('translate-y-20', 'opacity-0');
-    privacyStatus.classList.add('translate-y-0', 'opacity-100');
+  let currentTip = 0;
 
-    clearTimeout(privacyTimer);
+  const tipTitle = document.getElementById('tip-title');
+  const tipText = document.getElementById('tip-text');
+  const nextTip = document.getElementById('next-tip');
 
-    privacyTimer = setTimeout(() => {
-      privacyStatus.classList.add('translate-y-20', 'opacity-0');
-      privacyStatus.classList.remove('translate-y-0', 'opacity-100');
+  function showTip(index) {
+    if (!tipTitle || !tipText) return;
+
+    const tip = tips[index];
+
+    tipTitle.style.opacity = '0';
+    tipText.style.opacity = '0';
+
+    setTimeout(() => {
+      tipTitle.textContent = tip.title;
+      tipText.textContent = tip.text;
+
+      tipTitle.style.opacity = '1';
+      tipText.style.opacity = '1';
+    }, 150);
+  }
+
+  nextTip?.addEventListener('click', () => {
+    currentTip = (currentTip + 1) % tips.length;
+    showTip(currentTip);
+  });
+
+  // ----------------------------------------------------------
+  // Tutorial player
+  // ----------------------------------------------------------
+
+  const tutorialPlay = document.getElementById('tutorial-play');
+  const tutorialPlaceholder = document.querySelector('.video-placeholder');
+  const tutorialPlayer = document.getElementById('tutorial-player');
+
+  tutorialPlay?.addEventListener('click', () => {
+    /*
+      The iframe intentionally uses VIDEO_ID as a placeholder.
+
+      Replace VIDEO_ID in the iframe above with the ID of your
+      actual Dayront YouTube tutorial.
+
+      Example:
+      https://www.youtube.com/embed/abc123
+    */
+
+    if (!tutorialPlayer) return;
+
+    tutorialPlaceholder?.classList.add('video-hidden');
+    tutorialPlayer.classList.add('active');
+  });
+
+  // ----------------------------------------------------------
+  // Floating privacy/status message
+  // ----------------------------------------------------------
+
+  const privacyToast = document.getElementById('privacy-toast');
+
+  let toastTimeout;
+
+  function showPrivacyToast() {
+    if (!privacyToast) return;
+
+    privacyToast.classList.add('visible');
+
+    clearTimeout(toastTimeout);
+
+    toastTimeout = setTimeout(() => {
+      privacyToast.classList.remove('visible');
     }, 3500);
   }
 
-  let lastPrivacyScroll = 0;
+  let lastScroll = window.scrollY;
 
   window.addEventListener(
     'scroll',
     () => {
-      const current = window.scrollY;
+      const currentScroll = window.scrollY;
 
-      if (Math.abs(current - lastPrivacyScroll) > 120) {
-        showPrivacyStatus();
-        lastPrivacyScroll = current;
+      if (Math.abs(currentScroll - lastScroll) > 180) {
+        showPrivacyToast();
+        lastScroll = currentScroll;
       }
     },
     { passive: true }
   );
 
-  // Make the demo drop zone respond visually in real time.
-  const dropzone = document.getElementById('demo-dropzone');
+  // ----------------------------------------------------------
+  // Live chart movement
+  // ----------------------------------------------------------
 
-  if (dropzone) {
-    ['dragenter', 'dragover'].forEach((eventName) => {
-      dropzone.addEventListener(eventName, (event) => {
-        event.preventDefault();
-        dropzone.classList.add('border-sky', 'scale-[1.01]');
+  const loadValue = document.getElementById('load-value');
+
+  let load = 68;
+
+  setInterval(() => {
+    if (!loadValue) return;
+
+    const change = Math.floor(Math.random() * 9) - 4;
+
+    load = Math.max(42, Math.min(88, load + change));
+
+    loadValue.textContent = `${load}%`;
+  }, 1800);
+
+  // ----------------------------------------------------------
+  // Smooth FAQ interaction
+  // ----------------------------------------------------------
+
+  const faqItems = document.querySelectorAll('.faq-item');
+
+  faqItems.forEach((item) => {
+    item.addEventListener('toggle', () => {
+      if (!item.open) return;
+
+      faqItems.forEach((other) => {
+        if (other !== item) {
+          other.removeAttribute('open');
+        }
       });
     });
+  });
 
-    ['dragleave', 'drop'].forEach((eventName) => {
-      dropzone.addEventListener(eventName, (event) => {
-        event.preventDefault();
-        dropzone.classList.remove('border-sky', 'scale-[1.01]');
-      });
+  // ----------------------------------------------------------
+  // Small mouse movement effect for dashboard
+  // ----------------------------------------------------------
+
+  const dashboard = document.querySelector('.hero-dashboard');
+
+  if (dashboard && window.matchMedia('(pointer:fine)').matches) {
+    dashboard.addEventListener('mousemove', (event) => {
+      const rect = dashboard.getBoundingClientRect();
+
+      const x = (event.clientX - rect.left) / rect.width - 0.5;
+      const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+      dashboard.style.transform =
+        `perspective(1600px) rotateX(${2 - y * 2}deg) rotateY(${x * 2}deg) translateY(-3px)`;
+    });
+
+    dashboard.addEventListener('mouseleave', () => {
+      dashboard.style.transform =
+        'perspective(1600px) rotateX(2deg)';
     });
   }
 </script>
