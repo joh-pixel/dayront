@@ -279,12 +279,12 @@ const workflow = [
 
         <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 reveal reveal-delay-3">
           <a href="/tools" class="premium-button primary-button">
-            <span>Explore all tools</span>
+            <span>Explore Tools</span>
             <span class="button-icon">→</span>
           </a>
 
-          <a href="/convert/mp4-to-mp3" class="premium-button secondary-button">
-            <span>Try MP4 → MP3</span>
+          <a href="/blog" class="premium-button secondary-button">
+            <span>Read Blog</span>
             <span class="button-icon">↗</span>
           </a>
         </div>
@@ -441,6 +441,44 @@ const workflow = [
             </div>
 
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       TERMINAL CLI DEMO
+  ========================================================== -->
+  <section class="cli-section">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="cli-container reveal">
+        <div class="cli-window">
+          <div class="cli-window-bar">
+            <span></span><span></span><span></span>
+            <strong>Dayront CLI</strong>
+          </div>
+          <div class="cli-body">
+            <div class="cli-line">
+              <span class="prompt">$</span>
+              <span class="command typing-animation" id="cli-command"></span>
+              <span class="cursor">|</span>
+            </div>
+            <div class="cli-output" id="cli-output">
+              <div class="progress-bar">
+                <div class="progress-fill"></div>
+              </div>
+              <span class="success">✔ Package installed successfully</span>
+            </div>
+          </div>
+        </div>
+        <div class="cli-copy">
+          <span class="section-kicker">POWER USER</span>
+          <h3>Install the CLI for offline workflows</h3>
+          <p>
+            Run conversions directly from your terminal. One command unlocks
+            batch processing and scripting superpowers.
+          </p>
+          <a href="/blog" class="text-link">Learn more about the CLI →</a>
         </div>
       </div>
     </div>
@@ -668,28 +706,24 @@ const workflow = [
   </section>
 
   <!-- =========================================================
-       EMBEDDED TUTORIAL / VIDEO
+       IMAGE SHOWCASE (replaces old video section)
   ========================================================== -->
-  <section class="video-section">
+  <section class="image-showcase">
     <div class="max-w-6xl mx-auto px-4">
 
-      <div class="video-layout">
+      <div class="showcase-layout">
 
-        <div class="video-copy reveal">
-
+        <div class="showcase-text reveal">
           <span class="section-kicker">WATCH & LEARN</span>
-
           <h2>
             Not sure where to start?
-            <span>Watch it in action.</span>
+            <span>See it in action.</span>
           </h2>
-
           <p>
             Learn the basic Dayront workflow before touching your files.
             Pick a tool, select your media, adjust the options and download
             the finished result.
           </p>
-
           <div class="video-points">
             <div>
               <span>01</span>
@@ -704,65 +738,45 @@ const workflow = [
               <strong>Process and download</strong>
             </div>
           </div>
-
           <a href="/blog" class="text-link">
             Read the tutorials →
           </a>
-
         </div>
 
-        <div class="video-frame reveal">
-
-          <!--
-            Replace the iframe src below with your own YouTube tutorial URL
-            when you publish the Dayront tutorial.
-          -->
-          <div class="video-placeholder">
-
-            <div class="video-background-art">
-              <div class="video-orb orb-one"></div>
-              <div class="video-orb orb-two"></div>
-
-              <div class="video-window">
-                <div class="video-window-top">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+        <div class="showcase-image reveal">
+          <!-- Replace the src below with your own screenshot or illustration -->
+          <div class="image-mockup">
+            <div class="mockup-toolbar">
+              <span></span><span></span><span></span>
+              <small>Dayront Media Converter</small>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-file">
+                <span class="file-icon">🎬</span>
+                <div>
+                  <strong>my-video.mp4</strong>
+                  <small>128.4 MB · 04:32</small>
                 </div>
-
-                <div class="video-window-body">
-                  <div class="fake-wave"></div>
-                  <div class="fake-wave small"></div>
+                <span class="badge">Ready</span>
+              </div>
+              <div class="mockup-arrow">
+                <span>⟶</span>
+                <span class="format-badge">MP4</span>
+                <span class="format-badge output">MP3</span>
+              </div>
+              <div class="mockup-output">
+                <span class="file-icon">🎵</span>
+                <div>
+                  <strong>my-audio.mp3</strong>
+                  <small>320 kbps</small>
                 </div>
+                <span class="badge done">✓</span>
               </div>
             </div>
-
-            <button
-              id="tutorial-play"
-              type="button"
-              class="video-play"
-              aria-label="Play tutorial"
-            >
-              <span>▶</span>
-            </button>
-
-            <div class="video-label">
-              <span>DAYRONT TUTORIAL</span>
-              <strong>How to convert a video in your browser</strong>
+            <div class="mockup-cta">
+              <button disabled>Processing complete</button>
             </div>
-
           </div>
-
-          <div id="tutorial-player" class="hidden-video">
-            <iframe
-              src="https://www.youtube.com/embed/VIDEO_ID"
-              title="Dayront tutorial"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-            ></iframe>
-          </div>
-
         </div>
 
       </div>
@@ -1187,6 +1201,18 @@ const workflow = [
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    position: relative;
+  }
+
+  .gradient-text::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 3s infinite;
   }
 
   .hero-last {
@@ -1658,6 +1684,139 @@ const workflow = [
     font-weight: 800;
   }
 
+  /* TERMINAL CLI */
+
+  .cli-section {
+    padding: 80px 0;
+    background: rgba(14,165,233,.02);
+  }
+
+  :global(.dark) .cli-section {
+    background: rgba(15,23,42,.5);
+  }
+
+  .cli-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
+  }
+
+  .cli-window {
+    border-radius: 18px;
+    overflow: hidden;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    box-shadow: 0 30px 80px rgba(0,0,0,.25);
+    transition: transform .3s ease;
+  }
+
+  .cli-window-bar {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+  }
+
+  .cli-window-bar span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #64748b;
+  }
+
+  .cli-window-bar strong {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .cli-body {
+    padding: 25px 20px;
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    color: #cbd5e1;
+    font-size: 13px;
+  }
+
+  .cli-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .prompt {
+    color: #38bdf8;
+    font-weight: 700;
+  }
+
+  .command {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid transparent;
+    animation: typing 2.5s steps(30, end) forwards;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background: #38bdf8;
+    animation: blink 1s step-end infinite;
+  }
+
+  .cli-output {
+    margin-top: 18px;
+    opacity: 0;
+    animation: fadeInUp .5s 2.6s forwards;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: #1e293b;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    border-radius: 8px;
+    animation: progress 1.5s 2.6s ease forwards;
+  }
+
+  .success {
+    color: #4ade80;
+    font-size: 12px;
+    display: block;
+  }
+
+  .cli-copy .section-kicker {
+    color: #0284c7;
+  }
+
+  .cli-copy h3 {
+    margin: 12px 0 10px;
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  :global(.dark) .cli-copy h3 {
+    color: white;
+  }
+
+  .cli-copy p {
+    color: #64748b;
+    line-height: 1.65;
+    margin-bottom: 15px;
+  }
+
   /* STATS */
 
   .stats-section {
@@ -2073,6 +2232,11 @@ const workflow = [
     letter-spacing: .13em;
   }
 
+  .hint-content h3,
+  .hint-content p {
+    transition: opacity .15s ease;
+  }
+
   .hint-content h3 {
     margin: 3px 0;
     color: #0f172a;
@@ -2204,23 +2368,23 @@ const workflow = [
     margin-top: 38px;
   }
 
-  /* VIDEO */
+  /* IMAGE SHOWCASE (replaces video) */
 
-  .video-section {
+  .image-showcase {
     padding: 110px 0;
     background: #020617;
     color: white;
     overflow: hidden;
   }
 
-  .video-layout {
+  .showcase-layout {
     display: grid;
     grid-template-columns: .85fr 1.15fr;
     gap: 70px;
     align-items: center;
   }
 
-  .video-copy h2 {
+  .showcase-text h2 {
     margin: 0;
     font-size: clamp(2.3rem, 5vw, 4rem);
     line-height: 1;
@@ -2228,12 +2392,12 @@ const workflow = [
     font-weight: 900;
   }
 
-  .video-copy h2 span {
+  .showcase-text h2 span {
     display: block;
     color: #38bdf8;
   }
 
-  .video-copy > p {
+  .showcase-text > p {
     max-width: 520px;
     margin: 24px 0;
     color: #94a3b8;
@@ -2262,166 +2426,132 @@ const workflow = [
     font-size: 12px;
   }
 
-  .video-frame {
-    position: relative;
-    min-height: 400px;
-    overflow: hidden;
+  .showcase-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .image-mockup {
+    background: #0f172a;
     border: 1px solid #1e293b;
     border-radius: 25px;
-    background: #0f172a;
+    overflow: hidden;
+    width: 100%;
+    max-width: 480px;
     box-shadow: 0 30px 90px rgba(0,0,0,.35);
   }
 
-  .video-placeholder {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-  }
-
-  .video-background-art {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background:
-      radial-gradient(circle at 70% 30%, rgba(56,189,248,.18), transparent 30%),
-      radial-gradient(circle at 30% 70%, rgba(14,165,233,.12), transparent 35%),
-      #0f172a;
-  }
-
-  .video-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(50px);
-    animation: floatGlow 6s ease-in-out infinite;
-  }
-
-  .orb-one {
-    width: 180px;
-    height: 180px;
-    background: rgba(14,165,233,.18);
-    top: -50px;
-    right: -30px;
-  }
-
-  .orb-two {
-    width: 140px;
-    height: 140px;
-    background: rgba(250,204,21,.08);
-    bottom: -30px;
-    left: -30px;
-    animation-delay: -3s;
-  }
-
-  .video-window {
-    width: 70%;
-    height: 62%;
-    border: 1px solid #334155;
-    border-radius: 15px;
-    overflow: hidden;
-    background: #020617;
-    transform: rotate(-2deg);
-    box-shadow: 0 25px 70px rgba(0,0,0,.35);
-  }
-
-  .video-window-top {
-    height: 25px;
+  .mockup-toolbar {
+    height: 40px;
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding-left: 10px;
+    gap: 6px;
+    padding: 0 16px;
     border-bottom: 1px solid #1e293b;
+    background: #1e293b;
   }
 
-  .video-window-top span {
-    width: 5px;
-    height: 5px;
+  .mockup-toolbar span {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: #475569;
   }
 
-  .video-window-body {
-    height: calc(100% - 25px);
+  .mockup-toolbar small {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .mockup-body {
+    padding: 24px 20px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    gap: 16px;
+  }
+
+  .mockup-file,
+  .mockup-output {
+    display: flex;
+    align-items: center;
     gap: 12px;
-    padding: 25px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 14px;
   }
 
-  .fake-wave {
-    height: 80px;
-    border-radius: 9px;
-    background:
-      repeating-linear-gradient(
-        90deg,
-        rgba(56,189,248,.8) 0 2px,
-        transparent 2px 8px
-      );
-    opacity: .45;
+  .file-icon {
+    font-size: 22px;
   }
 
-  .fake-wave.small {
-    height: 35px;
-    opacity: .2;
-  }
-
-  .video-play {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 68px;
-    height: 68px;
-    display: grid;
-    place-items: center;
-    transform: translate(-50%,-50%);
-    border: 1px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    color: white;
-    background: rgba(14,165,233,.9);
-    box-shadow: 0 15px 45px rgba(14,165,233,.3);
-    cursor: pointer;
-    transition: .3s ease;
-  }
-
-  .video-play:hover {
-    transform: translate(-50%,-50%) scale(1.1);
-  }
-
-  .video-label {
-    position: absolute;
-    left: 25px;
-    bottom: 22px;
-  }
-
-  .video-label span {
+  .mockup-file strong,
+  .mockup-output strong {
     display: block;
-    color: #38bdf8;
-    font-size: 8px;
-    letter-spacing: .15em;
-    font-weight: 900;
-  }
-
-  .video-label strong {
-    display: block;
-    margin-top: 5px;
     font-size: 12px;
+    color: #f1f5f9;
   }
 
-  .hidden-video {
-    display: none;
-    position: absolute;
-    inset: 0;
+  .mockup-file small,
+  .mockup-output small {
+    color: #64748b;
+    font-size: 10px;
   }
 
-  .hidden-video.active {
-    display: block;
+  .badge {
+    margin-left: auto;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(34,197,94,.1);
+    color: #4ade80;
+    font-size: 9px;
+    font-weight: 800;
   }
 
-  .hidden-video iframe {
+  .badge.done {
+    background: rgba(34,197,94,.15);
+  }
+
+  .mockup-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    color: #64748b;
+    font-size: 24px;
+  }
+
+  .format-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(14,165,233,.08);
+    color: #38bdf8;
+    font-weight: 800;
+    font-size: 11px;
+  }
+
+  .format-badge.output {
+    background: rgba(34,197,94,.08);
+    color: #4ade80;
+  }
+
+  .mockup-cta {
+    padding: 0 20px 20px;
+  }
+
+  .mockup-cta button {
     width: 100%;
-    height: 100%;
-    border: 0;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #0284c7;
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    opacity: 0.5;
+    cursor: default;
   }
 
   /* VISUAL */
@@ -3224,6 +3354,37 @@ const workflow = [
     }
   }
 
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @keyframes blink {
+    from, to { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes progress {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
   /* MOBILE */
 
   @media (max-width: 900px) {
@@ -3236,7 +3397,8 @@ const workflow = [
     }
 
     .charts-grid,
-    .video-layout {
+    .video-layout,
+    .showcase-layout {
       grid-template-columns: 1fr;
     }
 
@@ -3260,7 +3422,7 @@ const workflow = [
       grid-template-columns: 1fr;
     }
 
-    .video-layout {
+    .showcase-layout {
       gap: 40px;
     }
 
@@ -3270,6 +3432,20 @@ const workflow = [
 
     .visual-large {
       grid-row: auto;
+    }
+
+    .cli-container {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+
+    .cli-copy {
+      order: -1;
+      text-align: center;
+    }
+
+    .image-mockup {
+      max-width: 100%;
     }
   }
 
@@ -3374,19 +3550,6 @@ const workflow = [
       align-items: flex-start;
     }
 
-    .video-frame {
-      min-height: 300px;
-    }
-
-    .video-window {
-      width: 80%;
-      height: 55%;
-    }
-
-    .video-copy h2 {
-      font-size: 2.7rem;
-    }
-
     .visual-editor {
       height: 320px;
     }
@@ -3411,6 +3574,14 @@ const workflow = [
       right: 10px;
       left: 10px;
       bottom: 10px;
+    }
+
+    .cli-window {
+      margin: 0 10px;
+    }
+
+    .image-mockup {
+      margin: 0 10px;
     }
   }
 
@@ -3555,31 +3726,6 @@ const workflow = [
   });
 
   // ----------------------------------------------------------
-  // Tutorial player
-  // ----------------------------------------------------------
-
-  const tutorialPlay = document.getElementById('tutorial-play');
-  const tutorialPlaceholder = document.querySelector('.video-placeholder');
-  const tutorialPlayer = document.getElementById('tutorial-player');
-
-  tutorialPlay?.addEventListener('click', () => {
-    /*
-      The iframe intentionally uses VIDEO_ID as a placeholder.
-
-      Replace VIDEO_ID in the iframe above with the ID of your
-      actual Dayront YouTube tutorial.
-
-      Example:
-      https://www.youtube.com/embed/abc123
-    */
-
-    if (!tutorialPlayer) return;
-
-    tutorialPlaceholder?.classList.add('video-hidden');
-    tutorialPlayer.classList.add('active');
-  });
-
-  // ----------------------------------------------------------
   // Floating privacy/status message
   // ----------------------------------------------------------
 
@@ -3631,6 +3777,16 @@ const workflow = [
 
     loadValue.textContent = `${load}%`;
   }, 1800);
+
+  // ----------------------------------------------------------
+  // Terminal CLI typing animation
+  // ----------------------------------------------------------
+
+  const commandEl = document.getElementById('cli-command');
+  if (commandEl) {
+    const command = 'npm install -g @dayront/cli';
+    commandEl.textContent = command;
+  }
 
   // ----------------------------------------------------------
   // Smooth FAQ interaction
