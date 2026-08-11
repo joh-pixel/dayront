@@ -1,52 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'MP4 to MP3 Converter – Extract Audio Free Online | Dayront',
-  metaDescription:
-    'Convert MP4 video to MP3 audio in your browser. No upload, fully private. Fast, free, and works everywhere.',
-  toolName: 'MP4 to MP3 Converter',
-  toolIcon: '🎬',
-  toolConfig: {
-    type: 'convert',
-    from: 'mp4',
-    to: 'mp3',
-    label: 'MP4 to MP3',
-  } as const,
-  howTo: [
-    {
-      title: 'Upload your MP4 video',
-      text: 'Drag & drop an MP4 file into the converter.',
-    },
-    {
-      title: 'Convert to MP3',
-      text: 'The audio track is extracted and encoded as MP3.',
-    },
-    {
-      title: 'Download the MP3',
-      text: 'Get the MP3 file – compatible with all devices.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Does it work with HD videos?',
-      answer: 'Yes, any MP4 video with an audio track is supported.',
-    },
-    {
-      question: 'Is my file uploaded?',
-      answer: 'No, conversion happens entirely on your device.',
-    },
-    {
-      question: 'Can I extract only part of the audio?',
-      answer: 'For trimming, use our Audio Cutter tool after conversion.',
-    },
-  ],
-  relatedTools: [
-    { href: '/convert/mp4-to-wav', icon: '🎬', name: 'MP4 to WAV' },
-    { href: '/convert/webm-to-mp3', icon: '🎬', name: 'WebM to MP3' },
-    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
-  ],
+const tool = {
+  slug: "mp4-to-mp3",
+  name: "MP4 to MP3",
+  metaTitle: "MP4 to MP3 Converter – Extract Audio Free Online | Dayront",
+  metaDescription: "Convert MP4 video to MP3 audio in your browser. No upload, fully private.",
+  icon: "🎬",
+  howTo: [{"title":"Upload MP4 video","text":"Drag & drop MP4."},{"title":"Convert to MP3","text":"Audio extracted."},{"title":"Download MP3","text":"Get audio file."}],
+  faq: [{"question":"HD videos?","answer":"Yes, any MP4 with audio."},{"question":"Uploaded?","answer":"No, conversion is local."},{"question":"Part of audio?","answer":"Use Audio Cutter after."}],
+  relatedTools: [{"href":"/convert/mp4-to-wav","icon":"🎬","name":"MP4 to WAV"},{"href":"/convert/webm-to-mp3","icon":"🎬","name":"WebM to MP3"},{"href":"/tools/audio-cutter","icon":"✂️","name":"Audio Cutter"}],
+  type: "convert",
+  from: "mp4",
+  to: "mp3",
+  outputFormat: undefined,
+  settings: [{"name":"bitrate","label":"Audio bitrate","type":"select","options":["128k","192k","256k","320k"],"default":"192k"}],
+  tutorial: "\n      <h2>Why Convert MP4 to MP3?</h2>\n      <p>Converting MP4 to MP3 is one of the most common audio/video tasks. Our MP4 to MP3 tool makes it effortless and completely private. Whether you need to save space, improve compatibility, or extract audio for editing, this tool does it instantly in your browser.</p>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n        <li><strong>High Quality</strong> – Preserves the best possible quality during conversion.</li>\n      </ul>\n    ",
+  relatedBlogs: [{"slug":"how-to-convert-mp4-to-mp3","title":"How to Convert MP4 to MP3 Online – Private, Fast & Free","categories":["mp4","mp3","audio extraction"]},{"slug":"understanding-audio-formats","title":"Understanding Audio Formats: MP3, WAV, FLAC, OGG, and M4A Explained","categories":["audio formats"]},{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

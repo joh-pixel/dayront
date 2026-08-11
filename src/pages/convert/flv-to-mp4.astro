@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "flv-to-mp4",
+  name: "FLV to MP4",
+  metaTitle: "FLV to MP4 Converter – Free Online | Dayront",
+  metaDescription: "Convert FLV to MP4 in your browser. No upload.",
+  icon: "🎬",
+  howTo: [{"title":"Upload FLV","text":"Select FLV file."},{"title":"Convert","text":"Click convert."},{"title":"Download MP4","text":"Get the MP4 file."}],
+  faq: [],
+  relatedTools: [{"href":"/convert/flv-to-webm","icon":"🎬","name":"FLV to WebM"},{"href":"/convert/mp4-to-mp3","icon":"🎬","name":"MP4 to MP3"}],
+  type: "convert-video",
+  from: "flv",
+  to: "mp4",
+  outputFormat: "mp4",
+  settings: [{"name":"vcodec","label":"Video Codec","type":"select","options":["libx264","copy"],"default":"libx264"},{"name":"acodec","label":"Audio Codec","type":"select","options":["aac","copy"],"default":"aac"}],
+  tutorial: "\n      <h2>Why Convert FLV to MP4?</h2>\n      <p>Converting FLV to MP4 is one of the most common audio/video tasks. Our FLV to MP4 tool makes it effortless and completely private. Whether you need to save space, improve compatibility, or extract audio for editing, this tool does it instantly in your browser.</p>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n        <li><strong>High Quality</strong> – Preserves the best possible quality during conversion.</li>\n      </ul>\n    ",
+  relatedBlogs: [{"slug":"how-to-convert-mp4-to-mp3","title":"How to Convert MP4 to MP3 Online – Private, Fast & Free","categories":["mp4","mp3","audio extraction"]},{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

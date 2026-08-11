@@ -1,19 +1,32 @@
-interface Props {
+interface ProgressBarProps {
   percent: number;
-  label?: string;
+  className?: string;
 }
 
-export default function ProgressBar({ percent, label = 'Processing...' }: Props) {
+export default function ProgressBar({
+  percent,
+  className = '',
+}: ProgressBarProps) {
+  const safePercent = Math.max(
+    0,
+    Math.min(100, Math.round(percent)),
+  );
+
   return (
-    <div class="w-full">
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-sm font-medium">{label}</span>
-        <span class="text-sm font-medium">{percent}%</span>
-      </div>
-      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+    <div
+      class={`w-full ${className}`}
+      role="progressbar"
+      aria-valuenow={safePercent}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-label="Processing progress"
+    >
+      <div class="h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
-          class="bg-lemon h-2 rounded-full transition-all duration-300"
-          style={{ width: `${percent}%` }}
+          class="h-full rounded-full bg-sky-500 transition-[width] duration-300 ease-out dark:bg-sky-400"
+          style={{
+            width: `${safePercent}%`,
+          }}
         />
       </div>
     </div>

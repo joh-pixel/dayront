@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "gif-to-video",
+  name: "GIF to MP4",
+  metaTitle: "GIF to MP4 Converter – Free Online | Dayront",
+  metaDescription: "Turn GIFs into MP4 videos. No upload, private.",
+  icon: "🎞️",
+  howTo: [{"title":"Upload GIF","text":"Select a GIF file."},{"title":"Convert","text":"Click convert."},{"title":"Download MP4","text":"Get the video version."}],
+  faq: [{"question":"Why convert to video?","answer":"MP4 files are often smaller than GIFs and support audio."}],
+  relatedTools: [{"href":"/tools/video-to-gif","icon":"🖼️","name":"Video to GIF"},{"href":"/tools/video-compressor","icon":"📉","name":"Video Compressor"}],
+  type: "gif-to-video",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [],
+  tutorial: "\n    <h2>Using Our GIF to MP4</h2>\n    <p>Our GIF to MP4 tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

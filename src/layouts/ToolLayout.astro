@@ -3,64 +3,102 @@ import BaseLayout from './BaseLayout.astro';
 import AdSlot from '../components/layout/AdSlot.astro';
 import Converter from '../components/conversion/Converter';
 import PrivacyBadge from '../components/ui/PrivacyBadge.astro';
-
-export interface HowToStep {
-  title: string;
-  text: string;
-}
-export interface FAQ {
-  question: string;
-  answer: string;
-}
-export interface RelatedTool {
-  href: string;
-  icon: string;
-  name: string;
-}
+import { tools } from '../lib/tools';
 
 export interface Props {
-  // SEO & content
-  metaTitle: string;
-  metaDescription: string;
-  toolName: string;
-  toolIcon: string;
-  // Converter config
-  toolConfig: {
-    type: 'convert' | 'cut' | 'merge' | 'compress' | 'boost' | 'speed' | 'reverse' | 'stereo-to-mono';
+  toolKey?: string;
+  toolConfig?: {
+    type: string;
     from?: string;
     to?: string;
     outputFormat?: string;
     label: string;
+    settings?: any[];
   };
-  // Page sections
-  howTo: HowToStep[];
-  faq: FAQ[];
-  relatedTools: RelatedTool[];
-  // Optional custom content before/after converter
+  metaTitle?: string;
+  metaDescription?: string;
+  toolName?: string;
+  toolIcon?: string;
+  howTo?: { title: string; text: string }[];
+  faq?: { question: string; answer: string }[];
+  relatedTools?: { href: string; icon: string; name: string }[];
   preConverter?: any;
   postConverter?: any;
+  extraContent?: {
+    tutorial?: string;
+    relatedBlogs?: { slug: string; title: string }[];
+  };
 }
 
 const {
-  metaTitle,
-  metaDescription,
-  toolName,
-  toolIcon,
-  toolConfig,
-  howTo,
-  faq,
-  relatedTools,
+  toolKey,
+  toolConfig: toolConfigProp,
+  metaTitle: metaTitleProp,
+  metaDescription: metaDescriptionProp,
+  toolName: toolNameProp,
+  toolIcon: toolIconProp,
+  howTo: howToProp,
+  faq: faqProp,
+  relatedTools: relatedToolsProp = [],
   preConverter,
   postConverter,
+  extraContent,
 } = Astro.props;
 
-// Build Schema.org data dynamically
+let metaTitle = metaTitleProp || '';
+let metaDescription = metaDescriptionProp || '';
+let toolName = toolNameProp || '';
+let toolIcon = toolIconProp || '';
+let howTo = howToProp || [];
+let faq = faqProp || [];
+let relatedTools = relatedToolsProp || [];
+let toolConfig = toolConfigProp;
+
+if (toolKey) {
+  const toolData = tools.find(t => t.slug === toolKey);
+  if (toolData) {
+    metaTitle = metaTitle || toolData.metaTitle;
+    metaDescription = metaDescription || toolData.metaDescription;
+    toolName = toolName || toolData.name;
+    toolIcon = toolIcon || toolData.icon;
+    howTo = howTo.length > 0 ? howTo : toolData.howTo;
+    faq = faq.length > 0 ? faq : toolData.faq;
+    if (!toolConfig) {
+      toolConfig = {
+        type: toolData.type || 'convert',
+        from: toolData.from,
+        to: toolData.to,
+        outputFormat: toolData.outputFormat,
+        label: toolData.name,
+        settings: toolData.settings || [],
+      };
+    }
+    if (relatedTools.length === 0 && toolData.relatedTools) {
+      relatedTools = toolData.relatedTools
+        .map((slug: string) => {
+          const t = tools.find(tt => tt.slug === slug);
+          if (!t) return null;
+          return {
+            href: t.from && t.to ? `/convert/${t.slug}` : `/tools/${t.slug}`,
+            icon: t.icon,
+            name: t.name,
+          };
+        })
+        .filter(Boolean) as any[];
+    }
+  }
+}
+
+if (!toolConfig) {
+  toolConfig = { type: 'convert', label: toolName || 'Conversion', settings: [] };
+}
+
 const howToSchema = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
   name: toolName,
   description: metaDescription,
-  step: howTo.map((step, i) => ({
+  step: howTo.map((step: any, i: number) => ({
     '@type': 'HowToStep',
     position: i + 1,
     name: step.title,
@@ -71,7 +109,7 @@ const howToSchema = {
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faq.map((q) => ({
+  mainEntity: faq.map((q: any) => ({
     '@type': 'Question',
     name: q.question,
     acceptedAnswer: {
@@ -83,98 +121,124 @@ const faqSchema = {
 ---
 
 <BaseLayout title={metaTitle} description={metaDescription}>
-  <!-- Structured data -->
   <script type="application/ld+json" set:html={JSON.stringify(howToSchema)} />
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
   <section class="max-w-7xl mx-auto px-4 py-8 sm:py-12">
     <!-- Breadcrumbs -->
-    <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
+    <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
       <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
-        <li><a href="/" class="hover:text-lemon transition">Home</a></li>
+        <li><a href="/" class="hover:text-sky transition dark:hover:text-sky">Home</a></li>
         <li aria-hidden="true">/</li>
-        <li><a href="/tools" class="hover:text-lemon transition">Tools</a></li>
+        <li><a href="/tools" class="hover:text-sky transition dark:hover:text-sky">Tools</a></li>
         <li aria-hidden="true">/</li>
         <li class="text-gray-900 dark:text-white font-medium">{toolName}</li>
       </ol>
     </nav>
 
     <div class="lg:grid lg:grid-cols-3 lg:gap-10">
-      <!-- Main column -->
       <div class="lg:col-span-2">
         <!-- Header -->
         <div class="flex items-center gap-3 mb-6">
           <span class="text-3xl">{toolIcon}</span>
-          <h1 class="text-3xl sm:text-4xl font-extrabold">{toolName}</h1>
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white">{toolName}</h1>
         </div>
 
-        <!-- Privacy badge -->
-        <div class="privacy-badge mb-8">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          Your files never leave your device
-        </div>
+        <PrivacyBadge />
 
-        <!-- Optional content before converter -->
         {preConverter && <div class="mb-6">{preConverter}</div>}
 
-        <!-- The functional converter island -->
         <Converter client:load toolConfig={toolConfig} />
 
-        <!-- Optional content after converter -->
         {postConverter && <div class="mt-6">{postConverter}</div>}
 
-        <!-- Below‑tool advertisement slot -->
         <AdSlot position="below-tool" class="my-10" />
-      
 
-        <!-- How‑to steps -->
-        <section class="mt-16">
-          <h2 class="text-2xl font-bold mb-6">How to use {toolName}</h2>
-          <ol class="space-y-6">
-            {howTo.map((step, i) => (
-              <li class="flex gap-4">
-                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-lemon text-black font-bold flex items-center justify-center text-sm">
-                  {i + 1}
-                </span>
+        {howTo.length > 0 && (
+          <section class="mt-16">
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">How to use {toolName}</h2>
+            <ol class="space-y-6">
+              {howTo.map((step: any, i: number) => (
+                <li class="flex gap-4">
+                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-sky text-black font-bold flex items-center justify-center text-sm">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <h3 class="font-semibold text-lg text-black dark:text-white">{step.title}</h3>
+                    <p class="text-gray-600 dark:text-white">{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {faq.length > 0 && (
+          <section class="mt-16">
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Frequently Asked Questions</h2>
+            <dl class="space-y-6">
+              {faq.map((q: any) => (
                 <div>
-                  <h3 class="font-semibold text-lg">{step.title}</h3>
-                  <p class="text-gray-600 dark:text-gray-400">{step.text}</p>
+                  <dt class="font-semibold text-lg text-black dark:text-white mb-2">{q.question}</dt>
+                  <dd class="text-gray-600 dark:text-white">{q.answer}</dd>
                 </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+              ))}
+            </dl>
+          </section>
+        )}
 
-        <!-- FAQ -->
-        <section class="mt-16">
-          <h2 class="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
-          <dl class="space-y-6">
-            {faq.map((q) => (
-              <div>
-                <dt class="font-semibold text-lg mb-2">{q.question}</dt>
-                <dd class="text-gray-600 dark:text-gray-400">{q.answer}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        {extraContent?.tutorial && (
+          <section class="mt-16 prose dark:prose-invert max-w-none" set:html={extraContent.tutorial} />
+        )}
+
+        {extraContent?.relatedBlogs && extraContent.relatedBlogs.length > 0 && (
+          <section class="mt-16">
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Related Articles</h2>
+            <div class="grid sm:grid-cols-2 gap-4">
+              {extraContent.relatedBlogs.map((post: any) => (
+                <a
+                  href={`/blog/${post.slug}`}
+                  class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 hover:border-sky transition"
+                >
+                  <h3 class="font-semibold text-black dark:text-white text-sm">{post.title}</h3>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ──────────── RELATED TOOLS (visible on all devices) ──────────── */}
+        {relatedTools.length > 0 && (
+          <section class="mt-16">
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Related Tools</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {relatedTools.map((tool: any) => (
+                <a
+                  href={tool.href}
+                  class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 hover:border-sky transition flex flex-col items-start gap-2"
+                >
+                  <span class="text-2xl">{tool.icon}</span>
+                  <span class="text-sm font-medium text-black dark:text-white">{tool.name}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
-      <!-- Sidebar: Related Tools (desktop) -->
+      <!-- Sidebar (desktop) -->
       <aside class="hidden lg:block space-y-8">
         <div class="sticky top-24">
-          <!-- Third ad slot will go here later (in‑content for blog), 
-               but sidebar can optionally have an ad if you like.
-               For now we leave it clean. -->
-          <h3 class="text-lg font-semibold mb-4">Related Tools</h3>
+          <h3 class="text-lg font-semibold text-black dark:text-white mb-4">Related Tools</h3>
           <ul class="space-y-2">
-            {relatedTools.map((tool) => (
+            {relatedTools.map((tool: any) => (
               <li>
                 <a
                   href={tool.href}
                   class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <span>{tool.icon}</span>
-                  <span class="text-sm font-medium">{tool.name}</span>
+                  <span class="text-sm font-medium text-black dark:text-white">{tool.name}</span>
                 </a>
               </li>
             ))}

@@ -1,54 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'Audio Merger – Combine Audio Files Online Free | Dayront',
-  metaDescription:
-    'Merge multiple audio tracks into one file. Supports MP3, WAV, M4A, and more. No upload, fully private.',
-  toolName: 'Audio Merger',
-  toolIcon: '🔗',
-  toolConfig: {
-    type: 'merge',
-    outputFormat: 'mp3',
-    label: 'Audio Merger',
-  } as const,
-  howTo: [
-    {
-      title: 'Upload your audio files',
-      text: 'Select two or more audio files from your device.',
-    },
-    {
-      title: 'Arrange the order',
-      text: 'Drag the clips to set the playback sequence.',
-    },
-    {
-      title: 'Merge & download',
-      text: 'Click "Merge" and your combined file will be ready.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Can I merge different formats?',
-      answer:
-        'Yes, you can mix MP3, WAV, M4A, and more in the same merge.',
-    },
-    {
-      question: 'Is the quality preserved?',
-      answer:
-        'Absolutely. We avoid unnecessary re‑encoding to keep quality high.',
-    },
-    {
-      question: 'Is there a file size limit?',
-      answer:
-        'No hard limit; performance depends on your device’s memory.',
-    },
-  ],
-  relatedTools: [
-    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
-    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
-    { href: '/convert/wav-to-mp3', icon: '🎵', name: 'WAV to MP3' },
-  ],
+const tool = {
+  slug: "audio-merger",
+  name: "Audio Merger",
+  metaTitle: "Audio Merger – Combine Audio Files Online Free | Dayront",
+  metaDescription: "Merge multiple audio tracks into one file. Supports MP3, WAV, M4A, and more.",
+  icon: "🔗",
+  howTo: [{"title":"Upload your audio files","text":"Select two or more files."},{"title":"Arrange the order","text":"Drag to set playback sequence."},{"title":"Merge and download","text":"Get your combined file."}],
+  faq: [{"question":"Can I merge different formats?","answer":"Yes, mix MP3, WAV, M4A, etc."},{"question":"Is quality preserved?","answer":"Yes, we avoid unnecessary re-encoding."},{"question":"Is there a file size limit?","answer":"No hard limit."}],
+  relatedTools: [{"href":"/tools/audio-cutter","icon":"✂️","name":"Audio Cutter"},{"href":"/tools/audio-compressor","icon":"📦","name":"Audio Compressor"},{"href":"/convert/wav-to-mp3","icon":"🎵","name":"WAV to MP3"}],
+  type: "merge",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [],
+  tutorial: "\n    <h2>Using Our Audio Merger</h2>\n    <p>Our Audio Merger tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

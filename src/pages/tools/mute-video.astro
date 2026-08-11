@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "mute-video",
+  name: "Mute Video",
+  metaTitle: "Mute Video – Remove Audio Online Free | Dayront",
+  metaDescription: "Mute MP4, WebM, MOV videos. No upload, private.",
+  icon: "🔇",
+  howTo: [{"title":"Upload video","text":"Choose a video."},{"title":"Mute","text":"Click convert."},{"title":"Download silent video","text":"Get the video without audio."}],
+  faq: [],
+  relatedTools: [{"href":"/tools/extract-audio","icon":"🎧","name":"Extract Audio"},{"href":"/tools/video-compressor","icon":"📉","name":"Video Compressor"}],
+  type: "mute-video",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [],
+  tutorial: "\n    <h2>Using Our Mute Video</h2>\n    <p>Our Mute Video tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

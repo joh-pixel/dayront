@@ -1,52 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'MP4 to WAV Converter – Extract Audio Free Online | Dayront',
-  metaDescription:
-    'Convert MP4 video to WAV audio in your browser. No upload, fully private. Get lossless audio for editing.',
-  toolName: 'MP4 to WAV Converter',
-  toolIcon: '🎬',
-  toolConfig: {
-    type: 'convert',
-    from: 'mp4',
-    to: 'wav',
-    label: 'MP4 to WAV',
-  } as const,
-  howTo: [
-    {
-      title: 'Choose your MP4 video',
-      text: 'Drag & drop an MP4 file into the converter.',
-    },
-    {
-      title: 'Extract audio as WAV',
-      text: 'Our engine strips the audio track and outputs an uncompressed WAV.',
-    },
-    {
-      title: 'Download the WAV',
-      text: 'Save the high‑quality audio to your device.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Why convert MP4 to WAV?',
-      answer: 'WAV files are ideal for audio editing, mixing, or archiving without quality loss.',
-    },
-    {
-      question: 'Does it work with large files?',
-      answer: 'Yes, though processing time depends on your device’s speed.',
-    },
-    {
-      question: 'Is my file safe?',
-      answer: 'Absolutely – everything stays on your computer.',
-    },
-  ],
-  relatedTools: [
-    { href: '/convert/mp4-to-mp3', icon: '🎬', name: 'MP4 to MP3' },
-    { href: '/convert/webm-to-wav', icon: '🎬', name: 'WebM to WAV' },
-    { href: '/tools/volume-booster', icon: '🔊', name: 'Volume Booster' },
-  ],
+const tool = {
+  slug: "mp4-to-wav",
+  name: "MP4 to WAV",
+  metaTitle: "MP4 to WAV Converter – Extract Audio Free Online | Dayront",
+  metaDescription: "Convert MP4 video to WAV audio in your browser. No upload, fully private.",
+  icon: "🎬",
+  howTo: [{"title":"Choose MP4 video","text":"Select MP4."},{"title":"Extract WAV","text":"Uncompressed audio."},{"title":"Download WAV","text":"Save high-quality audio."}],
+  faq: [{"question":"Why WAV?","answer":"Ideal for editing and archiving."},{"question":"Large files?","answer":"Yes, depends on device speed."},{"question":"Safe?","answer":"Everything stays on your computer."}],
+  relatedTools: [{"href":"/convert/mp4-to-mp3","icon":"🎬","name":"MP4 to MP3"},{"href":"/convert/webm-to-wav","icon":"🎬","name":"WebM to WAV"},{"href":"/tools/volume-booster","icon":"🔊","name":"Volume Booster"}],
+  type: "convert",
+  from: "mp4",
+  to: "wav",
+  outputFormat: undefined,
+  settings: [],
+  tutorial: "\n      <h2>Why Convert MP4 to WAV?</h2>\n      <p>Converting MP4 to WAV is one of the most common audio/video tasks. Our MP4 to WAV tool makes it effortless and completely private. Whether you need to save space, improve compatibility, or extract audio for editing, this tool does it instantly in your browser.</p>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n        <li><strong>High Quality</strong> – Preserves the best possible quality during conversion.</li>\n      </ul>\n    ",
+  relatedBlogs: [{"slug":"how-to-convert-mp4-to-mp3","title":"How to Convert MP4 to MP3 Online – Private, Fast & Free","categories":["mp4","mp3","audio extraction"]},{"slug":"understanding-audio-formats","title":"Understanding Audio Formats: MP3, WAV, FLAC, OGG, and M4A Explained","categories":["audio formats"]},{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

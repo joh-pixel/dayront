@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "ape-to-mp3",
+  name: "APE to MP3",
+  metaTitle: "APE to MP3 Converter – Free Online | Dayront",
+  metaDescription: "Convert APE files to MP3 in your browser. No upload, private.",
+  icon: "🎵",
+  howTo: [{"title":"Upload APE file","text":"Select an APE audio file."},{"title":"Convert","text":"Click convert."},{"title":"Download MP3","text":"Get the MP3 file."}],
+  faq: [],
+  relatedTools: [{"href":"/convert/flac-to-mp3","icon":"🎵","name":"FLAC to MP3"},{"href":"/convert/wav-to-mp3","icon":"🎵","name":"WAV to MP3"}],
+  type: "convert",
+  from: "ape",
+  to: "mp3",
+  outputFormat: undefined,
+  settings: [{"name":"bitrate","label":"Bitrate","type":"select","options":["128k","192k","256k","320k"],"default":"192k"}],
+  tutorial: "\n      <h2>Why Convert APE to MP3?</h2>\n      <p>Converting APE to MP3 is one of the most common audio/video tasks. Our APE to MP3 tool makes it effortless and completely private. Whether you need to save space, improve compatibility, or extract audio for editing, this tool does it instantly in your browser.</p>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n        <li><strong>High Quality</strong> – Preserves the best possible quality during conversion.</li>\n      </ul>\n    ",
+  relatedBlogs: [{"slug":"how-to-convert-mp4-to-mp3","title":"How to Convert MP4 to MP3 Online – Private, Fast & Free","categories":["mp4","mp3","audio extraction"]},{"slug":"understanding-audio-formats","title":"Understanding Audio Formats: MP3, WAV, FLAC, OGG, and M4A Explained","categories":["audio formats"]},{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

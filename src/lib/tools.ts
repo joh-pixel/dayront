@@ -8,22 +8,36 @@ export interface HowToStep {
   text: string;
 }
 
+export interface SettingDef {
+  name: string;
+  label: string;
+  type: 'range' | 'number' | 'select';
+  min?: number;
+  max?: number;
+  options?: string[];
+  default: string | number;
+}
+
 export interface Tool {
   slug: string;
   name: string;
-  category: 'audio-utility' | 'audio-conversion' | 'video-to-audio';
+  category: 'audio-utility' | 'audio-conversion' | 'video-to-audio' | 'video-utility' | 'video-conversion';
   from?: string;
   to?: string;
   description: string;
   metaTitle: string;
   metaDescription: string;
   icon: string;
+  type?: string;
+  outputFormat?: string;
+  settings?: SettingDef[];
   faq: FAQ[];
   howTo: HowToStep[];
   relatedTools: string[];
 }
 
 export const tools: Tool[] = [
+  // ── AUDIO UTILITIES ──────────────────────
   {
     slug: 'audio-cutter',
     name: 'Audio Cutter',
@@ -32,6 +46,12 @@ export const tools: Tool[] = [
     metaTitle: 'Audio Cutter – Trim MP3, WAV Online Free | Dayront',
     metaDescription: 'Cut audio files online without uploading. Trim MP3, WAV, M4A, and more. 100% private.',
     icon: '✂️',
+    type: 'cut',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'start', label: 'Start time (seconds)', type: 'number', min: 0, default: 0 },
+      { name: 'duration', label: 'Duration (seconds)', type: 'number', min: 1, default: 30 },
+    ],
     faq: [
       { question: 'Is it really free?', answer: 'Yes, completely free.' },
       { question: 'Do my files leave my device?', answer: 'No, processing is local.' },
@@ -52,6 +72,8 @@ export const tools: Tool[] = [
     metaTitle: 'Audio Merger – Combine Audio Files Online Free | Dayront',
     metaDescription: 'Merge multiple audio tracks into one file. Supports MP3, WAV, M4A, and more.',
     icon: '🔗',
+    type: 'merge',
+    outputFormat: 'mp3',
     faq: [
       { question: 'Can I merge different formats?', answer: 'Yes, mix MP3, WAV, M4A, etc.' },
       { question: 'Is quality preserved?', answer: 'Yes, we avoid unnecessary re-encoding.' },
@@ -72,6 +94,11 @@ export const tools: Tool[] = [
     metaTitle: 'Audio Compressor – Reduce Audio File Size Online | Dayront',
     metaDescription: 'Compress MP3, WAV, M4A files in your browser. No uploads, 100% private.',
     icon: '📦',
+    type: 'compress',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'quality', label: 'Quality (0 best, 9 smallest)', type: 'range', min: 0, max: 9, default: 3 },
+    ],
     faq: [
       { question: 'Will quality suffer?', answer: 'Smart compression keeps audio clear.' },
       { question: 'Is my file safe?', answer: 'Everything happens on your device.' },
@@ -92,6 +119,11 @@ export const tools: Tool[] = [
     metaTitle: 'Volume Booster – Increase Audio Volume Online Free | Dayront',
     metaDescription: 'Make audio files louder instantly. No upload, 100% private.',
     icon: '🔊',
+    type: 'boost',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'gain', label: 'Gain (dB)', type: 'number', min: 1, max: 20, default: 6 },
+    ],
     faq: [
       { question: 'Will it distort?', answer: 'No, we prevent clipping.' },
       { question: 'How much louder?', answer: '+6 dB by default.' },
@@ -112,6 +144,11 @@ export const tools: Tool[] = [
     metaTitle: 'Audio Speed Changer – Change Playback Speed Online Free | Dayront',
     metaDescription: 'Speed up or slow down audio files in your browser. No upload, 100% private.',
     icon: '⏩',
+    type: 'speed',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'factor', label: 'Speed factor', type: 'number', min: 0.25, max: 4, default: 1.5 },
+    ],
     faq: [
       { question: 'Does it affect pitch?', answer: 'We preserve original pitch.' },
       { question: 'What speeds?', answer: 'From 0.25× to 4×.' },
@@ -132,6 +169,8 @@ export const tools: Tool[] = [
     metaTitle: 'Reverse Audio – Play Audio Backwards Free Online | Dayront',
     metaDescription: 'Reverse audio files online. No upload needed. 100% private.',
     icon: '↩️',
+    type: 'reverse',
+    outputFormat: 'mp3',
     faq: [
       { question: 'What does reversing do?', answer: 'Plays sound backwards.' },
       { question: 'Long files?', answer: 'Yes, depends on device speed.' },
@@ -152,6 +191,8 @@ export const tools: Tool[] = [
     metaTitle: 'Stereo to Mono Converter – Free Online Tool | Dayront',
     metaDescription: 'Convert stereo audio to mono instantly. No upload, 100% private.',
     icon: '🔉',
+    type: 'stereo-to-mono',
+    outputFormat: 'mp3',
     faq: [
       { question: 'Why convert to mono?', answer: 'Smaller files, same audio in both ears.' },
       { question: 'Quality lost?', answer: 'Combined signal preserves clarity.' },
@@ -164,16 +205,18 @@ export const tools: Tool[] = [
     ],
     relatedTools: ['audio-cutter', 'volume-booster', 'mp3-to-wav'],
   },
+
+  // ── AUDIO CONVERSIONS ─────────────────────
   {
     slug: 'mp3-to-wav',
     name: 'MP3 to WAV',
     category: 'audio-conversion',
-    from: 'mp3',
-    to: 'wav',
+    from: 'mp3', to: 'wav',
     description: 'Convert MP3 to lossless WAV format.',
     metaTitle: 'MP3 to WAV Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert MP3 to lossless WAV in your browser. No upload, 100% private.',
     icon: '🎵',
+    type: 'convert',
     faq: [
       { question: 'Does it improve quality?', answer: 'No, preserves original MP3 quality.' },
       { question: 'Why convert to WAV?', answer: 'Preferred for editing and archiving.' },
@@ -190,12 +233,15 @@ export const tools: Tool[] = [
     slug: 'wav-to-mp3',
     name: 'WAV to MP3',
     category: 'audio-conversion',
-    from: 'wav',
-    to: 'mp3',
+    from: 'wav', to: 'mp3',
     description: 'Convert WAV to MP3 format.',
     metaTitle: 'WAV to MP3 Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert WAV to MP3 in your browser. No upload, fully private.',
     icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'How much smaller?', answer: '5-10× smaller than WAV.' },
       { question: 'Will I hear difference?', answer: 'At 320kbps, indistinguishable.' },
@@ -212,12 +258,15 @@ export const tools: Tool[] = [
     slug: 'm4a-to-mp3',
     name: 'M4A to MP3',
     category: 'audio-conversion',
-    from: 'm4a',
-    to: 'mp3',
+    from: 'm4a', to: 'mp3',
     description: 'Convert M4A audio to MP3 format.',
     metaTitle: 'M4A to MP3 Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert M4A to MP3 in your browser. No upload, fully private.',
     icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'Why convert?', answer: 'MP3 is more widely supported.' },
       { question: 'File size?', answer: 'Similar, high-quality MP3 bitrate.' },
@@ -234,12 +283,12 @@ export const tools: Tool[] = [
     slug: 'mp3-to-m4a',
     name: 'MP3 to M4A',
     category: 'audio-conversion',
-    from: 'mp3',
-    to: 'm4a',
+    from: 'mp3', to: 'm4a',
     description: 'Convert MP3 to M4A (AAC) format.',
     metaTitle: 'MP3 to M4A Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert MP3 to M4A in your browser. Keep quality, reduce size.',
     icon: '🎵',
+    type: 'convert',
     faq: [
       { question: 'Why M4A?', answer: 'Better quality at same bitrate, ideal for Apple.' },
       { question: 'Quality loss?', answer: 'Minimal, high-bitrate AAC encoder.' },
@@ -256,12 +305,15 @@ export const tools: Tool[] = [
     slug: 'flac-to-mp3',
     name: 'FLAC to MP3',
     category: 'audio-conversion',
-    from: 'flac',
-    to: 'mp3',
+    from: 'flac', to: 'mp3',
     description: 'Convert FLAC audio to MP3.',
     metaTitle: 'FLAC to MP3 Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert FLAC to MP3 in your browser. 100% private, fast and free.',
     icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'Will I lose quality?', answer: 'High-quality 320kbps encoding.' },
       { question: 'Safe?', answer: 'Everything on your device.' },
@@ -278,12 +330,15 @@ export const tools: Tool[] = [
     slug: 'ogg-to-mp3',
     name: 'OGG to MP3',
     category: 'audio-conversion',
-    from: 'ogg',
-    to: 'mp3',
+    from: 'ogg', to: 'mp3',
     description: 'Convert OGG audio to MP3 format.',
     metaTitle: 'OGG to MP3 Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert OGG to MP3 in your browser. No upload, fully private.',
     icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'Why convert?', answer: 'MP3 is more widely supported.' },
       { question: 'File size change?', answer: 'Slightly larger at high bitrate.' },
@@ -300,12 +355,12 @@ export const tools: Tool[] = [
     slug: 'mp3-to-ogg',
     name: 'MP3 to OGG',
     category: 'audio-conversion',
-    from: 'mp3',
-    to: 'ogg',
+    from: 'mp3', to: 'ogg',
     description: 'Convert MP3 to OGG Vorbis format.',
     metaTitle: 'MP3 to OGG Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Convert MP3 to OGG in your browser. No upload, completely private.',
     icon: '🎵',
+    type: 'convert',
     faq: [
       { question: 'Why OGG?', answer: 'Open format, excellent quality.' },
       { question: 'Quality lost?', answer: 'Minimal with high-quality settings.' },
@@ -319,15 +374,125 @@ export const tools: Tool[] = [
     relatedTools: ['ogg-to-mp3', 'mp3-to-wav', 'audio-compressor'],
   },
   {
+    slug: 'ape-to-mp3',
+    name: 'APE to MP3',
+    category: 'audio-conversion',
+    from: 'ape', to: 'mp3',
+    description: 'Convert APE lossless audio to MP3.',
+    metaTitle: 'APE to MP3 Converter – Free Online | Dayront',
+    metaDescription: 'Convert APE files to MP3 in your browser. No upload, private.',
+    icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload APE file', text: 'Select an APE audio file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP3', text: 'Get the MP3 file.' },
+    ],
+    relatedTools: ['flac-to-mp3', 'wav-to-mp3', 'audio-cutter'],
+  },
+  {
+    slug: 'opus-to-mp3',
+    name: 'OPUS to MP3',
+    category: 'audio-conversion',
+    from: 'opus', to: 'mp3',
+    description: 'Convert OPUS audio to MP3 format.',
+    metaTitle: 'OPUS to MP3 Converter – Free Online | Dayront',
+    metaDescription: 'Convert OPUS to MP3 in your browser. No upload.',
+    icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload OPUS file', text: 'Select an OPUS audio file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP3', text: 'Get the MP3 file.' },
+    ],
+    relatedTools: ['ogg-to-mp3', 'flac-to-mp3', 'mp3-to-wav'],
+  },
+  {
+    slug: 'aiff-to-mp3',
+    name: 'AIFF to MP3',
+    category: 'audio-conversion',
+    from: 'aiff', to: 'mp3',
+    description: 'Convert AIFF audio to MP3.',
+    metaTitle: 'AIFF to MP3 Converter – Free Online | Dayront',
+    metaDescription: 'Convert AIFF files to MP3 in your browser. No upload.',
+    icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload AIFF file', text: 'Select an AIFF audio file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP3', text: 'Get the MP3 file.' },
+    ],
+    relatedTools: ['wav-to-mp3', 'flac-to-mp3', 'mp3-to-m4a'],
+  },
+  {
+    slug: 'aac-to-mp3',
+    name: 'AAC to MP3',
+    category: 'audio-conversion',
+    from: 'aac', to: 'mp3',
+    description: 'Convert AAC audio to MP3.',
+    metaTitle: 'AAC to MP3 Converter – Free Online | Dayront',
+    metaDescription: 'Convert AAC to MP3 in your browser. No upload.',
+    icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload AAC file', text: 'Select an AAC audio file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP3', text: 'Get the MP3 file.' },
+    ],
+    relatedTools: ['m4a-to-mp3', 'wav-to-mp3', 'volume-booster'],
+  },
+  {
+    slug: 'amr-to-mp3',
+    name: 'AMR to MP3',
+    category: 'audio-conversion',
+    from: 'amr', to: 'mp3',
+    description: 'Convert AMR audio (voice recordings) to MP3.',
+    metaTitle: 'AMR to MP3 Converter – Free Online | Dayront',
+    metaDescription: 'Convert AMR files to MP3 in your browser. No upload.',
+    icon: '🎵',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload AMR file', text: 'Select an AMR audio file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP3', text: 'Get the MP3 file.' },
+    ],
+    relatedTools: ['wav-to-mp3', 'aac-to-mp3', 'mp3-to-ogg'],
+  },
+
+  // ── VIDEO TO AUDIO ────────────────────────
+  {
     slug: 'mp4-to-mp3',
     name: 'MP4 to MP3',
     category: 'video-to-audio',
-    from: 'mp4',
-    to: 'mp3',
+    from: 'mp4', to: 'mp3',
     description: 'Extract MP3 audio from MP4 videos.',
     metaTitle: 'MP4 to MP3 Converter – Extract Audio Free Online | Dayront',
     metaDescription: 'Convert MP4 video to MP3 audio in your browser. No upload, fully private.',
     icon: '🎬',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Audio bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'HD videos?', answer: 'Yes, any MP4 with audio.' },
       { question: 'Uploaded?', answer: 'No, conversion is local.' },
@@ -344,12 +509,15 @@ export const tools: Tool[] = [
     slug: 'mov-to-mp3',
     name: 'MOV to MP3',
     category: 'video-to-audio',
-    from: 'mov',
-    to: 'mp3',
+    from: 'mov', to: 'mp3',
     description: 'Extract MP3 audio from MOV videos.',
     metaTitle: 'MOV to MP3 Converter – Extract Audio Free Online | Dayront',
     metaDescription: 'Convert MOV video to MP3 audio in your browser. No upload, 100% private.',
     icon: '🎬',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'iPhone videos?', answer: 'Yes, fully compatible.' },
       { question: 'Quality loss?', answer: 'High-quality encoder.' },
@@ -366,12 +534,15 @@ export const tools: Tool[] = [
     slug: 'mkv-to-mp3',
     name: 'MKV to MP3',
     category: 'video-to-audio',
-    from: 'mkv',
-    to: 'mp3',
+    from: 'mkv', to: 'mp3',
     description: 'Extract MP3 audio from MKV videos.',
     metaTitle: 'MKV to MP3 Converter – Extract Audio Free Online | Dayront',
     metaDescription: 'Convert MKV video to MP3 audio in your browser. No upload, completely private.',
     icon: '🎬',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'Multi-channel?', answer: 'Downmixed to stereo.' },
       { question: 'Subtitles?', answer: 'Ignored.' },
@@ -388,12 +559,15 @@ export const tools: Tool[] = [
     slug: 'avi-to-mp3',
     name: 'AVI to MP3',
     category: 'video-to-audio',
-    from: 'avi',
-    to: 'mp3',
+    from: 'avi', to: 'mp3',
     description: 'Extract MP3 audio from AVI videos.',
     metaTitle: 'AVI to MP3 Converter – Extract Audio Free Online | Dayront',
     metaDescription: 'Convert AVI video to MP3 audio in your browser. No upload, 100% private.',
     icon: '🎬',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'All AVI files?', answer: 'Yes, with audio track.' },
       { question: 'Uploaded?', answer: 'No, local processing.' },
@@ -410,12 +584,15 @@ export const tools: Tool[] = [
     slug: 'webm-to-mp3',
     name: 'WebM to MP3',
     category: 'video-to-audio',
-    from: 'webm',
-    to: 'mp3',
+    from: 'webm', to: 'mp3',
     description: 'Extract MP3 audio from WebM videos.',
     metaTitle: 'WebM to MP3 Converter – Extract MP3 Audio Free Online | Dayront',
     metaDescription: 'Convert WebM video to MP3 audio in your browser. No upload, private, and free.',
     icon: '🎬',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
     faq: [
       { question: 'Audio-only?', answer: 'Yes, works.' },
       { question: 'Bitrate?', answer: 'High-quality VBR.' },
@@ -432,12 +609,12 @@ export const tools: Tool[] = [
     slug: 'mp4-to-wav',
     name: 'MP4 to WAV',
     category: 'video-to-audio',
-    from: 'mp4',
-    to: 'wav',
+    from: 'mp4', to: 'wav',
     description: 'Extract WAV audio from MP4 videos.',
     metaTitle: 'MP4 to WAV Converter – Extract Audio Free Online | Dayront',
     metaDescription: 'Convert MP4 video to WAV audio in your browser. No upload, fully private.',
     icon: '🎬',
+    type: 'convert',
     faq: [
       { question: 'Why WAV?', answer: 'Ideal for editing and archiving.' },
       { question: 'Large files?', answer: 'Yes, depends on device speed.' },
@@ -454,12 +631,12 @@ export const tools: Tool[] = [
     slug: 'webm-to-wav',
     name: 'WebM to WAV',
     category: 'video-to-audio',
-    from: 'webm',
-    to: 'wav',
+    from: 'webm', to: 'wav',
     description: 'Extract WAV audio from WebM videos.',
     metaTitle: 'WebM to WAV Converter – Free Online, No Upload | Dayront',
     metaDescription: 'Extract lossless WAV from WebM files in your browser. No upload, 100% private.',
     icon: '🎬',
+    type: 'convert',
     faq: [
       { question: 'Lossless?', answer: 'WAV preserves original audio.' },
       { question: 'WebM videos?', answer: 'Yes, any WebM with audio.' },
@@ -471,5 +648,300 @@ export const tools: Tool[] = [
       { title: 'Download WAV', text: 'Save for editing.' },
     ],
     relatedTools: ['webm-to-mp3', 'mp4-to-wav', 'audio-cutter'],
+  },
+  {
+    slug: 'flv-to-mp3',
+    name: 'FLV to MP3',
+    category: 'video-to-audio',
+    from: 'flv', to: 'mp3',
+    description: 'Extract MP3 audio from FLV videos.',
+    metaTitle: 'FLV to MP3 Converter – Free Online | Dayront',
+    metaDescription: 'Convert FLV to MP3 in your browser. No upload, private.',
+    icon: '🎬',
+    type: 'convert',
+    settings: [
+      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload FLV file', text: 'Select an FLV video.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP3', text: 'Get the audio.' },
+    ],
+    relatedTools: ['mp4-to-mp3', 'webm-to-mp3', 'flv-to-mp4'],
+  },
+
+  // ── VIDEO CONVERSIONS ─────────────────────
+  {
+    slug: 'flv-to-mp4',
+    name: 'FLV to MP4',
+    category: 'video-conversion',
+    from: 'flv', to: 'mp4',
+    description: 'Convert FLV video to MP4 format.',
+    metaTitle: 'FLV to MP4 Converter – Free Online | Dayront',
+    metaDescription: 'Convert FLV to MP4 in your browser. No upload.',
+    icon: '🎬',
+    type: 'convert-video',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'vcodec', label: 'Video Codec', type: 'select', options: ['libx264','copy'], default: 'libx264' },
+      { name: 'acodec', label: 'Audio Codec', type: 'select', options: ['aac','copy'], default: 'aac' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload FLV', text: 'Select FLV file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP4', text: 'Get the MP4 file.' },
+    ],
+    relatedTools: ['flv-to-webm', 'mp4-to-mp3', 'video-compressor'],
+  },
+  {
+    slug: 'flv-to-webm',
+    name: 'FLV to WebM',
+    category: 'video-conversion',
+    from: 'flv', to: 'webm',
+    description: 'Convert FLV to WebM format.',
+    metaTitle: 'FLV to WebM Converter – Free Online | Dayront',
+    metaDescription: 'Convert FLV to WebM in your browser. No upload.',
+    icon: '🎬',
+    type: 'convert-video',
+    outputFormat: 'webm',
+    settings: [
+      { name: 'vcodec', label: 'Video Codec', type: 'select', options: ['libvpx','copy'], default: 'libvpx' },
+      { name: 'acodec', label: 'Audio Codec', type: 'select', options: ['libvorbis','copy'], default: 'libvorbis' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload FLV', text: 'Select FLV file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download WebM', text: 'Get the WebM file.' },
+    ],
+    relatedTools: ['flv-to-mp4', 'webm-to-mp3', 'video-compressor'],
+  },
+
+  // ── VIDEO UTILITIES ──────────────────────
+  {
+    slug: 'video-compressor',
+    name: 'Video Compressor',
+    category: 'video-utility',
+    description: 'Reduce video file size with adjustable quality.',
+    metaTitle: 'Video Compressor – Reduce Video Size Online Free | Dayront',
+    metaDescription: 'Compress MP4, WebM, MOV files in your browser. Adjust quality and speed. 100% private.',
+    icon: '📉',
+    type: 'video-compress',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'crf', label: 'Quality (0 best, 51 worst)', type: 'range', min: 0, max: 51, default: 23 },
+      { name: 'preset', label: 'Encoding Speed', type: 'select', options: ['ultrafast','superfast','veryfast','faster','fast','medium','slow'], default: 'medium' },
+    ],
+    faq: [
+      { question: 'Will quality be lost?', answer: 'Yes, but you can control the trade‑off with the CRF slider. Lower CRF = better quality, larger file.' },
+      { question: 'Is it really free?', answer: 'Yes, unlimited use.' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Choose an MP4, WebM, or MOV file.' },
+      { title: 'Adjust settings', text: 'Select quality and speed.' },
+      { title: 'Download compressed file', text: 'Get a smaller video instantly.' },
+    ],
+    relatedTools: ['video-cutter', 'resize-video', 'video-to-gif'],
+  },
+  {
+    slug: 'video-cutter',
+    name: 'Video Cutter',
+    category: 'video-utility',
+    description: 'Trim and cut video clips without re‑encoding.',
+    metaTitle: 'Video Cutter – Trim Video Online Free | Dayront',
+    metaDescription: 'Cut MP4, WebM, MOV videos in your browser. No upload, 100% private.',
+    icon: '✂️',
+    type: 'video-cut',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'start', label: 'Start time (seconds)', type: 'number', min: 0, default: 0 },
+      { name: 'duration', label: 'Duration (seconds)', type: 'number', min: 1, default: 30 },
+    ],
+    faq: [
+      { question: 'Does it re‑encode?', answer: 'No, we use stream copy for speed and no quality loss.' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Select a video file.' },
+      { title: 'Set start and duration', text: 'Enter the seconds to keep.' },
+      { title: 'Download the trimmed clip', text: 'Get your cut video instantly.' },
+    ],
+    relatedTools: ['video-compressor', 'video-merger', 'audio-cutter'],
+  },
+  {
+    slug: 'video-merger',
+    name: 'Video Merger',
+    category: 'video-utility',
+    description: 'Combine multiple videos into one file.',
+    metaTitle: 'Video Merger – Combine Videos Online Free | Dayront',
+    metaDescription: 'Merge MP4, WebM, MOV clips in your browser. No upload, private.',
+    icon: '🔗',
+    type: 'video-merge',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [
+      { question: 'Can I merge different formats?', answer: 'Yes, they will be converted to a consistent format automatically.' },
+    ],
+    howTo: [
+      { title: 'Upload video files', text: 'Select two or more videos.' },
+      { title: 'Arrange order', text: 'Drag to reorder.' },
+      { title: 'Merge and download', text: 'Get a single combined video.' },
+    ],
+    relatedTools: ['video-cutter', 'audio-merger', 'video-compressor'],
+  },
+  {
+    slug: 'video-to-gif',
+    name: 'Video to GIF',
+    category: 'video-utility',
+    description: 'Convert a video clip to an animated GIF.',
+    metaTitle: 'Video to GIF Converter – Free Online | Dayront',
+    metaDescription: 'Turn MP4, WebM, MOV into GIFs. Adjust FPS and size. 100% private.',
+    icon: '🖼️',
+    type: 'video-to-gif',
+    outputFormat: 'gif',
+    settings: [
+      { name: 'fps', label: 'Frames per second', type: 'number', min: 1, max: 30, default: 10 },
+      { name: 'width', label: 'Width (pixels)', type: 'number', min: 100, max: 800, default: 320 },
+    ],
+    faq: [
+      { question: 'Will it loop?', answer: 'Yes, GIFs loop infinitely.' },
+    ],
+    howTo: [
+      { title: 'Upload video', text: 'Choose a short video.' },
+      { title: 'Set size and speed', text: 'Adjust width and FPS.' },
+      { title: 'Download GIF', text: 'Get your animated GIF.' },
+    ],
+    relatedTools: ['gif-to-video', 'video-compressor', 'video-cutter'],
+  },
+  {
+    slug: 'gif-to-video',
+    name: 'GIF to MP4',
+    category: 'video-utility',
+    description: 'Convert an animated GIF to an MP4 video.',
+    metaTitle: 'GIF to MP4 Converter – Free Online | Dayront',
+    metaDescription: 'Turn GIFs into MP4 videos. No upload, private.',
+    icon: '🎞️',
+    type: 'gif-to-video',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [
+      { question: 'Why convert to video?', answer: 'MP4 files are often smaller than GIFs and support audio.' },
+    ],
+    howTo: [
+      { title: 'Upload GIF', text: 'Select a GIF file.' },
+      { title: 'Convert', text: 'Click convert.' },
+      { title: 'Download MP4', text: 'Get the video version.' },
+    ],
+    relatedTools: ['video-to-gif', 'video-compressor', 'resize-video'],
+  },
+  {
+    slug: 'resize-video',
+    name: 'Resize Video',
+    category: 'video-utility',
+    description: 'Change video resolution (width/height).',
+    metaTitle: 'Resize Video – Change Resolution Online Free | Dayront',
+    metaDescription: 'Resize MP4, WebM, MOV videos. Set custom width and height. Private.',
+    icon: '↔️',
+    type: 'resize-video',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'width', label: 'Width (pixels)', type: 'number', min: 100, max: 3840, default: 1280 },
+      { name: 'height', label: 'Height (pixels)', type: 'number', min: 100, max: 2160, default: 720 },
+    ],
+    faq: [
+      { question: 'Will it keep aspect ratio?', answer: 'No, it will stretch to the exact dimensions. To maintain aspect ratio, set only width or height and leave the other blank (advanced mode coming soon).' },
+    ],
+    howTo: [
+      { title: 'Upload video', text: 'Choose a file.' },
+      { title: 'Enter new dimensions', text: 'Set width and height.' },
+      { title: 'Download resized video', text: 'Get the video at the new size.' },
+    ],
+    relatedTools: ['crop-video', 'video-compressor', 'video-cutter'],
+  },
+  {
+    slug: 'crop-video',
+    name: 'Crop Video',
+    category: 'video-utility',
+    description: 'Crop a region from a video.',
+    metaTitle: 'Crop Video – Cut Region Online Free | Dayront',
+    metaDescription: 'Crop MP4, WebM, MOV videos. Specify X, Y, width, height. Private.',
+    icon: '🔲',
+    type: 'crop-video',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'x', label: 'X offset', type: 'number', min: 0, default: 0 },
+      { name: 'y', label: 'Y offset', type: 'number', min: 0, default: 0 },
+      { name: 'w', label: 'Width', type: 'number', min: 1, default: 640 },
+      { name: 'h', label: 'Height', type: 'number', min: 1, default: 480 },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload video', text: 'Select a file.' },
+      { title: 'Set crop area', text: 'Enter coordinates and size.' },
+      { title: 'Download cropped video', text: 'Get the selected region.' },
+    ],
+    relatedTools: ['resize-video', 'video-cutter', 'video-compressor'],
+  },
+  {
+    slug: 'change-fps',
+    name: 'Change FPS',
+    category: 'video-utility',
+    description: 'Adjust video frame rate.',
+    metaTitle: 'Change FPS – Adjust Frame Rate Online Free | Dayront',
+    metaDescription: 'Change FPS of MP4, WebM, MOV videos. No upload, private.',
+    icon: '⏱️',
+    type: 'change-fps',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'fps', label: 'New FPS', type: 'number', min: 1, max: 60, default: 30 },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload video', text: 'Select a video.' },
+      { title: 'Choose new frame rate', text: 'Enter FPS.' },
+      { title: 'Download video', text: 'Get the video with the new frame rate.' },
+    ],
+    relatedTools: ['video-compressor', 'speed-changer', 'video-cutter'],
+  },
+  {
+    slug: 'mute-video',
+    name: 'Mute Video',
+    category: 'video-utility',
+    description: 'Remove audio from a video file.',
+    metaTitle: 'Mute Video – Remove Audio Online Free | Dayront',
+    metaDescription: 'Mute MP4, WebM, MOV videos. No upload, private.',
+    icon: '🔇',
+    type: 'mute-video',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [],
+    howTo: [
+      { title: 'Upload video', text: 'Choose a video.' },
+      { title: 'Mute', text: 'Click convert.' },
+      { title: 'Download silent video', text: 'Get the video without audio.' },
+    ],
+    relatedTools: ['extract-audio', 'video-compressor', 'audio-cutter'],
+  },
+  {
+    slug: 'extract-audio',
+    name: 'Extract Audio',
+    category: 'video-utility',
+    description: 'Extract the audio stream from any video.',
+    metaTitle: 'Extract Audio – Get Sound from Video Online Free | Dayront',
+    metaDescription: 'Extract audio from MP4, WebM, MOV, etc. to MP3. Private.',
+    icon: '🎧',
+    type: 'extract-audio',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'format', label: 'Output Format', type: 'select', options: ['mp3','wav','m4a','ogg','flac','aac'], default: 'mp3' },
+    ],
+    faq: [],
+    howTo: [
+      { title: 'Upload video', text: 'Select a video.' },
+      { title: 'Choose output format', text: 'Pick MP3, WAV, etc.' },
+      { title: 'Download audio', text: 'Get the extracted audio.' },
+    ],
+    relatedTools: ['mp4-to-mp3', 'mute-video', 'audio-cutter'],
   },
 ];

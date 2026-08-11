@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "video-cutter",
+  name: "Video Cutter",
+  metaTitle: "Video Cutter – Trim Video Online Free | Dayront",
+  metaDescription: "Cut MP4, WebM, MOV videos in your browser. No upload, 100% private.",
+  icon: "✂️",
+  howTo: [{"title":"Upload your video","text":"Select a video file."},{"title":"Set start and duration","text":"Enter the seconds to keep."},{"title":"Download the trimmed clip","text":"Get your cut video instantly."}],
+  faq: [{"question":"Does it re‑encode?","answer":"No, we use stream copy for speed and no quality loss."}],
+  relatedTools: [{"href":"/tools/video-compressor","icon":"📉","name":"Video Compressor"},{"href":"/tools/video-merger","icon":"🔗","name":"Video Merger"}],
+  type: "video-cut",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [{"name":"start","label":"Start time (seconds)","type":"number","min":0,"default":0},{"name":"duration","label":"Duration (seconds)","type":"number","min":1,"default":30}],
+  tutorial: "\n      <h2>Precise Video Cutting Without Re‑encoding</h2>\n      <p>Our Video Cutter lets you trim videos without losing quality because it uses stream copy. Just enter the start time and duration, and get your clip instantly.</p>\n      <h3>Common Use Cases</h3>\n      <ul>\n        <li>Cut out unwanted sections from recorded meetings.</li>\n        <li>Save the best moments from a long video.</li>\n        <li>Create short previews for social media.</li>\n      </ul>\n    ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

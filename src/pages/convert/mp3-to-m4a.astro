@@ -1,52 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'MP3 to M4A Converter – Free Online, No Upload | Dayront',
-  metaDescription:
-    'Convert MP3 to M4A (AAC) audio format in your browser. Keep quality, reduce size. 100% private, no server upload.',
-  toolName: 'MP3 to M4A Converter',
-  toolIcon: '🎵',
-  toolConfig: {
-    type: 'convert',
-    from: 'mp3',
-    to: 'm4a',
-    label: 'MP3 to M4A',
-  } as const,
-  howTo: [
-    {
-      title: 'Select your MP3 file',
-      text: 'Drag & drop or click to choose an MP3 audio file.',
-    },
-    {
-      title: 'Convert to M4A',
-      text: 'Our local converter wraps the audio in an M4A container with AAC encoding.',
-    },
-    {
-      title: 'Download the M4A file',
-      text: 'Save the M4A file – perfect for Apple devices and better compression.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Why convert MP3 to M4A?',
-      answer: 'M4A (AAC) often provides better quality at the same bitrate as MP3, and is ideal for iTunes/iPhone.',
-    },
-    {
-      question: 'Does the conversion lose quality?',
-      answer: 'There is minimal quality loss because we use a high‑bitrate AAC encoder.',
-    },
-    {
-      question: 'Is it free?',
-      answer: 'Yes, completely free – no hidden costs or watermarks.',
-    },
-  ],
-  relatedTools: [
-    { href: '/convert/m4a-to-mp3', icon: '🎵', name: 'M4A to MP3' },
-    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
-    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
-  ],
+const tool = {
+  slug: "mp3-to-m4a",
+  name: "MP3 to M4A",
+  metaTitle: "MP3 to M4A Converter – Free Online, No Upload | Dayront",
+  metaDescription: "Convert MP3 to M4A in your browser. Keep quality, reduce size.",
+  icon: "🎵",
+  howTo: [{"title":"Select MP3 file","text":"Choose an MP3."},{"title":"Convert to M4A","text":"Wrapped in M4A container."},{"title":"Download M4A","text":"Save for Apple devices."}],
+  faq: [{"question":"Why M4A?","answer":"Better quality at same bitrate, ideal for Apple."},{"question":"Quality loss?","answer":"Minimal, high-bitrate AAC encoder."},{"question":"Free?","answer":"Yes, completely free."}],
+  relatedTools: [{"href":"/convert/m4a-to-mp3","icon":"🎵","name":"M4A to MP3"},{"href":"/convert/mp3-to-wav","icon":"🎵","name":"MP3 to WAV"},{"href":"/tools/audio-compressor","icon":"📦","name":"Audio Compressor"}],
+  type: "convert",
+  from: "mp3",
+  to: "m4a",
+  outputFormat: undefined,
+  settings: [],
+  tutorial: "\n      <h2>Why Convert MP3 to M4A?</h2>\n      <p>Converting MP3 to M4A is one of the most common audio/video tasks. Our MP3 to M4A tool makes it effortless and completely private. Whether you need to save space, improve compatibility, or extract audio for editing, this tool does it instantly in your browser.</p>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n        <li><strong>High Quality</strong> – Preserves the best possible quality during conversion.</li>\n      </ul>\n    ",
+  relatedBlogs: [{"slug":"how-to-convert-mp4-to-mp3","title":"How to Convert MP4 to MP3 Online – Private, Fast & Free","categories":["mp4","mp3","audio extraction"]},{"slug":"understanding-audio-formats","title":"Understanding Audio Formats: MP3, WAV, FLAC, OGG, and M4A Explained","categories":["audio formats"]},{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

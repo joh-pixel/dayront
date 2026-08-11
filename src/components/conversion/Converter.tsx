@@ -1,7 +1,8 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import FileDropzone from './FileDropzone';
 import ProgressBar from './ProgressBar';
 import PrivacyToggle from './PrivacyToggle';
+
 import {
   convertFile,
   cutAudio,
@@ -12,7 +13,18 @@ import {
   reverseAudio,
   stereoToMono,
   stripMetadata,
+  compressVideo,
+  cutVideo,
+  mergeVideos,
+  videoToGif,
+  gifToMp4,
+  resizeVideo,
+  cropVideo,
+  changeFPS,
+  muteVideo,
+  extractAudio,
 } from '../../lib/ffmpeg';
+
 import { saveFile } from '../../lib/db';
 import { formatBytes } from '../../lib/utils';
 
@@ -24,7 +36,28 @@ type ToolType =
   | 'boost'
   | 'speed'
   | 'reverse'
-  | 'stereo-to-mono';
+  | 'stereo-to-mono'
+  | 'video-compress'
+  | 'video-cut'
+  | 'video-merge'
+  | 'video-to-gif'
+  | 'gif-to-video'
+  | 'resize-video'
+  | 'crop-video'
+  | 'change-fps'
+  | 'mute-video'
+  | 'extract-audio'
+  | 'convert-video';
+
+interface SettingDef {
+  name: string;
+  label: string;
+  type: 'range' | 'number' | 'select';
+  min?: number;
+  max?: number;
+  options?: string[];
+  default: string | number;
+}
 
 interface ToolConfig {
   type: ToolType;
@@ -32,83 +65,281 @@ interface ToolConfig {
   to?: string;
   outputFormat?: string;
   label?: string;
+  settings?: SettingDef[];
 }
 
-function getOutputFilename(originalName: string, outputFormat: string): string {
-  const base = originalName.replace(/\.[^/.]+$/, '');
-  return `${base}.${outputFormat}`;
+/** Detect time‑related settings */
+function isTimeSetting(name: string): boolean {
+  const lower = name.toLowerCase();
+  return lower.includes('start') || lower.includes('duration') || lower.includes('cut');
 }
 
-export default function Converter({ toolConfig }: { toolConfig: ToolConfig }) {
+/** Human‑readable hint for range sliders */
+function rangeHint(setting: SettingDef): string | null {
+  const name = setting.name.toLowerCase();
+  if (name === 'crf') return 'Lower = better quality, larger file';
+  if (name === 'quality') return '0 = best, 9 = smallest';
+  return null;
+}
+
+export default function Converter({
+  toolConfig,
+}: {
+  toolConfig: ToolConfig;
+}) {
   const [files, setFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-  const [outputFilename, setOutputFilename] = useState<string>('');
+  const [outputFilename, setOutputFilename] = useState('');
   const [privacy, setPrivacy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [settingsState, setSettingsState] = useState<Record<string, string | number>>(() => {
+    const initial: Record<string, string | number> = {};
+    toolConfig.settings?.forEach((setting) => {
+      initial[setting.name] = setting.default;
+    });
+    return initial;
+  });
+
+  const [timeUnits, setTimeUnits] = useState<Record<string, 'seconds' | 'minutes'>>({});
+
+  // Preview blob URL
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
+
+  // Cleanup blob URL on unmount or reset
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  function clampProgress(value: number) {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function updateProgress(value: number) {
+    setProgress(clampProgress(value));
+  }
+
+  function getSetting(name: string) {
+    return settingsState[name];
+  }
+
+  function updateSetting(name: string, value: string | number) {
+    setSettingsState((previous) => ({ ...previous, [name]: value }));
+  }
+
+  function toDisplayValue(name: string, internalValue: number): number {
+    const unit = timeUnits[name] || 'seconds';
+    return unit === 'minutes' ? internalValue / 60 : internalValue;
+  }
+
+  function fromDisplayValue(name: string, displayValue: number): number {
+    const unit = timeUnits[name] || 'seconds';
+    return unit === 'minutes' ? displayValue * 60 : displayValue;
+  }
+
   function handleFiles(selected: File[]) {
+    if (processing) return;
     setFiles(selected);
     setResultBlob(null);
     setOutputFilename('');
     setError(null);
+    setProgress(0);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
   }
 
   async function startConversion() {
-    if (files.length === 0) return;
+    if (files.length === 0 || processing) return;
+
     setProcessing(true);
     setProgress(0);
     setError(null);
+    setResultBlob(null);
+    setOutputFilename('');
+
     try {
       let output: Blob;
       const type = toolConfig.type;
 
       switch (type) {
-        case 'convert':
-          output = await convertFile(files[0], toolConfig.to || 'mp3', setProgress);
+        case 'cut': {
+          const start = Math.max(0, Number(getSetting('start') ?? 0));
+          const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
+          output = await cutAudio(
+            files[0],
+            start,
+            duration,
+            toolConfig.outputFormat || 'mp3',
+            updateProgress,
+          );
           break;
-        case 'cut':
-          output = await cutAudio(files[0], 0, 30, toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'merge': {
+          if (files.length < 2) throw new Error('Please select at least 2 audio files.');
+          output = await mergeAudio(files, toolConfig.outputFormat || 'mp3', updateProgress);
           break;
-        case 'merge':
-          if (files.length < 2) throw new Error('Please select at least 2 files.');
-          output = await mergeAudio(files, toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'compress': {
+          output = await compressAudio(
+            files[0],
+            Number(getSetting('quality') ?? 3),
+            toolConfig.outputFormat || 'mp3',
+            updateProgress,
+          );
           break;
-        case 'compress':
-          output = await compressAudio(files[0], 3, toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'boost': {
+          output = await boostVolume(
+            files[0],
+            Number(getSetting('gain') ?? 6),
+            toolConfig.outputFormat || 'mp3',
+            updateProgress,
+          );
           break;
-        case 'boost':
-          output = await boostVolume(files[0], 6, toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'speed': {
+          output = await changeSpeed(
+            files[0],
+            Number(getSetting('factor') ?? 1.5),
+            toolConfig.outputFormat || 'mp3',
+            updateProgress,
+          );
           break;
-        case 'speed':
-          output = await changeSpeed(files[0], 1.5, toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'reverse': {
+          output = await reverseAudio(files[0], toolConfig.outputFormat || 'mp3', updateProgress);
           break;
-        case 'reverse':
-          output = await reverseAudio(files[0], toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'stereo-to-mono': {
+          output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', updateProgress);
           break;
-        case 'stereo-to-mono':
-          output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', setProgress);
+        }
+        case 'convert': {
+          output = await convertFile(files[0], toolConfig.to || 'mp3', updateProgress);
           break;
+        }
+        case 'video-compress': {
+          output = await compressVideo(
+            files[0],
+            Number(getSetting('crf') ?? 23),
+            String(getSetting('preset') ?? 'medium'),
+            toolConfig.outputFormat || 'mp4',
+            updateProgress,
+          );
+          break;
+        }
+        case 'video-cut': {
+          const start = Math.max(0, Number(getSetting('start') ?? 0));
+          const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
+          output = await cutVideo(
+            files[0],
+            start,
+            duration,
+            toolConfig.outputFormat || 'mp4',
+            updateProgress,
+          );
+          break;
+        }
+        case 'video-merge': {
+          if (files.length < 2) throw new Error('Please select at least 2 video files.');
+          output = await mergeVideos(files, toolConfig.outputFormat || 'mp4', updateProgress);
+          break;
+        }
+        case 'video-to-gif': {
+          output = await videoToGif(
+            files[0],
+            Number(getSetting('fps') ?? 10),
+            Number(getSetting('width') ?? 320),
+            updateProgress,
+          );
+          break;
+        }
+        case 'gif-to-video': {
+          output = await gifToMp4(files[0], updateProgress);
+          break;
+        }
+        case 'resize-video': {
+          output = await resizeVideo(
+            files[0],
+            Number(getSetting('width') ?? 1280),
+            Number(getSetting('height') ?? 720),
+            toolConfig.outputFormat || 'mp4',
+            updateProgress,
+          );
+          break;
+        }
+        case 'crop-video': {
+          output = await cropVideo(
+            files[0],
+            Number(getSetting('x') ?? 0),
+            Number(getSetting('y') ?? 0),
+            Number(getSetting('w') ?? 640),
+            Number(getSetting('h') ?? 480),
+            toolConfig.outputFormat || 'mp4',
+            updateProgress,
+          );
+          break;
+        }
+        case 'change-fps': {
+          output = await changeFPS(
+            files[0],
+            Number(getSetting('fps') ?? 30),
+            toolConfig.outputFormat || 'mp4',
+            updateProgress,
+          );
+          break;
+        }
+        case 'mute-video': {
+          output = await muteVideo(files[0], toolConfig.outputFormat || 'mp4', updateProgress);
+          break;
+        }
+        case 'extract-audio': {
+          output = await extractAudio(
+            files[0],
+            String(getSetting('format') ?? 'mp3'),
+            updateProgress,
+          );
+          break;
+        }
+        case 'convert-video': {
+          output = await convertFile(files[0], toolConfig.to || 'mp4', updateProgress);
+          break;
+        }
         default:
-          throw new Error('Unsupported tool');
+          throw new Error('Unsupported tool.');
       }
 
       if (privacy) {
-        output = await stripMetadata(new File([output], 'temp', { type: output.type }));
+        updateProgress(Math.min(progress, 95));
+        output = await stripMetadata(new File([output], 'output', { type: output.type }));
       }
 
-      const id = `conv_${Date.now()}`;
+      const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       await saveFile(id, output);
 
       const format = toolConfig.outputFormat || toolConfig.to || 'mp3';
       const originalName = files[0]?.name || 'file';
-      const filename = getOutputFilename(originalName, format);
+      const base = originalName.replace(/\.[^/.]+$/, '');
+      const filename = `${base}.${format}`;
 
+      // Create preview URL
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const url = URL.createObjectURL(output);
+      setPreviewUrl(url);
       setResultBlob(output);
       setOutputFilename(filename);
-    } catch (e: any) {
-      setError(e.message || 'An error occurred');
+      setProgress(100);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || 'An error occurred while processing your file.');
     } finally {
       setProcessing(false);
     }
@@ -117,13 +348,13 @@ export default function Converter({ toolConfig }: { toolConfig: ToolConfig }) {
   function download() {
     if (!resultBlob) return;
     const url = URL.createObjectURL(resultBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = outputFilename || 'output.mp3';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = outputFilename || 'output.mp3';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function resetAll() {
@@ -133,75 +364,313 @@ export default function Converter({ toolConfig }: { toolConfig: ToolConfig }) {
     setError(null);
     setProgress(0);
     setProcessing(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
   }
 
+  const settings = toolConfig.settings || [];
+  const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
+
+  const inputClass = [
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
+    'outline-none transition placeholder:text-gray-400',
+    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
+    'dark:border-gray-600 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500',
+    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
+  ].join(' ');
+
+  const selectClass = [
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
+    'outline-none transition',
+    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
+    'dark:border-gray-600 dark:bg-gray-950 dark:text-white',
+    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
+  ].join(' ');
+
+  // Determine if the output is a video (or GIF) for preview player
+  const outputFormat = toolConfig.outputFormat || toolConfig.to || 'mp3';
+  const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
+  const isGif = outputFormat === 'gif';
+
   return (
-    <div class="space-y-6">
+    <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
       {!resultBlob && (
         <>
-          <FileDropzone
-            onFilesSelected={handleFiles}
-            multiple={toolConfig.type === 'merge'}
-          />
+          <FileDropzone onFilesSelected={handleFiles} multiple={multipleAllowed} />
+
           {files.length > 0 && (
-            <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 text-sm">
-              <p class="font-medium">Selected files:</p>
-              <ul class="list-disc list-inside">
-                {files.map((f) => (
-                  <li>{f.name} ({formatBytes(f.size)})</li>
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
+                <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                  {files.length} {files.length === 1 ? 'file' : 'files'}
+                </span>
+              </div>
+              <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                {files.map((file) => (
+                  <li
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
+                    class="flex items-center justify-between gap-4 px-5 py-3"
+                  >
+                    <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {file.name}
+                    </span>
+                    <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {formatBytes(file.size)}
+                    </span>
+                  </li>
                 ))}
               </ul>
             </div>
           )}
-          <PrivacyToggle checked={privacy} onChange={setPrivacy} />
+
+          {settings.length > 0 && (
+            <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div class="border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-lg dark:bg-sky-900/40">
+                    ⚙️
+                  </div>
+                  <div class="min-w-0">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white">Settings &amp; Adjustments</h2>
+                    <p class="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">
+                      Customize your output before processing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-6 p-5">
+                {settings.map((setting) => {
+                  const value = settingsState[setting.name] ?? setting.default;
+                  return (
+                    <div key={setting.name} class="space-y-2.5">
+                      <label
+                        for={`setting-${setting.name}`}
+                        class="block text-sm font-semibold text-gray-900 dark:text-white"
+                      >
+                        {setting.label}
+                      </label>
+
+                      {setting.type === 'select' && (
+                        <select
+                          id={`setting-${setting.name}`}
+                          value={String(value)}
+                          disabled={processing}
+                          class={selectClass}
+                          onChange={(event) =>
+                            updateSetting(setting.name, event.currentTarget.value)
+                          }
+                        >
+                          {setting.options?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {setting.type === 'range' && (
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-950">
+                          <div class="flex items-center gap-3">
+                            <input
+                              id={`setting-${setting.name}`}
+                              type="range"
+                              min={setting.min}
+                              max={setting.max}
+                              value={Number(value)}
+                              disabled={processing}
+                              onInput={(event) =>
+                                updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
+                              }
+                              class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-300 accent-sky-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700"
+                            />
+                            <output
+                              aria-live="polite"
+                              class="flex h-9 min-w-[52px] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-xs font-bold tabular-nums text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                            >
+                              {value}
+                            </output>
+                          </div>
+                          {rangeHint(setting) && (
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{rangeHint(setting)}</p>
+                          )}
+                          {(setting.min !== undefined || setting.max !== undefined) && (
+                            <div class="mt-2 flex justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                              <span>{setting.min ?? ''}</span>
+                              <span>{setting.max ?? ''}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {setting.type === 'number' && (
+                        isTimeSetting(setting.name) ? (
+                          <div class="flex gap-2">
+                            <input
+                              type="number"
+                              id={`setting-${setting.name}`}
+                              min={setting.min != null ? (timeUnits[setting.name] === 'minutes' ? Math.ceil((setting.min || 0) / 60) : setting.min) : undefined}
+                              max={setting.max != null ? (timeUnits[setting.name] === 'minutes' ? Math.floor((setting.max || 9999) / 60) : setting.max) : undefined}
+                              value={toDisplayValue(setting.name, Number(value))}
+                              disabled={processing}
+                              onInput={(e) => {
+                                const displayVal = Number((e.target as HTMLInputElement).value);
+                                if (!isNaN(displayVal)) {
+                                  updateSetting(setting.name, fromDisplayValue(setting.name, displayVal));
+                                }
+                              }}
+                              class={inputClass}
+                              step={timeUnits[setting.name] === 'minutes' ? 0.1 : 1}
+                            />
+                            <select
+                              value={timeUnits[setting.name] || 'seconds'}
+                              onChange={(e) => setTimeUnits((prev) => ({ ...prev, [setting.name]: e.currentTarget.value as 'seconds' | 'minutes' }))}
+                              class="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-white"
+                            >
+                              <option value="seconds">Seconds</option>
+                              <option value="minutes">Minutes</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <input
+                            type="number"
+                            id={`setting-${setting.name}`}
+                            min={setting.min}
+                            max={setting.max}
+                            value={Number(value)}
+                            disabled={processing}
+                            onInput={(event) =>
+                              updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
+                            }
+                            class={inputClass}
+                          />
+                        )
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <PrivacyToggle checked={privacy} onChange={setPrivacy} />
+          </div>
+
           <button
-            class="bg-sky text-black font-semibold px-6 py-3 rounded-xl hover:bg-sky-bright active:scale-95 transition-all duration-200 disabled:opacity-50"
+            type="button"
             disabled={files.length === 0 || processing}
             onClick={startConversion}
+            aria-busy={processing}
+            class="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl bg-sky-500 px-6 py-3.5 font-semibold text-white shadow-sm transition-all hover:bg-sky-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-sky-500 dark:hover:bg-sky-400"
           >
-            {processing ? 'Processing...' : `Start ${toolConfig.label || 'Conversion'}`}
+            {processing ? (
+              <>
+                <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Processing…
+              </>
+            ) : (
+              `Start ${toolConfig.label || 'Conversion'}`
+            )}
           </button>
-          {processing && <ProgressBar percent={progress} />}
+
+          {processing && (
+            <div
+              class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+              role="status"
+              aria-live="polite"
+              aria-label={`Processing ${progress}% complete`}
+            >
+              <div class="px-5 py-4">
+                <div class="mb-3 flex items-center justify-between gap-4">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />
+                    <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">Processing</span>
+                  </div>
+                  <span class="shrink-0 text-sm font-bold tabular-nums text-sky-600 dark:text-sky-400">
+                    {clampProgress(progress)}%
+                  </span>
+                </div>
+                <ProgressBar percent={clampProgress(progress)} />
+              </div>
+            </div>
+          )}
         </>
       )}
 
       {error && (
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-          <p class="text-red-600 dark:text-red-400 text-sm">{error}</p>
-          <button
-            class="mt-2 text-sm text-red-700 dark:text-red-300 underline hover:no-underline"
-            onClick={resetAll}
-          >
-            Try again
-          </button>
+        <div class="overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-sm dark:border-red-900/70 dark:bg-red-950/40">
+          <div class="p-5">
+            <div class="flex gap-3">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 font-bold text-red-600 dark:bg-red-900/50 dark:text-red-300">!</div>
+              <div class="min-w-0">
+                <p class="font-semibold text-red-900 dark:text-red-100">Something went wrong</p>
+                <p class="mt-1 break-words text-sm leading-6 text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  class="mt-3 font-semibold text-red-700 underline decoration-red-300 underline-offset-4 hover:no-underline dark:text-red-300 dark:decoration-red-700"
+                  onClick={resetAll}
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {resultBlob && (
-        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 space-y-4">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">✅</span>
-            <div>
-              <p class="font-semibold text-lg text-green-800 dark:text-green-100">Ready!</p>
-              <p class="text-sm text-green-700 dark:text-green-300">
-                {outputFilename} – {formatBytes(resultBlob.size)}
-              </p>
+        <div class="overflow-hidden rounded-2xl border border-green-200 bg-green-50 shadow-sm dark:border-green-900/70 dark:bg-green-950/30">
+          <div class="p-6">
+            <div class="flex items-start gap-4">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-100 text-xl font-bold text-green-700 dark:bg-green-900/50 dark:text-green-300">✓</div>
+              <div class="min-w-0">
+                <h2 class="text-lg font-bold text-green-900 dark:text-green-100">Your file is ready</h2>
+                <p class="mt-1 break-all text-sm font-medium text-green-700 dark:text-green-300">{outputFilename}</p>
+                <p class="mt-1 text-xs font-medium text-green-600 dark:text-green-400">{formatBytes(resultBlob.size)}</p>
+              </div>
             </div>
+
+            {/* Preview player */}
+            {previewUrl && (
+              <div class="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                {isGif ? (
+                  <img src={previewUrl} alt="Preview" class="w-full h-auto" />
+                ) : isVideoPreview ? (
+                  <video controls class="w-full max-h-96" src={previewUrl}>
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <audio controls class="w-full" src={previewUrl}>
+                    Your browser does not support the audio element.
+                  </audio>
+                )}
+              </div>
+            )}
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button
-              class="bg-sky text-black font-semibold px-6 py-3 rounded-xl hover:bg-sky-bright active:scale-95 transition-all flex-1"
-              onClick={download}
-            >
-              Download File
-            </button>
-            <button
-              class="bg-gray-200 dark:bg-gray-800 text-black dark:text-white font-semibold px-6 py-3 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-700 active:scale-95 transition-all"
-              onClick={resetAll}
-            >
-              Convert Another File
-            </button>
+          <div class="border-t border-green-200 bg-white p-5 dark:border-green-900/70 dark:bg-gray-900/60">
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={download}
+                class="w-full rounded-xl bg-sky-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-sky-600 active:scale-[0.98] dark:bg-sky-500 dark:hover:bg-sky-400"
+              >
+                Download File
+              </button>
+              <button
+                type="button"
+                onClick={resetAll}
+                class="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-3 font-semibold text-gray-800 transition hover:bg-gray-200 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              >
+                Convert Another File
+              </button>
+            </div>
           </div>
         </div>
       )}

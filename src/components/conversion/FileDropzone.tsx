@@ -34,19 +34,19 @@ export default function FileDropzone({ onFilesSelected, multiple = false }: Prop
     <div
       class={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition ${
         isDragging
-          ? 'border-lemon bg-lemon/10'
+          ? 'border-sky bg-sky-light/30 dark:bg-sky/10'
           : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <p class="text-xl font-medium mb-2">
+      <p class={`text-xl font-medium mb-2 ${isDragging ? 'text-sky' : 'text-black dark:text-white'}`}>
         {isDragging ? 'Drop files here' : 'Drag & drop your files'}
       </p>
       <p class="text-gray-500 dark:text-gray-400 mb-4">or</p>
       <button
-        class="bg-lemon text-black font-semibold px-6 py-3 rounded-xl hover:bg-lemon/90 transition"
+        class="bg-sky text-black font-semibold px-6 py-3 rounded-xl hover:bg-sky-bright active:scale-95 transition"
         onClick={() => inputRef.current?.click()}
       >
         Browse Files

@@ -38,6 +38,47 @@
   .dark ::selection {
     @apply bg-sky-500 text-white;
   }
+
+  /* ========== DARK MODE RANGE SLIDER ========== */
+  .dark input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* Track */
+  .dark input[type='range']::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #374151; /* gray-700 */
+    border-radius: 3px;
+  }
+  .dark input[type='range']::-moz-range-track {
+    height: 6px;
+    background: #374151;
+    border-radius: 3px;
+  }
+
+  /* Thumb */
+  .dark input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #38bdf8; /* sky-400 */
+    border-radius: 50%;
+    margin-top: -6px;
+    box-shadow: 0 0 4px rgba(56, 189, 248, 0.6);
+  }
+  .dark input[type='range']::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #38bdf8;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(56, 189, 248, 0.6);
+  }
 }
 
 /* Image grid inside blog posts */
@@ -123,7 +164,6 @@
   }
 
   /* ========== PROSE OVERRIDES FOR DARK MODE ========== */
-  /* Using Tailwind's typography variables instead of !important hacks */
   .dark .prose {
     --tw-prose-body: #e5e7eb;
     --tw-prose-headings: #ffffff;

@@ -1,52 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'MOV to MP3 Converter – Extract Audio Free Online | Dayront',
-  metaDescription:
-    'Convert MOV video to MP3 audio directly in your browser. No upload, 100% private. Works on all devices.',
-  toolName: 'MOV to MP3 Converter',
-  toolIcon: '🎬',
-  toolConfig: {
-    type: 'convert',
-    from: 'mov',
-    to: 'mp3',
-    label: 'MOV to MP3',
-  } as const,
-  howTo: [
-    {
-      title: 'Choose your MOV file',
-      text: 'Select a QuickTime MOV video from your device.',
-    },
-    {
-      title: 'Extract audio as MP3',
-      text: 'Our tool pulls the audio track and encodes it to MP3.',
-    },
-    {
-      title: 'Download the MP3',
-      text: 'Save the audio for use on any music player or phone.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Are iPhone videos supported?',
-      answer: 'Yes, MOV files recorded on iPhones are fully compatible.',
-    },
-    {
-      question: 'Will it lose quality?',
-      answer: 'We use a high‑quality MP3 encoder to preserve the original sound as much as possible.',
-    },
-    {
-      question: 'Is it really free?',
-      answer: 'Yes, unlimited conversions with no hidden fees.',
-    },
-  ],
-  relatedTools: [
-    { href: '/convert/mp4-to-mp3', icon: '🎬', name: 'MP4 to MP3' },
-    { href: '/convert/avi-to-mp3', icon: '🎬', name: 'AVI to MP3' },
-    { href: '/tools/speed-changer', icon: '⏩', name: 'Speed Changer' },
-  ],
+const tool = {
+  slug: "mov-to-mp3",
+  name: "MOV to MP3",
+  metaTitle: "MOV to MP3 Converter – Extract Audio Free Online | Dayront",
+  metaDescription: "Convert MOV video to MP3 audio in your browser. No upload, 100% private.",
+  icon: "🎬",
+  howTo: [{"title":"Choose MOV file","text":"Select QuickTime MOV."},{"title":"Extract audio","text":"Encoded to MP3."},{"title":"Download MP3","text":"Save audio."}],
+  faq: [{"question":"iPhone videos?","answer":"Yes, fully compatible."},{"question":"Quality loss?","answer":"High-quality encoder."},{"question":"Free?","answer":"Yes, unlimited."}],
+  relatedTools: [{"href":"/convert/mp4-to-mp3","icon":"🎬","name":"MP4 to MP3"},{"href":"/convert/avi-to-mp3","icon":"🎬","name":"AVI to MP3"},{"href":"/tools/speed-changer","icon":"⏩","name":"Speed Changer"}],
+  type: "convert",
+  from: "mov",
+  to: "mp3",
+  outputFormat: undefined,
+  settings: [{"name":"bitrate","label":"Bitrate","type":"select","options":["128k","192k","256k","320k"],"default":"192k"}],
+  tutorial: "\n      <h2>Why Convert MOV to MP3?</h2>\n      <p>Converting MOV to MP3 is one of the most common audio/video tasks. Our MOV to MP3 tool makes it effortless and completely private. Whether you need to save space, improve compatibility, or extract audio for editing, this tool does it instantly in your browser.</p>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n        <li><strong>High Quality</strong> – Preserves the best possible quality during conversion.</li>\n      </ul>\n    ",
+  relatedBlogs: [{"slug":"how-to-convert-mp4-to-mp3","title":"How to Convert MP4 to MP3 Online – Private, Fast & Free","categories":["mp4","mp3","audio extraction"]},{"slug":"understanding-audio-formats","title":"Understanding Audio Formats: MP3, WAV, FLAC, OGG, and M4A Explained","categories":["audio formats"]},{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

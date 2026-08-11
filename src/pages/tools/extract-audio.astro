@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "extract-audio",
+  name: "Extract Audio",
+  metaTitle: "Extract Audio – Get Sound from Video Online Free | Dayront",
+  metaDescription: "Extract audio from MP4, WebM, MOV, etc. to MP3. Private.",
+  icon: "🎧",
+  howTo: [{"title":"Upload video","text":"Select a video."},{"title":"Choose output format","text":"Pick MP3, WAV, etc."},{"title":"Download audio","text":"Get the extracted audio."}],
+  faq: [],
+  relatedTools: [{"href":"/convert/mp4-to-mp3","icon":"🎬","name":"MP4 to MP3"},{"href":"/tools/mute-video","icon":"🔇","name":"Mute Video"}],
+  type: "extract-audio",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [{"name":"format","label":"Output Format","type":"select","options":["mp3","wav","m4a","ogg","flac","aac"],"default":"mp3"}],
+  tutorial: "\n    <h2>Using Our Extract Audio</h2>\n    <p>Our Extract Audio tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

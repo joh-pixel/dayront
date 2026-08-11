@@ -1,0 +1,37 @@
+---
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "video-compressor",
+  name: "Video Compressor",
+  metaTitle: "Video Compressor – Reduce Video Size Online Free | Dayront",
+  metaDescription: "Compress MP4, WebM, MOV files in your browser. Adjust quality and speed. 100% private.",
+  icon: "📉",
+  howTo: [{"title":"Upload your video","text":"Choose an MP4, WebM, or MOV file."},{"title":"Adjust settings","text":"Select quality and speed."},{"title":"Download compressed file","text":"Get a smaller video instantly."}],
+  faq: [{"question":"Will quality be lost?","answer":"Yes, but you can control the trade‑off with the CRF slider. Lower CRF = better quality, larger file."},{"question":"Is it really free?","answer":"Yes, unlimited use."}],
+  relatedTools: [{"href":"/tools/video-cutter","icon":"✂️","name":"Video Cutter"},{"href":"/tools/resize-video","icon":"↔️","name":"Resize Video"}],
+  type: "video-compress",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [{"name":"crf","label":"Quality (0 best, 51 worst)","type":"range","min":0,"max":51,"default":23},{"name":"preset","label":"Encoding Speed","type":"select","options":["ultrafast","superfast","veryfast","faster","fast","medium","slow"],"default":"medium"}],
+  tutorial: "\n      <h2>How to Compress Video Files Without Losing Quality</h2>\n      <p>Video files can be huge, taking up precious storage. Our Video Compressor lets you reduce file size while keeping the quality as high as you want. Use the quality slider to find the perfect balance.</p>\n      <h3>Tips for Best Results</h3>\n      <ul>\n        <li>Use a lower CRF (18‑23) for near‑lossless compression.</li>\n        <li>Choose \"medium\" or \"slow\" preset for better compression (smaller file).</li>\n        <li>Always keep an original copy if you may need to edit later.</li>\n      </ul>\n    ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

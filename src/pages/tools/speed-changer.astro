@@ -1,51 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'Audio Speed Changer – Change Playback Speed Online Free | Dayront',
-  metaDescription:
-    'Speed up or slow down audio files in your browser. No upload, 100% private. Works with MP3, WAV, and more.',
-  toolName: 'Speed Changer',
-  toolIcon: '⏩',
-  toolConfig: {
-    type: 'speed',
-    outputFormat: 'mp3',
-    label: 'Speed Changer',
-  } as const,
-  howTo: [
-    {
-      title: 'Upload your audio',
-      text: 'Select the file you want to modify.',
-    },
-    {
-      title: 'Choose speed factor',
-      text: 'Pick a speed – e.g., 1.5× faster or 0.75× slower.',
-    },
-    {
-      title: 'Download the altered file',
-      text: 'Get your sped‑up or slowed‑down audio instantly.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Does changing speed affect pitch?',
-      answer: 'By default we preserve the original pitch, but you can choose to change pitch if you like.',
-    },
-    {
-      question: 'What speeds are possible?',
-      answer: 'From 0.25× (very slow) to 4× (very fast).',
-    },
-    {
-      question: 'Is it free?',
-      answer: 'Yes, completely free with no limits.',
-    },
-  ],
-  relatedTools: [
-    { href: '/tools/reverse-audio', icon: '↩️', name: 'Reverse Audio' },
-    { href: '/tools/volume-booster', icon: '🔊', name: 'Volume Booster' },
-    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
-  ],
+const tool = {
+  slug: "speed-changer",
+  name: "Speed Changer",
+  metaTitle: "Audio Speed Changer – Change Playback Speed Online Free | Dayront",
+  metaDescription: "Speed up or slow down audio files in your browser. No upload, 100% private.",
+  icon: "⏩",
+  howTo: [{"title":"Upload your audio","text":"Select file to modify."},{"title":"Choose speed factor","text":"Pick desired speed."},{"title":"Download altered file","text":"Get speed-changed audio."}],
+  faq: [{"question":"Does it affect pitch?","answer":"We preserve original pitch."},{"question":"What speeds?","answer":"From 0.25× to 4×."},{"question":"Is it free?","answer":"Yes, completely free."}],
+  relatedTools: [{"href":"/tools/reverse-audio","icon":"↩️","name":"Reverse Audio"},{"href":"/tools/volume-booster","icon":"🔊","name":"Volume Booster"},{"href":"/tools/audio-cutter","icon":"✂️","name":"Audio Cutter"}],
+  type: "speed",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [{"name":"factor","label":"Speed factor","type":"number","min":0.25,"max":4,"default":1.5}],
+  tutorial: "\n    <h2>Using Our Speed Changer</h2>\n    <p>Our Speed Changer tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [{"slug":"how-to-change-audio-speed","title":"How to Speed Up or Slow Down Audio Without Changing Pitch","categories":["speed changer","audio editing"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

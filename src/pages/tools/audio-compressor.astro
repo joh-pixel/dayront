@@ -1,53 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'Audio Compressor – Reduce Audio File Size Online | Dayront',
-  metaDescription:
-    'Compress MP3, WAV, M4A files directly in your browser. No uploads, 100% private, free.',
-  toolName: 'Audio Compressor',
-  toolIcon: '📦',
-  toolConfig: {
-    type: 'compress',
-    outputFormat: 'mp3',
-    label: 'Audio Compressor',
-  } as const,
-  howTo: [
-    {
-      title: 'Upload your audio file',
-      text: 'Select the file you want to make smaller.',
-    },
-    {
-      title: 'Choose compression strength',
-      text: 'Adjust the quality slider – smaller size or higher quality.',
-    },
-    {
-      title: 'Download the compressed file',
-      text: 'Get a lighter file instantly, with no noticeable quality loss.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Will the quality suffer?',
-      answer:
-        'Our smart compression keeps the audio clear while reducing file size.',
-    },
-    {
-      question: 'Is my file safe?',
-      answer:
-        'Yes, everything happens on your device. We don’t see or store your file.',
-    },
-    {
-      question: 'Which formats can I compress?',
-      answer: 'MP3, WAV, M4A, OGG, FLAC – all popular audio types.',
-    },
-  ],
-  relatedTools: [
-    { href: '/tools/volume-booster', icon: '🔊', name: 'Volume Booster' },
-    { href: '/tools/audio-cutter', icon: '✂️', name: 'Audio Cutter' },
-    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
-  ],
+const tool = {
+  slug: "audio-compressor",
+  name: "Audio Compressor",
+  metaTitle: "Audio Compressor – Reduce Audio File Size Online | Dayront",
+  metaDescription: "Compress MP3, WAV, M4A files in your browser. No uploads, 100% private.",
+  icon: "📦",
+  howTo: [{"title":"Upload your audio file","text":"Select the file to compress."},{"title":"Choose compression strength","text":"Adjust quality vs size."},{"title":"Download compressed file","text":"Get a lighter file instantly."}],
+  faq: [{"question":"Will quality suffer?","answer":"Smart compression keeps audio clear."},{"question":"Is my file safe?","answer":"Everything happens on your device."},{"question":"Which formats?","answer":"MP3, WAV, M4A, OGG, FLAC."}],
+  relatedTools: [{"href":"/tools/volume-booster","icon":"🔊","name":"Volume Booster"},{"href":"/tools/audio-cutter","icon":"✂️","name":"Audio Cutter"},{"href":"/convert/mp3-to-wav","icon":"🎵","name":"MP3 to WAV"}],
+  type: "compress",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [{"name":"quality","label":"Quality (0 best, 9 smallest)","type":"range","min":0,"max":9,"default":3}],
+  tutorial: "\n    <h2>Using Our Audio Compressor</h2>\n    <p>Our Audio Compressor tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

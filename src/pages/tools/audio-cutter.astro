@@ -1,52 +1,37 @@
 ---
 import ToolLayout from '../../layouts/ToolLayout.astro';
 
-const page = {
-  metaTitle: 'Audio Cutter – Trim MP3, WAV Online Free | Dayront',
-  metaDescription:
-    'Cut audio files online without uploading. Trim MP3, WAV, M4A, and more. 100% private, works in your browser.',
-  toolName: 'Audio Cutter',
-  toolIcon: '✂️',
-  toolConfig: {
-    type: 'cut',
-    outputFormat: 'mp3',
-    label: 'Audio Cutter',
-  } as const,
-  howTo: [
-    {
-      title: 'Select your audio file',
-      text: 'Click or drag & drop your audio file into the upload area.',
-    },
-    {
-      title: 'Adjust the cut points',
-      text: 'Use the sliders to set the start and end of the segment you want to keep.',
-    },
-    {
-      title: 'Download the trimmed audio',
-      text: 'Click "Cut Audio" and your trimmed file will be ready to download instantly.',
-    },
-  ],
-  faq: [
-    {
-      question: 'Is it really free?',
-      answer: 'Yes, completely free. No hidden costs.',
-    },
-    {
-      question: 'Do my files leave my device?',
-      answer:
-        'No. All cutting happens locally in your browser. We never see your files.',
-    },
-    {
-      question: 'What formats are supported?',
-      answer: 'MP3, WAV, M4A, OGG, FLAC, and more.',
-    },
-  ],
-  relatedTools: [
-    { href: '/tools/audio-merger', icon: '🔗', name: 'Audio Merger' },
-    { href: '/tools/audio-compressor', icon: '📦', name: 'Audio Compressor' },
-    { href: '/convert/mp3-to-wav', icon: '🎵', name: 'MP3 to WAV' },
-  ],
+const tool = {
+  slug: "audio-cutter",
+  name: "Audio Cutter",
+  metaTitle: "Audio Cutter – Trim MP3, WAV Online Free | Dayront",
+  metaDescription: "Cut audio files online without uploading. Trim MP3, WAV, M4A, and more. 100% private.",
+  icon: "✂️",
+  howTo: [{"title":"Select your audio file","text":"Click or drag & drop your audio file."},{"title":"Adjust the cut points","text":"Use the sliders to set start and end."},{"title":"Download the trimmed audio","text":"Save your trimmed file."}],
+  faq: [{"question":"Is it really free?","answer":"Yes, completely free."},{"question":"Do my files leave my device?","answer":"No, processing is local."},{"question":"What formats are supported?","answer":"MP3, WAV, M4A, OGG, FLAC, and more."}],
+  relatedTools: [{"href":"/tools/audio-merger","icon":"🔗","name":"Audio Merger"},{"href":"/tools/audio-compressor","icon":"📦","name":"Audio Compressor"},{"href":"/convert/mp3-to-wav","icon":"🎵","name":"MP3 to WAV"}],
+  type: "cut",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [{"name":"start","label":"Start time (seconds)","type":"number","min":0,"default":0},{"name":"duration","label":"Duration (seconds)","type":"number","min":1,"default":30}],
+  tutorial: "\n    <h2>Using Our Audio Cutter</h2>\n    <p>Our Audio Cutter tool is designed to be simple and private. Upload your file, adjust any settings, and download the processed result – all inside your browser. No data ever leaves your device.</p>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads – your files stay on your device.</li>\n      <li>Fast processing using the latest browser technology.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [{"slug":"the-complete-guide-to-converting-video-to-audio","title":"The Complete Guide to Converting Video to Audio: MP4, MOV, MKV to MP3","categories":["video to audio"]}],
 };
 ---
 
-<ToolLayout {...page} />
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>
