@@ -21,9 +21,9 @@ const {
   canonicalURL,
 } = Astro.props;
 
-/* -------------------------------------------------------
-   SITE SEARCH DATA
-------------------------------------------------------- */
+/* ---------------------------------------------------------
+   SEARCH DATA
+--------------------------------------------------------- */
 
 let blogItems: any[] = [];
 
@@ -61,40 +61,13 @@ const allSearchItems = [
 ---
 
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
 
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-
-    <meta
-      name="theme-color"
-      content="#ffffff"
-      media="(prefers-color-scheme: light)"
-    />
-
-    <meta
-      name="theme-color"
-      content="#030712"
-      media="(prefers-color-scheme: dark)"
-    />
-
-    <meta
-      name="mobile-web-app-capable"
-      content="yes"
-    />
-
-    <meta
-      name="apple-mobile-web-app-capable"
-      content="yes"
-    />
-
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="default"
+      content="width=device-width, initial-scale=1.0"
     />
 
     <SeoHead
@@ -104,9 +77,9 @@ const allSearchItems = [
       canonicalURL={canonicalURL}
     />
 
-    <!-- =================================================
-         EARLY THEME DETECTION
-    ================================================== -->
+    <!-- =====================================================
+         THEME
+    ====================================================== -->
 
     <script is:inline>
       (() => {
@@ -126,14 +99,10 @@ const allSearchItems = [
             theme === 'dark'
           );
         } catch {
-          // Ignore storage restrictions.
+          // Ignore theme initialization errors.
         }
       })();
     </script>
-
-    <!-- =================================================
-         SYSTEM THEME LISTENER
-    ================================================== -->
 
     <script is:inline>
       (() => {
@@ -161,9 +130,9 @@ const allSearchItems = [
       })();
     </script>
 
-    <!-- =================================================
+    <!-- =====================================================
          FONT
-    ================================================== -->
+    ====================================================== -->
 
     <link
       rel="preconnect"
@@ -181,9 +150,9 @@ const allSearchItems = [
       rel="stylesheet"
     />
 
-    <!-- =================================================
+    <!-- =====================================================
          PWA
-    ================================================== -->
+    ====================================================== -->
 
     <link
       rel="icon"
@@ -196,252 +165,48 @@ const allSearchItems = [
       href="/manifest.json"
     />
 
-    <!-- =================================================
-         PERFORMANCE HINTS
-    ================================================== -->
-
-    <link
-      rel="dns-prefetch"
-      href="//fonts.googleapis.com"
+    <meta
+      name="theme-color"
+      content="#38bdf8"
     />
 
-    <link
-      rel="dns-prefetch"
-      href="//fonts.gstatic.com"
+    <meta
+      name="mobile-web-app-capable"
+      content="yes"
     />
 
-    <!-- =================================================
-         GLOBAL WORKSPACE VARIABLES
-    ================================================== -->
+    <meta
+      name="apple-mobile-web-app-capable"
+      content="yes"
+    />
 
-    <style is:global>
-      :root {
-        --workspace-header-height: 64px;
-        --workspace-radius: 18px;
-        --workspace-radius-lg: 24px;
-        --workspace-content-width: 1440px;
-      }
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="default"
+    />
 
-      html {
-        background: #ffffff;
-        color-scheme: light;
-      }
-
-      html.dark {
-        background: #030712;
-        color-scheme: dark;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        overflow-x: hidden;
-        background: #ffffff;
-        color: #000000;
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
-      }
-
-      html.dark body {
-        background: #030712;
-        color: #ffffff;
-      }
-
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
-      ::selection {
-        background: rgba(56, 189, 248, 0.25);
-      }
-
-      /* Better mobile tap behavior */
-      button,
-      a,
-      input,
-      select,
-      textarea {
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      button,
-      a {
-        touch-action: manipulation;
-      }
-
-      /* Prevent images from overflowing */
-      img,
-      video,
-      canvas,
-      svg {
-        max-width: 100%;
-      }
-
-      /* Better keyboard navigation */
-      :focus-visible {
-        outline: 3px solid rgba(14, 165, 233, 0.45);
-        outline-offset: 3px;
-      }
-
-      /* =================================================
-         PAGE TRANSITION
-      ================================================== */
-
-      body {
-        animation:
-          dayront-page-in
-          0.35s
-          cubic-bezier(0.22, 1, 0.36, 1)
-          both;
-      }
-
-      @keyframes dayront-page-in {
-        from {
-          opacity: 0;
-          transform: translateY(6px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* =================================================
-         WORKSPACE UTILITIES
-      ================================================== */
-
-      .workspace-shell {
-        width: 100%;
-        max-width: var(--workspace-content-width);
-        margin-inline: auto;
-      }
-
-      .workspace-panel {
-        border: 1px solid rgb(229 231 235);
-        border-radius: var(--workspace-radius-lg);
-        background: #ffffff;
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.03),
-          0 10px 35px rgba(0, 0, 0, 0.04);
-      }
-
-      html.dark .workspace-panel {
-        border-color: rgb(31 41 55);
-        background: rgb(17 24 39);
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.2),
-          0 15px 45px rgba(0, 0, 0, 0.2);
-      }
-
-      .workspace-grid-bg {
-        background-image:
-          linear-gradient(
-            to right,
-            rgba(148, 163, 184, 0.08) 1px,
-            transparent 1px
-          ),
-          linear-gradient(
-            to bottom,
-            rgba(148, 163, 184, 0.08) 1px,
-            transparent 1px
-          );
-        background-size: 32px 32px;
-      }
-
-      html.dark .workspace-grid-bg {
-        background-image:
-          linear-gradient(
-            to right,
-            rgba(148, 163, 184, 0.035) 1px,
-            transparent 1px
-          ),
-          linear-gradient(
-            to bottom,
-            rgba(148, 163, 184, 0.035) 1px,
-            transparent 1px
-          );
-      }
-
-      /* =================================================
-         SCROLLBAR
-      ================================================== */
-
-      * {
-        scrollbar-width: thin;
-        scrollbar-color:
-          rgba(148, 163, 184, 0.55)
-          transparent;
-      }
-
-      *::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-
-      *::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      *::-webkit-scrollbar-thumb {
-        border-radius: 999px;
-        background: rgba(148, 163, 184, 0.45);
-      }
-
-      *::-webkit-scrollbar-thumb:hover {
-        background: rgba(148, 163, 184, 0.7);
-      }
-
-      /* =================================================
-         REDUCED MOTION
-      ================================================== */
-
-      @media (prefers-reduced-motion: reduce) {
-        html {
-          scroll-behavior: auto;
-        }
-
-        *,
-        *::before,
-        *::after {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-          scroll-behavior: auto !important;
-        }
-
-        body {
-          animation: none;
-        }
-      }
-    </style>
+    <meta
+      name="apple-mobile-web-app-title"
+      content="Dayront"
+    />
   </head>
 
   <body
-    class="min-h-screen flex flex-col bg-white text-black antialiased dark:bg-gray-950 dark:text-white"
+    class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200"
   >
-    <!-- =================================================
-         GLOBAL HEADER
-    ================================================== -->
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
     <Header />
 
-    <!-- =================================================
-         BELOW HEADER AD
-    ================================================== -->
+    <!-- =====================================================
+         HEADER AD
+    ====================================================== -->
 
     <div
-      class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8"
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
     >
       <AdSlot
         position="below-header"
@@ -449,50 +214,49 @@ const allSearchItems = [
       />
     </div>
 
-    <!-- =================================================
-         MAIN APPLICATION / MEDIA WORKSPACE
-    ================================================== -->
+    <!-- =====================================================
+         PAGE
+    ====================================================== -->
 
-    <main
-      id="main-content"
-      class="relative flex-1 min-w-0"
-    >
+    <main class="flex-1">
       <slot />
     </main>
 
-    <!-- =================================================
+    <!-- =====================================================
          FOOTER
-    ================================================== -->
+    ====================================================== -->
 
     <Footer />
 
-    <!-- =================================================
-         STICKY FOOTER AD
-    ================================================== -->
+    <!-- =====================================================
+         STICKY AD
+    ====================================================== -->
 
     <AdSlot
       position="sticky-footer"
       class="fixed bottom-0 left-0 right-0 z-40"
     />
 
-    <!-- =================================================
-         GLOBAL SEARCH
-    ================================================== -->
+    <!-- =====================================================
+         SEARCH
+    ====================================================== -->
 
-    <SearchModal items={allSearchItems} />
+    <SearchModal
+      items={allSearchItems}
+    />
 
-    <!-- =================================================
+    <!-- =====================================================
          PWA INSTALL BUTTON
-    ================================================== -->
+    ====================================================== -->
 
     <button
       id="pwa-install-btn"
       type="button"
       aria-label="Install Dayront"
-      class="fixed bottom-20 right-4 z-50 hidden items-center gap-2 rounded-full bg-sky px-4 py-2.5 font-semibold text-black shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-sky-bright"
+      class="fixed bottom-20 right-4 z-50 bg-sky text-black font-semibold px-4 py-2 rounded-full shadow-lg hover:bg-sky-bright transition-all duration-300 hidden items-center gap-2"
     >
       <svg
-        class="h-5 w-5"
+        class="w-5 h-5"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -506,273 +270,284 @@ const allSearchItems = [
         />
       </svg>
 
-      <span>Install Dayront</span>
+      Install Dayront
     </button>
 
-    <!-- =================================================
-         GLOBAL LIVE STATUS
-    ================================================== -->
-
-    <div
-      id="dayront-live-status"
-      class="pointer-events-none fixed bottom-20 left-1/2 z-50 -translate-x-1/2 translate-y-5 opacity-0 transition-all duration-300"
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      <div
-        class="flex items-center gap-2 rounded-full border border-gray-200 bg-white/95 px-4 py-2 text-xs font-medium text-gray-700 shadow-xl backdrop-blur-md dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-300"
-      >
-        <span
-          class="h-2 w-2 animate-pulse rounded-full bg-green-500"
-        ></span>
-
-        <span id="dayront-live-status-text">
-          Ready
-        </span>
-      </div>
-    </div>
-
-    <!-- =================================================
+    <!-- =====================================================
          SERVICE WORKER
-    ================================================== -->
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker
-            .register('/sw.js')
-            .catch(() => {
-              // Service worker is optional.
-            });
-        });
-      }
-    </script>
-
-    <!-- =================================================
-         PWA INSTALL
-    ================================================== -->
-
-    <script>
-      let deferredPrompt = null;
-
-      const installBtn =
-        document.getElementById(
-          'pwa-install-btn'
-        );
-
-      window.addEventListener(
-        'beforeinstallprompt',
-        (event) => {
-          event.preventDefault();
-
-          deferredPrompt = event;
-
-          if (!installBtn) return;
-
-          installBtn.classList.remove('hidden');
-          installBtn.classList.add(
-            'inline-flex'
-          );
-        }
-      );
-
-      installBtn?.addEventListener(
-        'click',
-        async () => {
-          if (!deferredPrompt) return;
-
-          deferredPrompt.prompt();
-
-          try {
-            const { outcome } =
-              await deferredPrompt.userChoice;
-
-            if (outcome === 'accepted') {
-              installBtn.classList.add(
-                'hidden'
-              );
-
-              installBtn.classList.remove(
-                'inline-flex'
-              );
-            }
-          } catch {
-            // Ignore install prompt errors.
-          }
-
-          deferredPrompt = null;
-        }
-      );
-
-      window.addEventListener(
-        'appinstalled',
-        () => {
-          installBtn?.classList.add(
-            'hidden'
-          );
-
-          installBtn?.classList.remove(
-            'inline-flex'
-          );
-
-          deferredPrompt = null;
-        }
-      );
-    </script>
-
-    <!-- =================================================
-         THEME + ASTRO NAVIGATION
-    ================================================== -->
-
-    <script>
-      function applyDayrontTheme() {
-        try {
-          const stored =
-            localStorage.getItem('theme');
-
-          const prefersDark =
-            window.matchMedia(
-              '(prefers-color-scheme: dark)'
-            ).matches;
-
-          const theme =
-            stored ||
-            (prefersDark
-              ? 'dark'
-              : 'light');
-
-          document.documentElement.classList.toggle(
-            'dark',
-            theme === 'dark'
-          );
-        } catch {
-          // Ignore.
-        }
-      }
-
-      document.addEventListener(
-        'astro:before-swap',
-        () => {
-          document.body.style.opacity = '0';
-          document.body.style.transition =
-            'opacity 0.15s ease-out';
-        }
-      );
-
-      document.addEventListener(
-        'astro:after-swap',
-        () => {
-          applyDayrontTheme();
-
-          requestAnimationFrame(() => {
-            document.body.style.opacity = '1';
-            document.body.style.transition =
-              'opacity 0.2s ease-out';
-          });
-        }
-      );
-
-      window.addEventListener(
-        'storage',
-        (event) => {
-          if (event.key === 'theme') {
-            applyDayrontTheme();
-          }
-        }
-      );
-    </script>
-
-    <!-- =================================================
-         GLOBAL MEDIA WORKSPACE EVENTS
-    ================================================== -->
+    ====================================================== -->
 
     <script>
       (() => {
-        const status =
-          document.getElementById(
-            'dayront-live-status'
-          );
-
-        const statusText =
-          document.getElementById(
-            'dayront-live-status-text'
-          );
-
-        let statusTimer;
-
-        window.dayrontStatus =
-          function showDayrontStatus(
-            message
-          ) {
-            if (!status || !statusText)
-              return;
-
-            statusText.textContent =
-              message;
-
-            status.classList.remove(
-              'translate-y-5',
-              'opacity-0'
-            );
-
-            status.classList.add(
-              'translate-y-0',
-              'opacity-100'
-            );
-
-            clearTimeout(statusTimer);
-
-            statusTimer = setTimeout(
-              () => {
-                status.classList.add(
-                  'translate-y-5',
-                  'opacity-0'
-                );
-
-                status.classList.remove(
-                  'translate-y-0',
-                  'opacity-100'
-                );
-              },
-              3200
-            );
-          };
-      })();
-    </script>
-
-    <!-- =================================================
-         CONNECTION / ONLINE STATUS
-    ================================================== -->
-
-    <script>
-      function updateConnectionStatus() {
-        if (
-          typeof window.dayrontStatus !==
-          'function'
-        ) {
+        if (!('serviceWorker' in navigator)) {
           return;
         }
 
-        if (navigator.onLine) {
-          window.dayrontStatus(
-            'You are back online'
-          );
-        } else {
-          window.dayrontStatus(
-            'Offline mode — local tools may still work'
-          );
-        }
-      }
+        let refreshing = false;
 
-      window.addEventListener(
-        'online',
-        updateConnectionStatus
-      );
+        const reloadOnce = () => {
+          if (refreshing) return;
 
-      window.addEventListener(
-        'offline',
-        updateConnectionStatus
-      );
+          refreshing = true;
+
+          window.location.reload();
+        };
+
+        navigator.serviceWorker.addEventListener(
+          'controllerchange',
+          () => {
+            reloadOnce();
+          }
+        );
+
+        window.addEventListener(
+          'load',
+          async () => {
+            try {
+              const registration =
+                await navigator.serviceWorker.register(
+                  '/sw.js',
+                  {
+                    scope: '/',
+                    updateViaCache: 'none',
+                  }
+                );
+
+              /*
+               * Ask the browser to check for a new
+               * service worker every time the page loads.
+               */
+              await registration.update();
+
+              /*
+               * If a new worker is waiting, tell it
+               * to activate immediately.
+               */
+              if (registration.waiting) {
+                registration.waiting.postMessage({
+                  type: 'SKIP_WAITING',
+                });
+              }
+
+              registration.addEventListener(
+                'updatefound',
+                () => {
+                  const newWorker =
+                    registration.installing;
+
+                  if (!newWorker) return;
+
+                  newWorker.addEventListener(
+                    'statechange',
+                    () => {
+                      if (
+                        newWorker.state ===
+                        'installed'
+                      ) {
+                        /*
+                         * A controller means this is
+                         * an update, not first install.
+                         */
+                        if (
+                          navigator.serviceWorker
+                            .controller
+                        ) {
+                          newWorker.postMessage({
+                            type:
+                              'SKIP_WAITING',
+                          });
+                        }
+                      }
+                    }
+                  );
+                }
+              );
+            } catch (error) {
+              /*
+               * PWA functionality must never break
+               * the actual Dayront website.
+               */
+              console.warn(
+                'Dayront Service Worker registration failed:',
+                error
+              );
+            }
+          }
+        );
+      })();
     </script>
+
+    <!-- =====================================================
+         PWA INSTALL PROMPT
+    ====================================================== -->
+
+    <script>
+      (() => {
+        let deferredPrompt = null;
+
+        const installButton =
+          document.getElementById(
+            'pwa-install-btn'
+          );
+
+        if (!installButton) return;
+
+        window.addEventListener(
+          'beforeinstallprompt',
+          (event) => {
+            event.preventDefault();
+
+            deferredPrompt = event;
+
+            installButton.classList.remove(
+              'hidden'
+            );
+
+            installButton.classList.add(
+              'inline-flex'
+            );
+          }
+        );
+
+        installButton.addEventListener(
+          'click',
+          async () => {
+            if (!deferredPrompt) return;
+
+            try {
+              deferredPrompt.prompt();
+
+              const result =
+                await deferredPrompt.userChoice;
+
+              if (
+                result?.outcome === 'accepted'
+              ) {
+                installButton.classList.add(
+                  'hidden'
+                );
+
+                installButton.classList.remove(
+                  'inline-flex'
+                );
+              }
+            } catch (error) {
+              console.warn(
+                'Dayront installation prompt failed:',
+                error
+              );
+            }
+
+            deferredPrompt = null;
+          }
+        );
+
+        window.addEventListener(
+          'appinstalled',
+          () => {
+            installButton.classList.add(
+              'hidden'
+            );
+
+            installButton.classList.remove(
+              'inline-flex'
+            );
+
+            deferredPrompt = null;
+          }
+        );
+      })();
+    </script>
+
   </body>
 </html>
+
+<!-- =========================================================
+     GLOBAL PAGE STYLES
+========================================================== -->
+
+<style is:global>
+
+  body {
+    padding-bottom: 60px;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      padding-bottom: 90px;
+    }
+  }
+
+  body {
+    animation:
+      dayront-page-fade-in
+      0.3s
+      ease-out;
+  }
+
+  @keyframes dayront-page-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body {
+      animation: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+</style>
+
+<!-- =========================================================
+     ASTRO VIEW TRANSITIONS
+========================================================== -->
+
+<script>
+  document.addEventListener(
+    'astro:before-swap',
+    () => {
+      document.body.style.opacity = '0';
+      document.body.style.transition =
+        'opacity 0.15s ease-out';
+    }
+  );
+
+  document.addEventListener(
+    'astro:after-swap',
+    () => {
+      document.body.style.opacity = '1';
+      document.body.style.transition =
+        'opacity 0.15s ease-out';
+
+      const theme =
+        localStorage.getItem('theme') ||
+        (
+          window.matchMedia(
+            '(prefers-color-scheme: dark)'
+          ).matches
+            ? 'dark'
+            : 'light'
+        );
+
+      document.documentElement.classList.toggle(
+        'dark',
+        theme === 'dark'
+      );
+    }
+  );
+</script>
