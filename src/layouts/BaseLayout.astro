@@ -14,28 +14,18 @@ export interface Props {
   canonicalURL?: string;
 }
 
-const {
-  title,
-  description,
-  ogImage,
-  canonicalURL,
-} = Astro.props;
+const { title, description, ogImage, canonicalURL } = Astro.props;
 
 /* ---------------------------------------------------------
    SEARCH DATA
 --------------------------------------------------------- */
-
 let blogItems: any[] = [];
-
 try {
   const blogPosts = await getCollection('blog');
-
-  blogItems = blogPosts.map((post) => ({
+  blogItems = blogPosts.map(post => ({
     title: post.data.title,
     description: post.data.description,
-    url: `/blog/${post.id
-      .replace(/\.mdx$/, '')
-      .replace(/^en\//, '')}`,
+    url: `/blog/${post.id.replace(/\.mdx$/, '').replace(/^en\//, '')}`,
     type: 'blog',
     icon: '📝',
   }));
@@ -43,32 +33,22 @@ try {
   blogItems = [];
 }
 
-const toolItems = tools.map((tool) => ({
+const toolItems = tools.map(tool => ({
   title: tool.name,
   description: tool.description,
-  url:
-    tool.from && tool.to
-      ? `/convert/${tool.slug}`
-      : `/tools/${tool.slug}`,
+  url: tool.from && tool.to ? `/convert/${tool.slug}` : `/tools/${tool.slug}`,
   type: 'tool',
   icon: tool.icon,
 }));
 
-const allSearchItems = [
-  ...toolItems,
-  ...blogItems,
-];
+const allSearchItems = [...toolItems, ...blogItems];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" style="color-scheme: light dark;">
   <head>
     <meta charset="UTF-8" />
-
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <SeoHead
       title={title}
@@ -78,73 +58,24 @@ const allSearchItems = [
     />
 
     <!-- =====================================================
-         THEME
+         THEME – DEVICE PREFERENCE ONLY (no localStorage)
     ====================================================== -->
-
     <script is:inline>
       (() => {
-        try {
-          const stored = localStorage.getItem('theme');
-
-          const prefersDark = window.matchMedia(
-            '(prefers-color-scheme: dark)'
-          ).matches;
-
-          const theme =
-            stored ||
-            (prefersDark ? 'dark' : 'light');
-
-          document.documentElement.classList.toggle(
-            'dark',
-            theme === 'dark'
-          );
-        } catch {
-          // Ignore theme initialization errors.
-        }
-      })();
-    </script>
-
-    <script is:inline>
-      (() => {
-        const mediaQuery = window.matchMedia(
-          '(prefers-color-scheme: dark)'
-        );
-
-        const updateTheme = (event) => {
-          if (!localStorage.getItem('theme')) {
-            document.documentElement.classList.toggle(
-              'dark',
-              event.matches
-            );
-          }
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const apply = (e) => {
+          document.documentElement.classList.toggle('dark', e.matches);
         };
-
-        if (mediaQuery.addEventListener) {
-          mediaQuery.addEventListener(
-            'change',
-            updateTheme
-          );
-        } else {
-          mediaQuery.addListener(updateTheme);
-        }
+        apply(mq);                    // set initial theme
+        mq.addEventListener('change', apply);
       })();
     </script>
 
     <!-- =====================================================
          FONT
     ====================================================== -->
-
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
-
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -153,321 +84,117 @@ const allSearchItems = [
     <!-- =====================================================
          PWA
     ====================================================== -->
-
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="/favicon.svg"
-    />
-
-    <link
-      rel="manifest"
-      href="/manifest.json"
-    />
-
-    <meta
-      name="theme-color"
-      content="#38bdf8"
-    />
-
-    <meta
-      name="mobile-web-app-capable"
-      content="yes"
-    />
-
-    <meta
-      name="apple-mobile-web-app-capable"
-      content="yes"
-    />
-
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="default"
-    />
-
-    <meta
-      name="apple-mobile-web-app-title"
-      content="Dayront"
-    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#38bdf8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Dayront" />
   </head>
 
   <body
     class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200"
   >
-
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
     <Header />
 
-    <!-- =====================================================
-         HEADER AD
-    ====================================================== -->
-
-    <div
-      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
-    >
-      <AdSlot
-        position="below-header"
-        class="my-2"
-      />
+    <!-- Header ad -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <AdSlot position="below-header" class="my-2" />
     </div>
-
-    <!-- =====================================================
-         PAGE
-    ====================================================== -->
 
     <main class="flex-1">
       <slot />
     </main>
 
-    <!-- =====================================================
-         FOOTER
-    ====================================================== -->
-
     <Footer />
 
-    <!-- =====================================================
-         STICKY AD
-    ====================================================== -->
+    <!-- Sticky footer ad -->
+    <AdSlot position="sticky-footer" class="fixed bottom-0 left-0 right-0 z-40" />
 
-    <AdSlot
-      position="sticky-footer"
-      class="fixed bottom-0 left-0 right-0 z-40"
-    />
+    <!-- Search modal -->
+    <SearchModal items={allSearchItems} />
 
-    <!-- =====================================================
-         SEARCH
-    ====================================================== -->
-
-    <SearchModal
-      items={allSearchItems}
-    />
-
-    <!-- =====================================================
-         PWA INSTALL BUTTON
-    ====================================================== -->
-
+    <!-- PWA Install button -->
     <button
       id="pwa-install-btn"
       type="button"
       aria-label="Install Dayront"
       class="fixed bottom-20 right-4 z-50 bg-sky text-black font-semibold px-4 py-2 rounded-full shadow-lg hover:bg-sky-bright transition-all duration-300 hidden items-center gap-2"
     >
-      <svg
-        class="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"
-        />
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
       </svg>
-
       Install Dayront
     </button>
 
-    <!-- =====================================================
-         SERVICE WORKER
-    ====================================================== -->
-
+    <!-- Service worker registration -->
     <script>
       (() => {
-        if (!('serviceWorker' in navigator)) {
-          return;
-        }
+        if (!('serviceWorker' in navigator)) return;
 
-        let refreshing = false;
-
-        const reloadOnce = () => {
-          if (refreshing) return;
-
-          refreshing = true;
-
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
           window.location.reload();
-        };
+        });
 
-        navigator.serviceWorker.addEventListener(
-          'controllerchange',
-          () => {
-            reloadOnce();
-          }
-        );
-
-        window.addEventListener(
-          'load',
-          async () => {
-            try {
-              const registration =
-                await navigator.serviceWorker.register(
-                  '/sw.js',
-                  {
-                    scope: '/',
-                    updateViaCache: 'none',
-                  }
-                );
-
-              /*
-               * Ask the browser to check for a new
-               * service worker every time the page loads.
-               */
-              await registration.update();
-
-              /*
-               * If a new worker is waiting, tell it
-               * to activate immediately.
-               */
-              if (registration.waiting) {
-                registration.waiting.postMessage({
-                  type: 'SKIP_WAITING',
-                });
-              }
-
-              registration.addEventListener(
-                'updatefound',
-                () => {
-                  const newWorker =
-                    registration.installing;
-
-                  if (!newWorker) return;
-
-                  newWorker.addEventListener(
-                    'statechange',
-                    () => {
-                      if (
-                        newWorker.state ===
-                        'installed'
-                      ) {
-                        /*
-                         * A controller means this is
-                         * an update, not first install.
-                         */
-                        if (
-                          navigator.serviceWorker
-                            .controller
-                        ) {
-                          newWorker.postMessage({
-                            type:
-                              'SKIP_WAITING',
-                          });
-                        }
-                      }
-                    }
-                  );
-                }
-              );
-            } catch (error) {
-              /*
-               * PWA functionality must never break
-               * the actual Dayront website.
-               */
-              console.warn(
-                'Dayront Service Worker registration failed:',
-                error
-              );
+        window.addEventListener('load', async () => {
+          try {
+            const registration = await navigator.serviceWorker.register('/sw.js', {
+              scope: '/',
+              updateViaCache: 'none',
+            });
+            await registration.update();
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
             }
+          } catch (error) {
+            console.warn('Dayront SW registration failed:', error);
           }
-        );
+        });
       })();
     </script>
 
-    <!-- =====================================================
-         PWA INSTALL PROMPT
-    ====================================================== -->
-
+    <!-- PWA Install prompt -->
     <script>
       (() => {
         let deferredPrompt = null;
-
-        const installButton =
-          document.getElementById(
-            'pwa-install-btn'
-          );
-
+        const installButton = document.getElementById('pwa-install-btn');
         if (!installButton) return;
 
-        window.addEventListener(
-          'beforeinstallprompt',
-          (event) => {
-            event.preventDefault();
+        window.addEventListener('beforeinstallprompt', (event) => {
+          event.preventDefault();
+          deferredPrompt = event;
+          installButton.classList.remove('hidden');
+          installButton.classList.add('inline-flex');
+        });
 
-            deferredPrompt = event;
-
-            installButton.classList.remove(
-              'hidden'
-            );
-
-            installButton.classList.add(
-              'inline-flex'
-            );
-          }
-        );
-
-        installButton.addEventListener(
-          'click',
-          async () => {
-            if (!deferredPrompt) return;
-
-            try {
-              deferredPrompt.prompt();
-
-              const result =
-                await deferredPrompt.userChoice;
-
-              if (
-                result?.outcome === 'accepted'
-              ) {
-                installButton.classList.add(
-                  'hidden'
-                );
-
-                installButton.classList.remove(
-                  'inline-flex'
-                );
-              }
-            } catch (error) {
-              console.warn(
-                'Dayront installation prompt failed:',
-                error
-              );
+        installButton.addEventListener('click', async () => {
+          if (!deferredPrompt) return;
+          try {
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            if (result?.outcome === 'accepted') {
+              installButton.classList.add('hidden');
+              installButton.classList.remove('inline-flex');
             }
-
-            deferredPrompt = null;
+          } catch (error) {
+            console.warn('Dayront install prompt failed:', error);
           }
-        );
+          deferredPrompt = null;
+        });
 
-        window.addEventListener(
-          'appinstalled',
-          () => {
-            installButton.classList.add(
-              'hidden'
-            );
-
-            installButton.classList.remove(
-              'inline-flex'
-            );
-
-            deferredPrompt = null;
-          }
-        );
+        window.addEventListener('appinstalled', () => {
+          installButton.classList.add('hidden');
+          installButton.classList.remove('inline-flex');
+          deferredPrompt = null;
+        });
       })();
     </script>
-
   </body>
 </html>
 
-<!-- =========================================================
-     GLOBAL PAGE STYLES
-========================================================== -->
-
+<!-- Global page styles -->
 <style is:global>
-
   body {
     padding-bottom: 60px;
   }
@@ -479,10 +206,7 @@ const allSearchItems = [
   }
 
   body {
-    animation:
-      dayront-page-fade-in
-      0.3s
-      ease-out;
+    animation: dayront-page-fade-in 0.3s ease-out;
   }
 
   @keyframes dayront-page-fade-in {
@@ -490,7 +214,6 @@ const allSearchItems = [
       opacity: 0;
       transform: translateY(8px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
@@ -501,7 +224,6 @@ const allSearchItems = [
     body {
       animation: none;
     }
-
     *,
     *::before,
     *::after {
@@ -510,44 +232,21 @@ const allSearchItems = [
       scroll-behavior: auto !important;
     }
   }
-
 </style>
 
-<!-- =========================================================
-     ASTRO VIEW TRANSITIONS
-========================================================== -->
-
+<!-- Astro view transitions -->
 <script>
-  document.addEventListener(
-    'astro:before-swap',
-    () => {
-      document.body.style.opacity = '0';
-      document.body.style.transition =
-        'opacity 0.15s ease-out';
-    }
-  );
+  document.addEventListener('astro:before-swap', () => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.15s ease-out';
+  });
 
-  document.addEventListener(
-    'astro:after-swap',
-    () => {
-      document.body.style.opacity = '1';
-      document.body.style.transition =
-        'opacity 0.15s ease-out';
+  document.addEventListener('astro:after-swap', () => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.15s ease-out';
 
-      const theme =
-        localStorage.getItem('theme') ||
-        (
-          window.matchMedia(
-            '(prefers-color-scheme: dark)'
-          ).matches
-            ? 'dark'
-            : 'light'
-        );
-
-      document.documentElement.classList.toggle(
-        'dark',
-        theme === 'dark'
-      );
-    }
-  );
+    // Re‑apply current device preference (no localStorage)
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', isDark);
+  });
 </script>

@@ -38,10 +38,6 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
         <option value="fr">FR</option>
         <option value="ja">JA</option>
       </select>
-      <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle theme">
-        <span class="hidden dark:inline">☀️</span>
-        <span class="dark:hidden">🌙</span>
-      </button>
     </div>
 
     <!-- Mobile menu button -->
@@ -87,7 +83,6 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
         <select id="lang-select-mobile" class="text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-1 text-black dark:text-white">
           <option value="en">EN</option><option value="es">ES</option><option value="pt">PT</option><option value="de">DE</option><option value="fr">FR</option><option value="ja">JA</option>
         </select>
-        <button id="theme-toggle-mobile" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">🌓</button>
       </div>
     </div>
   </div>
@@ -102,11 +97,10 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
   let isMenuOpen = false;
 
   function openMenu() {
-    menu.style.maxHeight = '500px'; // enough to show all links
+    menu.style.maxHeight = '500px';
     menu.style.opacity = '1';
     menu.style.transform = 'translateY(0)';
     overlay.classList.remove('hidden');
-    // trigger reflow then set opacity
     overlay.offsetHeight;
     overlay.style.opacity = '1';
     icon.classList.add('rotate-90');
@@ -122,7 +116,6 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
     icon.classList.remove('rotate-90');
     isMenuOpen = false;
     document.body.style.overflow = '';
-    // hide overlay after transition
     setTimeout(() => {
       overlay.classList.add('hidden');
     }, 300);
@@ -136,27 +129,14 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
     }
   });
 
-  // Close on overlay click
   overlay?.addEventListener('click', closeMenu);
 
-  // Close on link click inside the menu
   menu?.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', closeMenu);
   });
-  // Also close when search button inside menu is clicked
   menu?.querySelector('button[onclick="window.openSearch()"]')?.addEventListener('click', closeMenu);
 
-  // Theme toggle functions (unchanged)
-  function toggleTheme() {
-    const html = document.documentElement;
-    const isDark = html.classList.contains('dark');
-    html.classList.toggle('dark', !isDark);
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
-  }
-  document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-  document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
-
-  // Language switcher (unchanged)
+  // Language switcher
   function changeLang(el) {
     const lang = el.value;
     localStorage.setItem('dayront-lang', lang);
