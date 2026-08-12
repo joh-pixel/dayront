@@ -4,9 +4,6 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
   <path d="M8 12h16v8H8z" fill="#fff"/>
   <circle cx="16" cy="16" r="3" fill="#38bdf8"/>
 </svg>`;
-
-// Current language from parent layout
-const { lang = 'en' } = Astro.props;
 ---
 
 <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
@@ -32,19 +29,6 @@ const { lang = 'en' } = Astro.props;
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </button>
-
-      <!-- Language switcher – current lang preselected -->
-      <select
-        id="lang-select"
-        class="text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-1 text-black dark:text-white focus:border-sky focus:outline-none"
-      >
-        <option value="en" selected={lang === 'en'}>EN</option>
-        <option value="es" selected={lang === 'es'}>ES</option>
-        <option value="pt" selected={lang === 'pt'}>PT</option>
-        <option value="de" selected={lang === 'de'}>DE</option>
-        <option value="fr" selected={lang === 'fr'}>FR</option>
-        <option value="ja" selected={lang === 'ja'}>JA</option>
-      </select>
     </div>
 
     <!-- Mobile menu button -->
@@ -85,27 +69,12 @@ const { lang = 'en' } = Astro.props;
           Search
         </span>
       </button>
-
-      <div class="flex items-center justify-between px-3 pt-3 border-t border-gray-200 dark:border-gray-800 mt-3">
-        <!-- Mobile language switcher – also preselected -->
-        <select
-          id="lang-select-mobile"
-          class="text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-1 text-black dark:text-white"
-        >
-          <option value="en" selected={lang === 'en'}>EN</option>
-          <option value="es" selected={lang === 'es'}>ES</option>
-          <option value="pt" selected={lang === 'pt'}>PT</option>
-          <option value="de" selected={lang === 'de'}>DE</option>
-          <option value="fr" selected={lang === 'fr'}>FR</option>
-          <option value="ja" selected={lang === 'ja'}>JA</option>
-        </select>
-      </div>
     </div>
   </div>
 </header>
 
 <script>
-  // --- Mobile menu logic ---
+  // Mobile menu logic
   const menuBtn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
   const overlay = document.getElementById('mobile-overlay');
@@ -152,24 +121,4 @@ const { lang = 'en' } = Astro.props;
     link.addEventListener('click', closeMenu);
   });
   menu?.querySelector('button[onclick="window.openSearch()"]')?.addEventListener('click', closeMenu);
-
-  // --- Language management ---
-  function changeLang(lang) {
-    localStorage.setItem('dayront-lang', lang);
-    const url = new URL(window.location.href);
-    url.searchParams.set('lang', lang);
-    window.location.href = url.toString();
-  }
-
-  // Attach event listeners to both dropdowns
-  const desktopLangSelect = document.getElementById('lang-select');
-  const mobileLangSelect = document.getElementById('lang-select-mobile');
-
-  desktopLangSelect?.addEventListener('change', (e) => {
-    changeLang(e.target.value);
-  });
-
-  mobileLangSelect?.addEventListener('change', (e) => {
-    changeLang(e.target.value);
-  });
 </script>
