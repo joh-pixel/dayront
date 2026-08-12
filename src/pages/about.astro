@@ -110,13 +110,13 @@ const teamParas = pages.about?.team || [
 
     <!-- Our Story -->
     <div class="space-y-6 mb-16">
-      <h2 class="text-2xl font-bold text-black dark:text-white">{t('about.ourStoryHeading', 'Our Story')}</h2>
+      <h2 class="text-2xl font-bold text-black dark:text-white"><span data-i18n="about.ourStoryHeading">Our Story</span></h2>
       {Array.isArray(ourStoryParas) ? ourStoryParas.map((p: string) => <p class="text-gray-700 dark:text-white leading-relaxed">{p}</p>) : <p class="text-gray-700 dark:text-white leading-relaxed">{ourStoryParas}</p>}
     </div>
 
     <!-- How It Works -->
     <div class="space-y-6 mb-16">
-      <h2 class="text-2xl font-bold text-black dark:text-white">{t('about.howItWorksHeading', 'How Dayront Works')}</h2>
+      <h2 class="text-2xl font-bold text-black dark:text-white"><span data-i18n="about.howItWorksHeading">How Dayront Works</span></h2>
       {howItWorksParas.map((p: string) => <p class="text-gray-700 dark:text-white leading-relaxed">{p}</p>)}
       <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-white ml-4">
         {howItWorksSteps.map((step: { title: string; text: string }) => (
@@ -133,13 +133,13 @@ const teamParas = pages.about?.team || [
 
     <!-- Privacy Philosophy -->
     <div class="space-y-6 mb-16">
-      <h2 class="text-2xl font-bold text-black dark:text-white">{t('about.privacyHeading', 'Our Privacy Philosophy')}</h2>
+      <h2 class="text-2xl font-bold text-black dark:text-white"><span data-i18n="about.privacyHeading">Our Privacy Philosophy</span></h2>
       {Array.isArray(privacyParas) ? privacyParas.map((p: string) => <p class="text-gray-700 dark:text-white leading-relaxed">{p}</p>) : <p class="text-gray-700 dark:text-white leading-relaxed">{privacyParas}</p>}
     </div>
 
     <!-- Who Uses Dayront -->
     <div class="space-y-6 mb-16">
-      <h2 class="text-2xl font-bold text-black dark:text-white">{t('about.whoUsesHeading', 'Who Uses Dayront?')}</h2>
+      <h2 class="text-2xl font-bold text-black dark:text-white"><span data-i18n="about.whoUsesHeading">Who Uses Dayront?</span></h2>
       {Array.isArray(whoUsesParas) ? whoUsesParas.map((p: string) => <p class="text-gray-700 dark:text-white leading-relaxed">{p}</p>) : <p class="text-gray-700 dark:text-white leading-relaxed">{whoUsesParas}</p>}
       <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-white ml-4">
         {whoUsesList.map((item: { title: string; text: string }) => (
@@ -161,25 +161,25 @@ const teamParas = pages.about?.team || [
         ))}
       </ul>
       <p class="text-gray-700 dark:text-white leading-relaxed">
-        {t('about.roadAheadFooter', 'Everything we build will stay true to our core promise:')} <strong class="text-black dark:text-white">{t('about.corePromise', 'your files never leave your device.')}</strong>
+        <span data-i18n="about.roadAheadFooter">Everything we build will stay true to our core promise:</span> <strong class="text-black dark:text-white"><span data-i18n="about.corePromise">your files never leave your device.</span></strong>
       </p>
     </div>
 
     <!-- The Team -->
     <div class="space-y-6 mb-16">
-      <h2 class="text-2xl font-bold text-black dark:text-white">{t('about.teamHeading', 'The Team')}</h2>
+      <h2 class="text-2xl font-bold text-black dark:text-white"><span data-i18n="about.teamHeading">The Team</span></h2>
       {Array.isArray(teamParas) ? teamParas.map((p: string) => <p class="text-gray-700 dark:text-white leading-relaxed">{p}</p>) : <p class="text-gray-700 dark:text-white leading-relaxed">{teamParas}</p>}
     </div>
 
     <!-- Contact / CTA -->
     <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 text-center">
-      <h2 class="text-2xl font-bold text-black dark:text-white mb-3">{t('about.ctaHeading', 'Have Questions or Feedback?')}</h2>
+      <h2 class="text-2xl font-bold text-black dark:text-white mb-3"><span data-i18n="about.ctaHeading">Have Questions or Feedback?</span></h2>
       <p class="text-gray-600 dark:text-white mb-6 max-w-md mx-auto">
         {t('about.ctaText', "We'd love to hear from you. Whether you found a bug, have a feature request, or just want to say hello.")}
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="mailto:hello@dayront.com" class="btn-primary">{t('about.emailUs', 'Email Us')}</a>
-        <a href={`/tools?lang=${lang}`} class="btn-secondary">{t('about.exploreTools', 'Explore Tools')}</a>
+        <a href="mailto:hello@dayront.com" class="btn-primary"><span data-i18n="about.emailUs">Email Us</span></a>
+        <a href={`/tools?lang=${lang}`} class="btn-secondary"><span data-i18n="about.exploreTools">Explore Tools</span></a>
       </div>
     </div>
   </section>

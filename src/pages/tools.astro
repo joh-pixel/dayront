@@ -83,14 +83,8 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
 <BaseLayout
   lang={lang}
-  title={t(
-    'tools_page_title',
-    'All Media Tools – Free & Private | Dayront'
-  )}
-  description={t(
-    'tools_page_desc',
-    'Browse all free online media tools. Convert, cut, merge, boost, and more – 100% private, no upload.'
-  )}
+  title=<span data-i18n="tools_page_title">All Media Tools – Free &amp; Private | Dayront</span>
+  description=<span data-i18n="tools_page_desc">Browse all free online media tools. Convert, cut, merge, boost, and more – 100% private, no upload.</span>
 >
   <!-- HERO -->
   <section class="tools-hero relative overflow-hidden">
@@ -104,40 +98,34 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
       <div class="max-w-3xl">
         <div class="privacy-badge">
           <span class="status-dot"></span>
-          {t(
-            'privacy_first_badge',
-            'Privacy-first media processing'
-          )}
+          <span data-i18n="privacy_first_badge">Privacy-first media processing</span>
         </div>
 
         <h1 class="hero-title">
-          {t('tools_hero_heading', 'All Your Media Tools')}
+          <span data-i18n="tools_hero_heading">All Your Media Tools</span>
           <span>
-            {t('tools_hero_subheading', 'In One Place.')}
+            <span data-i18n="tools_hero_subheading">In One Place.</span>
           </span>
         </h1>
 
         <p class="hero-description">
-          {t(
-            'tools_hero_desc',
-            'Everything you need to convert, edit, combine, enhance, and process audio and video files directly in your browser.'
-          )}
+          <span data-i18n="tools_hero_desc">Everything you need to convert, edit, combine, enhance, and process audio and video files directly in your browser.</span>
         </p>
 
         <div class="feature-pills">
           <div class="feature-pill">
             <span>🔒</span>
-            {t('no_uploads', 'No uploads')}
+            <span data-i18n="no_uploads">No uploads</span>
           </div>
 
           <div class="feature-pill">
             <span>⚡</span>
-            {t('fast_processing', 'Fast processing')}
+            <span data-i18n="fast_processing">Fast processing</span>
           </div>
 
           <div class="feature-pill">
             <span>🆓</span>
-            {t('free_to_use', 'Free to use')}
+            <span data-i18n="free_to_use">Free to use</span>
           </div>
         </div>
       </div>
@@ -151,28 +139,28 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
       <div class="stat-card reveal">
         <p class="stat-number">{tools.length}+</p>
         <p class="stat-label">
-          {t('free_tools', 'Free tools')}
+          <span data-i18n="free_tools">Free tools</span>
         </p>
       </div>
 
       <div class="stat-card reveal">
         <p class="stat-number">100%</p>
         <p class="stat-label">
-          {t('browser_based', 'Browser based')}
+          <span data-i18n="browser_based">Browser based</span>
         </p>
       </div>
 
       <div class="stat-card reveal">
         <p class="stat-number">0</p>
         <p class="stat-label">
-          {t('server_uploads', 'Server uploads')}
+          <span data-i18n="server_uploads">Server uploads</span>
         </p>
       </div>
 
       <div class="stat-card reveal">
         <p class="stat-number">24/7</p>
         <p class="stat-label">
-          {t('available_online', 'Available online')}
+          <span data-i18n="available_online">Available online</span>
         </p>
       </div>
 
@@ -187,21 +175,15 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
         <div>
           <p class="section-kicker">
-            {t('find_tool', 'FIND A TOOL')}
+            <span data-i18n="find_tool">FIND A TOOL</span>
           </p>
 
           <h2 class="section-title">
-            {t(
-              'what_do_you_want',
-              'What do you want to do?'
-            )}
+            <span data-i18n="what_do_you_want">What do you want to do?</span>
           </h2>
 
           <p class="section-description">
-            {t(
-              'search_or_browse',
-              'Search by tool name or browse by category.'
-            )}
+            <span data-i18n="search_or_browse">Search by tool name or browse by category.</span>
           </p>
         </div>
 
@@ -225,24 +207,15 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
             <input
               id="tool-search"
               type="text"
-              placeholder={t(
-                'search_tools_placeholder',
-                'Search tools...'
-              )}
-              aria-label={t(
-                'search_tools',
-                'Search tools'
-              )}
+              placeholder=<span data-i18n="search_tools_placeholder">Search tools...</span>
+              aria-label=<span data-i18n="search_tools">Search tools</span>
               autocomplete="off"
             />
 
             <button
               id="clear-search"
               type="button"
-              aria-label={t(
-                'clear_search',
-                'Clear search'
-              )}
+              aria-label=<span data-i18n="clear_search">Clear search</span>
             >
               ×
             </button>
@@ -250,16 +223,10 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
           <select
             id="tool-filter"
-            aria-label={t(
-              'filter_category',
-              'Filter tools by category'
-            )}
+            aria-label=<span data-i18n="filter_category">Filter tools by category</span>
           >
             <option value="all">
-              {t(
-                'all_categories',
-                'All Categories'
-              )}
+              <span data-i18n="all_categories">All Categories</span>
             </option>
 
             {
@@ -279,7 +246,7 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
               type="button"
               class="view-button active"
             >
-              {t('grid', 'Grid')}
+              <span data-i18n="grid">Grid</span>
             </button>
 
             <button
@@ -287,7 +254,7 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
               type="button"
               class="view-button"
             >
-              {t('list', 'List')}
+              <span data-i18n="list">List</span>
             </button>
           </div>
 
@@ -302,7 +269,7 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
           data-category="all"
           class="category-pill active"
         >
-          {t('all_tools', 'All Tools')}
+          <span data-i18n="all_tools">All Tools</span>
         </button>
 
         {
@@ -336,10 +303,7 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
         <span class="browser-status">
           <span></span>
-          {t(
-            'processing_in_browser',
-            'Processing stays in your browser'
-          )}
+          <span data-i18n="processing_in_browser">Processing stays in your browser</span>
         </span>
 
       </div>
@@ -415,27 +379,18 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
       </div>
 
       <h3>
-        {t(
-          'no_tools_found',
-          'No tools found'
-        )}
+        <span data-i18n="no_tools_found">No tools found</span>
       </h3>
 
       <p>
-        {t(
-          'try_another_search',
-          'Try another search term or choose a different category.'
-        )}
+        <span data-i18n="try_another_search">Try another search term or choose a different category.</span>
       </p>
 
       <button
         id="reset-tools"
         type="button"
       >
-        {t(
-          'show_all_tools',
-          'Show all tools'
-        )}
+        <span data-i18n="show_all_tools">Show all tools</span>
       </button>
     </div>
   </section>
@@ -451,17 +406,11 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
         <div class="privacy-heading">
           <span>🔒</span>
-          {t(
-            'privacy_first_by_design',
-            'PRIVACY-FIRST BY DESIGN'
-          )}
+          <span data-i18n="privacy_first_by_design">PRIVACY-FIRST BY DESIGN</span>
         </div>
 
         <h2>
-          {t(
-            'files_belong_to_you',
-            'Your files belong to you.'
-          )}
+          <span data-i18n="files_belong_to_you">Your files belong to you.</span>
         </h2>
 
         <p>
@@ -475,40 +424,28 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
           <div>
             <strong>
-              {t('no_account', 'No account')}
+              <span data-i18n="no_account">No account</span>
             </strong>
             <span>
-              {t(
-                'start_immediately',
-                'Start immediately'
-              )}
+              <span data-i18n="start_immediately">Start immediately</span>
             </span>
           </div>
 
           <div>
             <strong>
-              {t('no_upload', 'No upload')}
+              <span data-i18n="no_upload">No upload</span>
             </strong>
             <span>
-              {t(
-                'local_processing',
-                'Local processing'
-              )}
+              <span data-i18n="local_processing">Local processing</span>
             </span>
           </div>
 
           <div>
             <strong>
-              {t(
-                'free_tools_callout',
-                'Free tools'
-              )}
+              <span data-i18n="free_tools_callout">Free tools</span>
             </strong>
             <span>
-              {t(
-                'no_hidden_fees',
-                'No hidden fees'
-              )}
+              <span data-i18n="no_hidden_fees">No hidden fees</span>
             </span>
           </div>
 

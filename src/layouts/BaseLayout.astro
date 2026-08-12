@@ -6,7 +6,6 @@ import AdSlot from '../components/layout/AdSlot.astro';
 import SearchModal from '../components/ui/SearchModal.astro';
 import { getCollection } from 'astro:content';
 import { tools } from '../lib/tools';
-import { getLangFromAstroUrl, useTranslations } from '../lib/i18n';
 
 export interface Props {
   title: string;
@@ -16,12 +15,7 @@ export interface Props {
 }
 
 const { title, description, ogImage, canonicalURL } = Astro.props;
-const lang = getLangFromAstroUrl(Astro.url);
-
-// ---------------------------------------------------------
-// Load translations for the layout (if needed for static UI)
-// ---------------------------------------------------------
-const { t: layoutT, tc: layoutTC } = await useTranslations(lang, Astro.url.origin);
+const lang = 'en'; // static build – client-side script will adjust after load
 
 // Search data (unchanged)
 let blogItems: any[] = [];
@@ -62,6 +56,7 @@ const allSearchItems = [...toolItems, ...blogItems];
       canonicalURL={canonicalURL}
     />
 
+    <!-- Theme – device preference only -->
     <script is:inline>
       (() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -88,21 +83,33 @@ const allSearchItems = [...toolItems, ...blogItems];
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Dayront" />
 
-    <!-- ----------------------------------------------------
-         Auto‑append ?lang= to all internal links
-    ----------------------------------------------------- -->
+    <!-- Client‑side translation -->
+    <script src="/i18n.js" defer></script>
+
+    <!-- Synchronise language dropdown and <html lang> from URL/localStorage -->
+    <script is:inline>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const lang = params.get('lang') || localStorage.getItem('dayront-lang') || 'en';
+        document.documentElement.lang = lang;
+
+        document.querySelectorAll('#lang-select, #lang-select-mobile').forEach(sel => {
+          if (sel) sel.value = lang;
+        });
+      })();
+    </script>
+
+    <!-- Auto‑append ?lang= to all internal links -->
     <script is:inline>
       (() => {
         const url = new URL(window.location.href);
         const lang = url.searchParams.get('lang');
         if (!lang) return;
 
-        // We'll mutate all internal links to include the lang param
         document.addEventListener('astro:page-load', () => {
           document.querySelectorAll('a[href^="/"]').forEach(link => {
             const href = link.getAttribute('href');
             if (href.includes('?')) {
-              // already has query, just append
               link.href = href + '&lang=' + lang;
             } else {
               link.href = href + '?lang=' + lang;
@@ -116,7 +123,7 @@ const allSearchItems = [...toolItems, ...blogItems];
   <body
     class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200"
   >
-    <!-- Pass current language to Header -->
+    <!-- Header with current language -->
     <Header lang={lang} />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
