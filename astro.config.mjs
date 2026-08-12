@@ -1,29 +1,32 @@
-import { defineConfig } from "astro/config";
-import mdx from "@astrojs/mdx";
-import sitemap from "@astrojs/sitemap";
-import robotsTxt from "astro-robots-txt";
-import preact from "@astrojs/preact";
-import tailwind from "@astrojs/tailwind";
-import astroI18next from "astro-i18next";
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import sitemap from '@astrojs/sitemap';
+import robotsTxt from 'astro-robots-txt';
+import preact from '@astrojs/preact';
+import tailwind from '@astrojs/tailwind';
+import astroI18next from 'astro-i18next';
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  site: "https://dayront.com",
+  site: 'https://dayront.com',
+  output: 'server',
+  adapter: vercel(),
   integrations: [
     tailwind(),
     preact({ compat: true }),
     mdx(),
     sitemap({
       i18n: {
-        defaultLocale: "en",
-        locales: { en: "en", es: "es", pt: "pt", de: "de", fr: "fr", ja: "ja" },
+        defaultLocale: 'en',
+        locales: { en: 'en', es: 'es', pt: 'pt', de: 'de', fr: 'fr', ja: 'ja' },
       },
     }),
     robotsTxt(),
     astroI18next(),
   ],
   i18n: {
-    defaultLocale: "en",
-    locales: ["en", "es", "pt", "de", "fr", "ja"],
+    defaultLocale: 'en',
+    locales: ['en', 'es', 'pt', 'de', 'fr', 'ja'],
     routing: {
       prefixDefaultLocale: false,
     },
@@ -31,9 +34,9 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        react: "preact/compat",
-        "react-dom": "preact/compat",
-        "react/jsx-runtime": "preact/jsx-runtime",
+        react: 'preact/compat',
+        'react-dom': 'preact/compat',
+        'react/jsx-runtime': 'preact/jsx-runtime',
       },
     },
     plugins: [

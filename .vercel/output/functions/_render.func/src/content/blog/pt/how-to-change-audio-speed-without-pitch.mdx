@@ -1,0 +1,82 @@
+---
+title: Como acelerar ou abrandar o áudio sem alterar o tom
+description: >-
+  Aprenda a alterar a velocidade de reprodução de um ficheiro de áudio, mantendo
+  a afinação original. Ideal para a edição de podcasts, a aprendizagem de
+  línguas e a prática musical.
+date: 2025-04-10T00:00:00.000Z
+author: Equipa Dayront
+categories:
+  - Tutoriais
+  - Edição de áudio
+tags:
+  - regulador de velocidade
+  - tom
+  - edição de áudio
+  - ritmo
+image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&q=80'
+relatedPosts:
+  - guia-definitivo-sobre-compressão-de-áudio
+  - 10-dicas-essenciais-para-a-edição-de-áudio
+---
+
+# Como acelerar ou abrandar o áudio sem alterar o tom
+
+Alguma vez quiseste ouvir uma palestra a uma velocidade de 1,5× sem que as vozes soassem como as de um esquilo? Ou abrandar um solo de guitarra para aprender cada nota sem que soe como um baixo? É isso que a **ajuste de tempo com preservação do tom** faz – e o Speed Changer da Dayront torna isso possível instantaneamente, de graça, no teu navegador.
+
+## Por que é que o tom é importante
+
+Quando reproduzes o áudio simplesmente mais rápido (como acelerar uma cassete), o tom aumenta. As vozes ficam estridentes e a música fica desafinada. O verdadeiro «time-stretching» altera o tempo, mantendo o tom constante. Isto é feito através de algoritmos avançados de processamento de sinal – e agora pode fazê-lo online sem instalar nada.
+
+### Casos de utilização comuns
+
+- **Edição de podcasts** – condensa segmentos prolixos sem afastar os ouvintes.
+- **Aprendizagem de línguas** – abranda a velocidade dos falantes nativos para perceberes cada palavra.
+- **Prática musical** – abranda uma passagem rápida para a aprenderes e, depois, acelera-a para te testares.
+- **Acessibilidade** – ajuste a velocidade dos audiolivros ao seu nível de conforto.
+
+<img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&q=80" alt="Pessoa a usar auscultadores" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
+
+## Como funciona o Speed Changer (simplificado)
+
+As alterações tradicionais na velocidade de reprodução alteram a altura do som. A técnica do **vocoder de fase**, utilizada pelo FFmpeg e pelo Dayront, processa o áudio em pequenos quadros sobrepostos, ajusta o espaçamento entre eles e, em seguida, ressintetiza o sinal – tudo isto sem afetar a frequência.
+
+Eis uma comparação simples:
+
+| Fator de velocidade | Efeito na altura do som (sem preservação) | Dayront (preservada) |
+|--------------|----------------------------------------|---------------------|
+| 0,75× | Reduz em ~5 semitons | Tom inalterado     |
+| 1,25× | Aumenta em ~3 semitons | Tom inalterado     |
+| 2,0× | Aumenta em 12 semitons (oitava) | Afinação inalterada     |
+
+<img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80" alt="Forma de onda de áudio com etiquetas" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
+
+## Passo a passo: Alterar a velocidade com o Dayront
+
+1. **Aceda à [ferramenta Speed Changer](/tools/speed-changer).**
+2. **Carregue o seu ficheiro de áudio** – MP3, WAV, M4A, etc.
+3. **Escolha um fator de velocidade** (atualmente, o valor predefinido é 1,5×, mas poderá ajustá-lo no futuro ou utilizar as nossas definições avançadas – em breve).
+4. **Clique em «Iniciar»** – o ficheiro é processado instantaneamente no seu navegador.
+5. **Descarregue o áudio com a velocidade ajustada** – será reproduzido no novo tempo, mantendo o tom original.
+
+> **Dica:** No caso de ficheiros muito grandes, o processamento pode demorar alguns segundos. Mas, como tudo é feito localmente, não perde tempo a fazer o upload.
+
+## Antes e depois: comparação de formas de onda
+
+<img src="https://images.unsplash.com/photo-1633617477270-7a8ff6f4d5f2?w=800&q=80" alt="Duas formas de onda lado a lado" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
+
+*(Pode substituir isto por uma imagem real das formas de onda antes e depois)*
+
+Depois de abrandar um clip de 10 segundos para 75% da velocidade, a forma de onda estica-se horizontalmente, mas mantém as suas características verticais (amplitude). Quando reproduzida, a altura do som é idêntica à do original – apenas mais lenta.
+
+## Limitações e dicas
+
+- Configurações extremas (abaixo de 0,5× ou acima de 2,0×) podem introduzir artefactos. Para obter a melhor qualidade, mantenha-se entre 0,75× e 1,5×.
+- Ficheiros com transientes fortes (como bateria) podem soar ligeiramente distorcidos quando abrandados.
+- Guarde sempre uma cópia do seu ficheiro original antes de fazer experiências.
+
+## Para além do básico: funcionalidades futuras
+
+Estamos a planear adicionar uma **pré-visualização em tempo real** e um **regulador avançado** para que possa escolher a percentagem exata de velocidade. Além disso, está em desenvolvimento a alteração independente da altura do som (sem alterar o tempo).
+
+Por enquanto, aproveite a liberdade de alterar a velocidade de reprodução sem prejudicar o som. Experimente já o [Speed Changer](/tools/speed-changer) – é gratuito e confidencial.

@@ -45,6 +45,40 @@ const {
   extraContent,
 } = Astro.props;
 
+/* ------------------------------------------------------------------------
+   LANGUAGE DETECTION
+------------------------------------------------------------------------ */
+
+const lang =
+  new URL(Astro.url).searchParams.get('lang') || 'en';
+
+/* ------------------------------------------------------------------------
+   LOAD TRANSLATIONS (tools + common)
+------------------------------------------------------------------------ */
+
+let toolsTranslations: Record<string, any> = {};
+let commonTranslations: Record<string, any> = {};
+
+try {
+  const [toolsRes, commonRes] = await Promise.all([
+    fetch(new URL(`/locales/${lang}/tools.json`, Astro.url.origin)),
+    fetch(new URL(`/locales/${lang}/common.json`, Astro.url.origin)),
+  ]);
+
+  if (toolsRes.ok) {
+    toolsTranslations = await toolsRes.json();
+  }
+  if (commonRes.ok) {
+    commonTranslations = await commonRes.json();
+  }
+} catch {
+  // Fallback silently – English will be used below
+}
+
+/* ------------------------------------------------------------------------
+   BUILD TOOL DATA (with translation overrides)
+------------------------------------------------------------------------ */
+
 let metaTitle = metaTitleProp || '';
 let metaDescription = metaDescriptionProp || '';
 let toolName = toolNameProp || '';
@@ -57,31 +91,49 @@ let toolConfig = toolConfigProp;
 if (toolKey) {
   const toolData = tools.find(t => t.slug === toolKey);
   if (toolData) {
+    // Base English values
     metaTitle = metaTitle || toolData.metaTitle;
     metaDescription = metaDescription || toolData.metaDescription;
     toolName = toolName || toolData.name;
     toolIcon = toolIcon || toolData.icon;
     howTo = howTo.length > 0 ? howTo : toolData.howTo;
     faq = faq.length > 0 ? faq : toolData.faq;
+
+    // Apply translations if available
+    const tTool = toolsTranslations[toolKey] || {};
+    if (tTool.title) toolName = tTool.title;
+    if (tTool.metaTitle) metaTitle = tTool.metaTitle;
+    if (tTool.metaDescription) metaDescription = tTool.metaDescription;
+    if (tTool.icon) toolIcon = tTool.icon;
+    if (tTool.howTo) howTo = tTool.howTo;
+    if (tTool.faq) faq = tTool.faq;
+
     if (!toolConfig) {
       toolConfig = {
         type: toolData.type || 'convert',
         from: toolData.from,
         to: toolData.to,
         outputFormat: toolData.outputFormat,
-        label: toolData.name,
+        label: toolName,       // translated name
         settings: toolData.settings || [],
       };
     }
+
     if (relatedTools.length === 0 && toolData.relatedTools) {
       relatedTools = toolData.relatedTools
         .map((slug: string) => {
           const t = tools.find(tt => tt.slug === slug);
           if (!t) return null;
+
+          // Use translated name if available for related tools
+          const relatedTrans = toolsTranslations[slug] || {};
+          const name = relatedTrans.title || t.name;
+          const icon = relatedTrans.icon || t.icon;
+
           return {
             href: t.from && t.to ? `/convert/${t.slug}` : `/tools/${t.slug}`,
-            icon: t.icon,
-            name: t.name,
+            icon,
+            name,
           };
         })
         .filter(Boolean) as any[];
@@ -92,6 +144,19 @@ if (toolKey) {
 if (!toolConfig) {
   toolConfig = { type: 'convert', label: toolName || 'Conversion', settings: [] };
 }
+
+/* ------------------------------------------------------------------------
+   STATIC TEXT (headings)
+------------------------------------------------------------------------ */
+
+const howToHeading = commonTranslations.how_to_use || 'How to use';
+const faqHeading = commonTranslations.faq_heading || 'Frequently Asked Questions';
+const relatedToolsHeading = commonTranslations.related_tools || 'Related Tools';
+const relatedArticlesHeading = commonTranslations.related_articles || 'Related Articles';
+
+/* ------------------------------------------------------------------------
+   SCHEMA ORG DATA
+------------------------------------------------------------------------ */
 
 const howToSchema = {
   '@context': 'https://schema.org',
@@ -156,7 +221,9 @@ const faqSchema = {
 
         {howTo.length > 0 && (
           <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">How to use {toolName}</h2>
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">
+              {howToHeading} {toolName}
+            </h2>
             <ol class="space-y-6">
               {howTo.map((step: any, i: number) => (
                 <li class="flex gap-4">
@@ -175,7 +242,7 @@ const faqSchema = {
 
         {faq.length > 0 && (
           <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Frequently Asked Questions</h2>
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{faqHeading}</h2>
             <dl class="space-y-6">
               {faq.map((q: any) => (
                 <div>
@@ -193,7 +260,7 @@ const faqSchema = {
 
         {extraContent?.relatedBlogs && extraContent.relatedBlogs.length > 0 && (
           <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Related Articles</h2>
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{relatedArticlesHeading}</h2>
             <div class="grid sm:grid-cols-2 gap-4">
               {extraContent.relatedBlogs.map((post: any) => (
                 <a
@@ -207,10 +274,10 @@ const faqSchema = {
           </section>
         )}
 
-        {/* ──────────── RELATED TOOLS (visible on all devices) ──────────── */}
+        {/* Related tools – visible on all devices */}
         {relatedTools.length > 0 && (
           <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Related Tools</h2>
+            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{relatedToolsHeading}</h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {relatedTools.map((tool: any) => (
                 <a
@@ -229,7 +296,7 @@ const faqSchema = {
       <!-- Sidebar (desktop) -->
       <aside class="hidden lg:block space-y-8">
         <div class="sticky top-24">
-          <h3 class="text-lg font-semibold text-black dark:text-white mb-4">Related Tools</h3>
+          <h3 class="text-lg font-semibold text-black dark:text-white mb-4">{relatedToolsHeading}</h3>
           <ul class="space-y-2">
             {relatedTools.map((tool: any) => (
               <li>

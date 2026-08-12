@@ -1,18 +1,24 @@
 ---
+export const prerender = true;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
 // 1. Import 'render' from astro:content
 import { getCollection, render } from 'astro:content';
 import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
+  // ✅ Only generate pages for English posts to avoid locale‑prefixed slugs.
+  const posts = await getCollection('blog', (entry) =>
+    entry.id.startsWith('en/')
+  );
 
   return posts.map((post) => {
     const rawSlug = post.id.replace(/\.(mdx|md)$/, '');
     const slug = rawSlug.replace(/^en\//, ''); // remove locale prefix
 
-    return {  
-      params: { slug },  
-      props: { post },  
+    return {
+      params: { slug },
+      props: { post },
     };
   });
 }
@@ -24,7 +30,7 @@ if (!post) {
 }
 
 // 2. Use the standalone render() function here
-const { Content } = await render(post); 
+const { Content } = await render(post);
 
 // Word count & reading time
 const rawBody = post.body || '';

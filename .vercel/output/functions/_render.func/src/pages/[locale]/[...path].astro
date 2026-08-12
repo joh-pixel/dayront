@@ -1,0 +1,23 @@
+---
+const { path } = Astro.params;
+
+const supportedLangs = ['en', 'es', 'pt', 'de', 'fr', 'ja'];
+const segments = path ? path.split('/').filter(Boolean) : [];
+
+let redirectTo = '/?lang=en';
+
+if (segments.length >= 2 && segments[0] === 'blog' && supportedLangs.includes(segments[1])) {
+  // /blog/{lang}/rest → /blog/rest?lang={lang}
+  const lang = segments[1];
+  const rest = segments.slice(2).join('/');
+  redirectTo = rest ? `/blog/${rest}?lang=${lang}` : `/blog?lang=${lang}`;
+} else if (segments.length >= 1 && supportedLangs.includes(segments[0])) {
+  // /{lang}/rest → /rest?lang={lang}
+  const lang = segments[0];
+  const rest = segments.slice(1).join('/');
+  redirectTo = rest ? `/${rest}?lang=${lang}` : `/?lang=${lang}`;
+}
+
+console.log('Redirecting to:', redirectTo);
+return Astro.redirect(redirectTo, 302);
+---

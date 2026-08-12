@@ -1,0 +1,99 @@
+import '../chunks/page-ssr_B6YcU95I.mjs';
+import { c as createAstro, a as createComponent, r as renderComponent, b as renderTemplate, m as maybeRenderHead, d as addAttribute } from '../chunks/astro/server_CayxtmO5.mjs';
+import 'piccolore';
+import { g as getLangFromAstroUrl, $ as $$BaseLayout } from '../chunks/BaseLayout_DUayu5R1.mjs';
+export { renderers } from '../renderers.mjs';
+
+const $$Astro = createAstro("https://dayront.com");
+const $$About = createComponent(async ($$result, $$props, $$slots) => {
+  const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
+  Astro2.self = $$About;
+  const lang = getLangFromAstroUrl(Astro2.url);
+  let pages = {};
+  try {
+    const res = await fetch(
+      new URL(`/locales/${lang}/pages.json`, Astro2.url.origin)
+    );
+    if (res.ok) {
+      pages = await res.json();
+    }
+  } catch {
+  }
+  function t(key, fallback) {
+    const keys = key.split(".");
+    let value = pages;
+    for (const k of keys) {
+      if (value && typeof value === "object") {
+        value = value[k];
+      } else {
+        return fallback;
+      }
+    }
+    return typeof value === "string" ? value : fallback;
+  }
+  const about = (key, fallback) => t(`about.${key}`, fallback);
+  const heading = about("heading", "About Dayront");
+  const description = about("metaDescription", "Dayront processes your files entirely in your browser. No uploads, no servers, just fast and private media tools.");
+  const ourStoryParas = pages.about?.ourStory || [
+    "Dayront started with a simple frustration. Every online converter wanted us to upload our files to some unknown server. A family video, a voice memo with sensitive information, a podcast draft \u2014 all of it would leave our computers and sit on someone else's hard drive. We didn't like that. And we figured you probably don't either.",
+    "In 2024, a small group of developers and privacy advocates got together and asked: what if we could bring powerful media processing tools directly to people's browsers? No uploads, no accounts, no tracking. Just open a website, drop your file, and get your result. All locally. All private.",
+    "The technology was ready. The same battle\u2011tested media engines that power the world's most popular apps could now run inside a browser. The pieces were there. We just had to put them together in a way that felt simple, fast, and trustworthy.",
+    "That's how Dayront was born. A tool built for everyone \u2014 journalists handling sensitive recordings, podcasters editing on the go, students working on projects, musicians tweaking audio files, and anyone who values their digital privacy."
+  ];
+  const howItWorksParas = pages.about?.howItWorks?.paragraphs || [
+    "When you use Dayront, everything happens right inside your browser. We harness a powerful, industry\u2011standard media processing engine that runs directly on your device \u2014 the same kind of technology used by the most trusted audio and video applications.",
+    "Here's what happens when you convert a file:"
+  ];
+  const howItWorksSteps = pages.about?.howItWorks?.steps || [
+    { title: "You select your file", text: "it stays in your computer's memory." },
+    { title: "The engine loads", text: "a small, self\u2011contained module that runs without any server connection." },
+    { title: "Processing begins", text: "the conversion or editing happens entirely within a secure, sandboxed environment in your browser tab." },
+    { title: "You download the result", text: "the processed file is saved directly to your downloads folder. No copy ever leaves your device." }
+  ];
+  const privacyParas = pages.about?.privacyPhilosophy || [
+    "We're not just saying 'your files are safe' because it sounds good. We designed the entire architecture around that promise. Dayront has no file storage, no user database, no analytics that track individual behavior, and no server\u2011side processing for media files.",
+    "Most 'free online tools' aren't really free \u2014 you pay with your data. Your uploaded files might be scanned for ad targeting, stored indefinitely, or even leaked in a data breach. We think that's unacceptable.",
+    "Dayront's business model is straightforward: we display a small number of privacy\u2011friendly ads that never block your conversion. You get free, unlimited tools. We get enough to cover hosting costs. No data collection, no selling of information, no creepy tracking across the web.",
+    "This commitment extends to our design choices. No sign\u2011up forms. No email collection. No cookies beyond what's strictly necessary for the theme and language preference you set. We built Dayront to be the tool we'd want to use ourselves \u2014 and we're pretty picky about privacy."
+  ];
+  const whoUsesParas = pages.about?.whoUses?.paragraphs || [
+    "Dayront serves a wide range of people around the world. Here are some of the communities we're proud to support:"
+  ];
+  const whoUsesList = pages.about?.whoUses?.list || [
+    { title: "Journalists & researchers", text: "who handle sensitive audio and video material that can't be uploaded to third\u2011party servers." },
+    { title: "Podcasters & content creators", text: "who need quick, reliable conversions between formats while editing on the go." },
+    { title: "Musicians & sound designers", text: "who process samples, change tempos, or convert lossless files." },
+    { title: "Students & educators", text: "who work on multimedia projects without access to expensive software." },
+    { title: "Privacy advocates & activists", text: "who refuse to compromise their data for basic file processing." },
+    { title: "People with limited internet", text: "Dayront works offline after the first load and processes everything locally." }
+  ];
+  const roadAheadParas = pages.about?.roadAhead?.paragraphs || [
+    "We're far from done. Here's what we're working on:"
+  ];
+  const roadAheadList = pages.about?.roadAhead?.list || [
+    { title: "Batch processing", text: "convert multiple files at once, saving you time on large projects." },
+    { title: "More video tools", text: "trimming, cropping, and basic editing without leaving your browser." },
+    { title: "More languages", text: "we want Dayront to feel native to everyone, everywhere." },
+    { title: "Improved accessibility", text: "making sure Dayront works for people using screen readers, keyboard navigation, and other assistive technologies." },
+    { title: "Desktop apps", text: "a fully offline, installable version for Windows, Mac, and Linux." }
+  ];
+  const teamParas = pages.about?.team || [
+    "Dayront is built by a small, distributed team of developers, designers, and privacy advocates. We work remotely, believe that basic digital tools should be free and private, and we care deeply about an internet where you don't have to trade your privacy for convenience.",
+    "We contribute to open\u2011source projects, sponsor privacy\u2011focused initiatives, and try to set an example that good tools don't need to spy on you."
+  ];
+  return renderTemplate`${renderComponent($$result, "BaseLayout", $$BaseLayout, { "lang": lang, "title": heading, "description": description }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<section class="max-w-3xl mx-auto px-4 py-16 bg-white dark:bg-gray-950"> <!-- Page header --> <div class="mb-16"> <h1 class="text-4xl sm:text-5xl font-extrabold text-black dark:text-white mb-4">${heading}</h1> <p class="text-xl text-gray-600 dark:text-white leading-relaxed"> ${about("intro", "We believe your files should never leave your device. That's why we built Dayront \u2014 a complete suite of media tools that run entirely in your browser.")} </p> </div> <!-- Our Story --> <div class="space-y-6 mb-16"> <h2 class="text-2xl font-bold text-black dark:text-white">${t("about.ourStoryHeading", "Our Story")}</h2> ${Array.isArray(ourStoryParas) ? ourStoryParas.map((p) => renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${p}</p>`) : renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${ourStoryParas}</p>`} </div> <!-- How It Works --> <div class="space-y-6 mb-16"> <h2 class="text-2xl font-bold text-black dark:text-white">${t("about.howItWorksHeading", "How Dayront Works")}</h2> ${howItWorksParas.map((p) => renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${p}</p>`)} <ol class="list-decimal list-inside space-y-2 text-gray-700 dark:text-white ml-4"> ${howItWorksSteps.map((step) => renderTemplate`<li><strong class="text-black dark:text-white">${step.title}</strong> — ${step.text}</li>`)} </ol> <p class="text-gray-700 dark:text-white leading-relaxed"> ${t("about.howItWorksFooter", "At no point during this process do we \u2014 or anyone else \u2014 have access to your files. The server only sends the initial website. After that, your browser takes over completely.")} </p> <p class="text-gray-700 dark:text-white leading-relaxed"> ${t("about.offlineNote", "This also means Dayront works offline after the first visit. Once the core files are cached by your browser, you can use most tools without an internet connection. On a plane? In a remote area with spotty signal? Dayront keeps working.")} </p> </div> <!-- Privacy Philosophy --> <div class="space-y-6 mb-16"> <h2 class="text-2xl font-bold text-black dark:text-white">${t("about.privacyHeading", "Our Privacy Philosophy")}</h2> ${Array.isArray(privacyParas) ? privacyParas.map((p) => renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${p}</p>`) : renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${privacyParas}</p>`} </div> <!-- Who Uses Dayront --> <div class="space-y-6 mb-16"> <h2 class="text-2xl font-bold text-black dark:text-white">${t("about.whoUsesHeading", "Who Uses Dayront?")}</h2> ${Array.isArray(whoUsesParas) ? whoUsesParas.map((p) => renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${p}</p>`) : renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${whoUsesParas}</p>`} <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-white ml-4"> ${whoUsesList.map((item) => renderTemplate`<li><strong class="text-black dark:text-white">${item.title}</strong> — ${item.text}</li>`)} </ul> <p class="text-gray-700 dark:text-white leading-relaxed"> ${t("about.whoUsesFooter", "We're constantly inspired by the creative ways people use Dayront. From archiving family videos to preparing audio evidence for court, from creating sound effects to extracting music from old video files \u2014 Dayront helps people do more with their media, privately.")} </p> </div> <!-- The Road Ahead --> <div class="space-y-6 mb-16"> <h2 class="text-2xl font-bold text-black dark:text-white">${t("about.roadAheadHeading", "What's Next for Dayront?")}</h2> ${Array.isArray(roadAheadParas) ? roadAheadParas.map((p) => renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${p}</p>`) : renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${roadAheadParas}</p>`} <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-white ml-4"> ${roadAheadList.map((item) => renderTemplate`<li><strong class="text-black dark:text-white">${item.title}</strong> — ${item.text}</li>`)} </ul> <p class="text-gray-700 dark:text-white leading-relaxed"> ${t("about.roadAheadFooter", "Everything we build will stay true to our core promise:")} <strong class="text-black dark:text-white">${t("about.corePromise", "your files never leave your device.")}</strong> </p> </div> <!-- The Team --> <div class="space-y-6 mb-16"> <h2 class="text-2xl font-bold text-black dark:text-white">${t("about.teamHeading", "The Team")}</h2> ${Array.isArray(teamParas) ? teamParas.map((p) => renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${p}</p>`) : renderTemplate`<p class="text-gray-700 dark:text-white leading-relaxed">${teamParas}</p>`} </div> <!-- Contact / CTA --> <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 text-center"> <h2 class="text-2xl font-bold text-black dark:text-white mb-3">${t("about.ctaHeading", "Have Questions or Feedback?")}</h2> <p class="text-gray-600 dark:text-white mb-6 max-w-md mx-auto"> ${t("about.ctaText", "We'd love to hear from you. Whether you found a bug, have a feature request, or just want to say hello.")} </p> <div class="flex flex-col sm:flex-row items-center justify-center gap-4"> <a href="mailto:hello@dayront.com" class="btn-primary">${t("about.emailUs", "Email Us")}</a> <a${addAttribute(`/tools?lang=${lang}`, "href")} class="btn-secondary">${t("about.exploreTools", "Explore Tools")}</a> </div> </div> </section> ` })}`;
+}, "/home/dayront/src/pages/about.astro", void 0);
+
+const $$file = "/home/dayront/src/pages/about.astro";
+const $$url = "/about";
+
+const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: $$About,
+  file: $$file,
+  url: $$url
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const page = () => _page;
+
+export { page };

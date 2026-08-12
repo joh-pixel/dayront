@@ -1,0 +1,215 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/_astro/(.*)$",
+			"headers": {
+				"cache-control": "public, max-age=31536000, immutable"
+			},
+			"continue": true
+		},
+		{
+			"src": "^/_server-islands/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/about/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/blog/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/aac-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/aiff-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/amr-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/ape-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/avi-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/flac-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/flv-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/flv-to-mp4/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/flv-to-webm/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/m4a-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mkv-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mov-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mp3-to-m4a/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mp3-to-ogg/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mp3-to-wav/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mp4-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/mp4-to-wav/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/ogg-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/opus-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/wav-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/webm-to-mp3/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/convert/webm-to-wav/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/privacy/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/rss\\.xml/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/search/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/terms/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/audio-compressor/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/audio-cutter/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/audio-merger/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/change-fps/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/crop-video/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/extract-audio/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/gif-to-video/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/mute-video/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/resize-video/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/reverse-audio/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/speed-changer/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/stereo-to-mono/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/video-compressor/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/video-cutter/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/video-merger/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/video-to-gif/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/volume-booster/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/tools/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/([^/]+?)(?:/(.*?))?/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/$",
+			"dest": "_render"
+		}
+	]
+}

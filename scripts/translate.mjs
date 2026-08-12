@@ -1,64 +1,67 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
+import * as deepl from 'deepl-node';
 import matter from 'gray-matter';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const LOCALES_DIR = path.resolve(__dirname, '../public/locales');
 const BLOG_DIR = path.resolve(__dirname, '../src/content/blog');
 const SOURCE_LANG = 'en';
 const TARGET_LANGS = ['es', 'pt', 'de', 'fr', 'ja'];
 
-// Using MyMemory – free, no API key, 1000 words/day limit.
-// To use LibreTranslate instead, replace this URL with your instance.
-const TRANSLATION_API = 'https://api.mymemory.translated.net/get';
+const DEEPL_API_KEY = 'a36b9b71-076c-4cba-bcde-b480e23b6d1c:fx';
+const translator = new deepl.Translator(DEEPL_API_KEY); // uses standard API URL
+
+const langMap = {
+  es: 'es',
+  pt: 'pt-PT',   // change to 'pt-BR' for Brazilian Portuguese
+  de: 'de',
+  fr: 'fr',
+  ja: 'ja',
+};
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function translateText(text, targetLang) {
-  if (!text || typeof text !== 'string' || text.trim() === '') return text;
+  // Only strings can be translated
+  if (typeof text !== 'string') return text;
+  if (text.trim() === '') return text;
 
-  try {
-    const url = `${TRANSLATION_API}?q=${encodeURIComponent(text)}&langpair=${SOURCE_LANG}|${targetLang}`;
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if (data.responseStatus === 200 && data.responseData.translatedText) {
-      return data.responseData.translatedText;
-    } else {
-      console.warn(`⚠️  MyMemory could not translate to ${targetLang}: "${text.slice(0, 50)}..."`);
-      return text; // fallback to original
-    }
-  } catch (err) {
-    console.warn(`⚠️  Network error for ${targetLang}: ${err.message}`);
-    return text;
-  }
+  const deeplLang = langMap[targetLang] || targetLang;
+  const result = await translator.translateText(text, SOURCE_LANG, deeplLang);
+  return result.text;
 }
 
 async function translateObject(obj, targetLang) {
-  const translated = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'string') {
-      translated[key] = await translateText(value, targetLang);
-    } else if (Array.isArray(value)) {
-      translated[key] = await Promise.all(
-        value.map(item =>
-          typeof item === 'string'
-            ? translateText(item, targetLang)
-            : translateObject(item, targetLang)
-        )
-      );
-    } else if (typeof value === 'object' && value !== null) {
-      translated[key] = await translateObject(value, targetLang);
-    } else {
-      translated[key] = value;
-    }
+  if (typeof obj === 'string') {
+    const translated = await translateText(obj, targetLang);
+    await delay(200);
+    return translated;
   }
-  return translated;
+  if (Array.isArray(obj)) {
+    const result = [];
+    for (const item of obj) {
+      result.push(await translateObject(item, targetLang));
+      await delay(150);
+    }
+    return result;
+  }
+  if (typeof obj === 'object' && obj !== null) {
+    const translated = {};
+    for (const [key, value] of Object.entries(obj)) {
+      translated[key] = await translateObject(value, targetLang);
+      await delay(150);
+    }
+    return translated;
+  }
+  // numbers, booleans, etc. – return as‑is
+  return obj;
 }
 
 async function main() {
-  // 1. Translate locale JSON files (common.json, tools.json, pages.json)
-  console.log('🌐 Translating locale files...');
+  console.log('🌐 Translating locale files (DeepL)…');
   const sourceDir = path.join(LOCALES_DIR, SOURCE_LANG);
   if (!(await fs.pathExists(sourceDir))) {
     console.log('❌ English locale files not found. Create public/locales/en/ first.');
@@ -72,45 +75,65 @@ async function main() {
     const files = await fs.readdir(sourceDir);
     for (const file of files) {
       if (path.extname(file) !== '.json') continue;
+
+      const targetPath = path.join(targetDir, file);
+      if (await fs.pathExists(targetPath)) {
+        console.log(`    ⏭  ${file} (already exists)`);
+        continue;
+      }
+
       const sourceData = await fs.readJson(path.join(sourceDir, file));
+      console.log(`    🔄 ${file}`);
       const translatedData = await translateObject(sourceData, lang);
-      await fs.writeJson(path.join(targetDir, file), translatedData, { spaces: 2 });
+      await fs.writeJson(targetPath, translatedData, { spaces: 2 });
       console.log(`    ✅ ${file}`);
     }
   }
 
-  // 2. Translate blog posts (if any)
-  console.log('📝 Translating blog posts...');
+  console.log('📝 Translating blog posts…');
   const sourceBlogDir = path.join(BLOG_DIR, SOURCE_LANG);
   if (!(await fs.pathExists(sourceBlogDir))) {
     console.log('ℹ️  No English blog posts found. Skipping.');
-    return;
-  }
+  } else {
+    for (const lang of TARGET_LANGS) {
+      console.log(`  → ${lang}`);
+      const targetBlogDir = path.join(BLOG_DIR, lang);
+      await fs.ensureDir(targetBlogDir);
+      const posts = await fs.readdir(sourceBlogDir);
+      for (const post of posts) {
+        if (path.extname(post) !== '.mdx') continue;
 
-  for (const lang of TARGET_LANGS) {
-    console.log(`  → ${lang}`);
-    const targetBlogDir = path.join(BLOG_DIR, lang);
-    await fs.ensureDir(targetBlogDir);
-    const posts = await fs.readdir(sourceBlogDir);
-    for (const post of posts) {
-      if (path.extname(post) !== '.mdx') continue;
-      const raw = await fs.readFile(path.join(sourceBlogDir, post), 'utf8');
-      const { data, content } = matter(raw);
+        const targetPath = path.join(targetBlogDir, post);
+        if (await fs.pathExists(targetPath)) {
+          console.log(`    ⏭  ${post} (already exists)`);
+          continue;
+        }
 
-      // Translate frontmatter values
-      const translatedData = {};
-      for (const [key, value] of Object.entries(data)) {
-        translatedData[key] = typeof value === 'string' ? await translateText(value, lang) : value;
+        const raw = await fs.readFile(path.join(sourceBlogDir, post), 'utf8');
+        const { data, content } = matter(raw);
+
+        const translatedData = {};
+        for (const [key, value] of Object.entries(data)) {
+          if (typeof value === 'string') {
+            translatedData[key] = await translateText(value, lang);
+          } else if (Array.isArray(value)) {
+            translatedData[key] = await Promise.all(
+              value.map(v => (typeof v === 'string' ? translateText(v, lang) : v))
+            );
+          } else {
+            translatedData[key] = value;
+          }
+        }
+
+        const translatedContent = await translateText(content, lang);
+        const newMdx = matter.stringify(translatedContent, translatedData);
+        await fs.writeFile(targetPath, newMdx, 'utf8');
+        console.log(`    📄 ${post}`);
       }
-
-      const translatedContent = await translateText(content, lang);
-      const newMdx = matter.stringify(translatedContent, translatedData);
-      await fs.writeFile(path.join(targetBlogDir, post), newMdx, 'utf8');
-      console.log(`    📄 ${post}`);
     }
   }
 
-  console.log('✨ All translations completed.');
+  console.log('✨ All translations completed (DeepL).');
 }
 
 main().catch(console.error);

@@ -1,5 +1,9 @@
 ---
+export const prerender = true;
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getLangFromAstroUrl } from '../../../lib/i18n';
+const lang = getLangFromAstroUrl(Astro.url);
+
 import ArticleCard from '../../../components/blog/ArticleCard.astro';
 import { getCollection } from 'astro:content';
 
@@ -31,7 +35,7 @@ const filteredPosts = allPosts
 const tagName = tag.charAt(0).toUpperCase() + tag.slice(1);
 ---
 
-<BaseLayout
+<BaseLayout lang={lang}
   title={`${tagName} – Blog | Dayront`}
   description={`Blog posts tagged with "${tagName}" – guides, tips, and more.`}
 >

@@ -30,16 +30,49 @@ const {
   slug,
 } = Astro.props;
 
-const formattedDate = new Date(date).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
+/* --------------------------------------------------------------------------
+   LANGUAGE
+-------------------------------------------------------------------------- */
 
-// Fetch related posts
+// Language is passed via ?lang= query parameter.
+const lang = new URL(Astro.url).searchParams.get('lang') || 'en';
+
+// Load common translations for the current language
+let common: Record<string, any> = {};
+try {
+  const commonRes = await fetch(
+    new URL(`/locales/${lang}/common.json`, Astro.url.origin)
+  );
+  if (commonRes.ok) {
+    common = await commonRes.json();
+  }
+} catch {
+  // Fallback silently – English will be used below
+}
+
+// Helper: get a translated string or fallback to English
+function t(key: string, fallback: string): string {
+  return common[key] || fallback;
+}
+
+/* --------------------------------------------------------------------------
+   FORMATTED DATE (respect language)
+-------------------------------------------------------------------------- */
+
+const formattedDate = new Date(date).toLocaleDateString(
+  lang && lang !== 'en' ? lang : 'en-US',
+  { year: 'numeric', month: 'long', day: 'numeric' }
+);
+
+/* --------------------------------------------------------------------------
+   RELATED POSTS – fetch from the same language folder
+-------------------------------------------------------------------------- */
+
 let relatedPosts: any[] = [];
 if (relatedSlugs.length > 0) {
-  const allPosts = await getCollection('blog', (entry) => entry.id.startsWith('en/'));
+  const allPosts = await getCollection('blog', (entry) =>
+    entry.id.startsWith(`${lang}/`)
+  );
   relatedPosts = allPosts
     .filter(p => relatedSlugs.includes(p.slug))
     .map(p => ({
@@ -55,17 +88,17 @@ if (relatedSlugs.length > 0) {
 <BaseLayout title={title} description={description}>
   <div class="max-w-7xl mx-auto px-4 py-8 sm:py-12 lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
     <div>
-      <!-- Breadcrumbs -->
+      <!-- Breadcrumbs with translated labels -->
       <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
         <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
-          <li><a href="/" class="hover:text-sky transition">Home</a></li>
+          <li><a href={`/?lang=${lang}`} class="hover:text-sky transition">{t('home', 'Home')}</a></li>
           <li aria-hidden="true">/</li>
-          <li><a href="/blog" class="hover:text-sky transition">Blog</a></li>
+          <li><a href={`/blog?lang=${lang}`} class="hover:text-sky transition">{t('blog', 'Blog')}</a></li>
           {categories[0] && (
             <>
               <li aria-hidden="true">/</li>
               <li>
-                <a href={`/blog/category/${categories[0].toLowerCase()}`} class="hover:text-sky transition">{categories[0]}</a>
+                <a href={`/blog/category/${categories[0].toLowerCase()}?lang=${lang}`} class="hover:text-sky transition">{categories[0]}</a>
               </li>
             </>
           )}
@@ -87,14 +120,14 @@ if (relatedSlugs.length > 0) {
           {categories.length > 0 && (
             <div class="flex flex-wrap gap-2 mb-3">
               {categories.map(cat => (
-                <a href={`/blog/category/${cat.toLowerCase()}`} class="bg-sky-light dark:bg-sky/20 text-sky dark:text-sky-bright text-xs px-2.5 py-1 rounded-full hover:bg-sky/20 transition">{cat}</a>
+                <a href={`/blog/category/${cat.toLowerCase()}?lang=${lang}`} class="bg-sky-light dark:bg-sky/20 text-sky dark:text-sky-bright text-xs px-2.5 py-1 rounded-full hover:bg-sky/20 transition">{cat}</a>
               ))}
             </div>
           )}
           {tags.length > 0 && (
             <div class="flex flex-wrap gap-2">
               {tags.map(tag => (
-                <a href={`/blog/tag/${tag.toLowerCase()}`} class="text-xs text-gray-500 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full hover:border-sky transition">#{tag}</a>
+                <a href={`/blog/tag/${tag.toLowerCase()}?lang=${lang}`} class="text-xs text-gray-500 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full hover:border-sky transition">#{tag}</a>
               ))}
             </div>
           )}
@@ -107,10 +140,12 @@ if (relatedSlugs.length > 0) {
 
       <AdSlot position="in-content" class="mb-12" />
 
-      <!-- Related Posts Slider -->
+      <!-- Related Posts – translated heading + links include language -->
       {relatedPosts.length > 0 && (
         <section class="mt-16">
-          <h2 class="text-2xl font-bold text-black dark:text-white mb-6">Related Articles</h2>
+          <h2 class="text-2xl font-bold text-black dark:text-white mb-6">
+            {t('related_articles', 'Related Articles')}
+          </h2>
           <div class="relative">
             <div id="related-slider" class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
               {relatedPosts.map(post => (
@@ -120,10 +155,13 @@ if (relatedSlugs.length > 0) {
                   )}
                   <div class="p-4">
                     <time class="text-xs text-gray-500" datetime={post.date}>
-                      {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(post.date).toLocaleDateString(
+                        lang && lang !== 'en' ? lang : 'en-US',
+                        { month: 'short', day: 'numeric' }
+                      )}
                     </time>
                     <h3 class="font-semibold text-black dark:text-white mt-1 mb-2 line-clamp-2">{post.title}</h3>
-                    <a href={`/blog/${post.slug}`} class="text-sky text-sm font-medium hover:underline">Read →</a>
+                    <a href={`/blog/${post.slug}?lang=${lang}`} class="text-sky text-sm font-medium hover:underline">Read →</a>
                   </div>
                 </div>
               ))}

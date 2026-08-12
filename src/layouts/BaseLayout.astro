@@ -6,6 +6,7 @@ import AdSlot from '../components/layout/AdSlot.astro';
 import SearchModal from '../components/ui/SearchModal.astro';
 import { getCollection } from 'astro:content';
 import { tools } from '../lib/tools';
+import { getLangFromAstroUrl, useTranslations } from '../lib/i18n';
 
 export interface Props {
   title: string;
@@ -15,10 +16,14 @@ export interface Props {
 }
 
 const { title, description, ogImage, canonicalURL } = Astro.props;
+const lang = getLangFromAstroUrl(Astro.url);
 
-/* ---------------------------------------------------------
-   SEARCH DATA
---------------------------------------------------------- */
+// ---------------------------------------------------------
+// Load translations for the layout (if needed for static UI)
+// ---------------------------------------------------------
+const { t: layoutT, tc: layoutTC } = await useTranslations(lang, Astro.url.origin);
+
+// Search data (unchanged)
 let blogItems: any[] = [];
 try {
   const blogPosts = await getCollection('blog');
@@ -45,7 +50,7 @@ const allSearchItems = [...toolItems, ...blogItems];
 ---
 
 <!doctype html>
-<html lang="en" style="color-scheme: light dark;">
+<html lang={lang} style="color-scheme: light dark;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -57,23 +62,17 @@ const allSearchItems = [...toolItems, ...blogItems];
       canonicalURL={canonicalURL}
     />
 
-    <!-- =====================================================
-         THEME – DEVICE PREFERENCE ONLY (no localStorage)
-    ====================================================== -->
     <script is:inline>
       (() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
         const apply = (e) => {
           document.documentElement.classList.toggle('dark', e.matches);
         };
-        apply(mq);                    // set initial theme
+        apply(mq);
         mq.addEventListener('change', apply);
       })();
     </script>
 
-    <!-- =====================================================
-         FONT
-    ====================================================== -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -81,9 +80,6 @@ const allSearchItems = [...toolItems, ...blogItems];
       rel="stylesheet"
     />
 
-    <!-- =====================================================
-         PWA
-    ====================================================== -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#38bdf8" />
@@ -91,14 +87,38 @@ const allSearchItems = [...toolItems, ...blogItems];
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Dayront" />
+
+    <!-- ----------------------------------------------------
+         Auto‑append ?lang= to all internal links
+    ----------------------------------------------------- -->
+    <script is:inline>
+      (() => {
+        const url = new URL(window.location.href);
+        const lang = url.searchParams.get('lang');
+        if (!lang) return;
+
+        // We'll mutate all internal links to include the lang param
+        document.addEventListener('astro:page-load', () => {
+          document.querySelectorAll('a[href^="/"]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href.includes('?')) {
+              // already has query, just append
+              link.href = href + '&lang=' + lang;
+            } else {
+              link.href = href + '?lang=' + lang;
+            }
+          });
+        });
+      })();
+    </script>
   </head>
 
   <body
     class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200"
   >
-    <Header />
+    <!-- Pass current language to Header -->
+    <Header lang={lang} />
 
-    <!-- Header ad -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       <AdSlot position="below-header" class="my-2" />
     </div>
@@ -107,15 +127,12 @@ const allSearchItems = [...toolItems, ...blogItems];
       <slot />
     </main>
 
-    <Footer />
+    <Footer lang={lang} />
 
-    <!-- Sticky footer ad -->
     <AdSlot position="sticky-footer" class="fixed bottom-0 left-0 right-0 z-40" />
 
-    <!-- Search modal -->
     <SearchModal items={allSearchItems} />
 
-    <!-- PWA Install button -->
     <button
       id="pwa-install-btn"
       type="button"
@@ -128,7 +145,6 @@ const allSearchItems = [...toolItems, ...blogItems];
       Install Dayront
     </button>
 
-    <!-- Service worker registration -->
     <script>
       (() => {
         if (!('serviceWorker' in navigator)) return;
@@ -154,7 +170,6 @@ const allSearchItems = [...toolItems, ...blogItems];
       })();
     </script>
 
-    <!-- PWA Install prompt -->
     <script>
       (() => {
         let deferredPrompt = null;
@@ -193,7 +208,6 @@ const allSearchItems = [...toolItems, ...blogItems];
   </body>
 </html>
 
-<!-- Global page styles -->
 <style is:global>
   body {
     padding-bottom: 60px;
@@ -234,7 +248,6 @@ const allSearchItems = [...toolItems, ...blogItems];
   }
 </style>
 
-<!-- Astro view transitions -->
 <script>
   document.addEventListener('astro:before-swap', () => {
     document.body.style.opacity = '0';
@@ -245,7 +258,6 @@ const allSearchItems = [...toolItems, ...blogItems];
     document.body.style.opacity = '1';
     document.body.style.transition = 'opacity 0.15s ease-out';
 
-    // Re‑apply current device preference (no localStorage)
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.classList.toggle('dark', isDark);
   });
