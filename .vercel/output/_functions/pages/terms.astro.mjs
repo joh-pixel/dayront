@@ -1,7 +1,7 @@
-import '../chunks/page-ssr_B6YcU95I.mjs';
+/* empty css                                  */
 import { c as createAstro, a as createComponent, r as renderComponent, b as renderTemplate, m as maybeRenderHead, u as unescapeHTML } from '../chunks/astro/server_CayxtmO5.mjs';
 import 'piccolore';
-import { g as getLangFromAstroUrl, $ as $$BaseLayout } from '../chunks/BaseLayout_DUayu5R1.mjs';
+import { g as getLangFromAstroUrl, $ as $$BaseLayout } from '../chunks/BaseLayout_m8T0OSWF.mjs';
 export { renderers } from '../renderers.mjs';
 
 const $$Astro = createAstro("https://dayront.com");

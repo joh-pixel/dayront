@@ -1,7 +1,7 @@
-import '../../chunks/page-ssr_B6YcU95I.mjs';
+/* empty css                                     */
 import { a as createComponent, r as renderComponent, b as renderTemplate } from '../../chunks/astro/server_CayxtmO5.mjs';
 import 'piccolore';
-import { $ as $$ToolLayout } from '../../chunks/ToolLayout_CVyddFiD.mjs';
+import { $ as $$ToolLayout } from '../../chunks/ToolLayout_DEadn9aC.mjs';
 export { renderers } from '../../renderers.mjs';
 
 const $$VideoCompressor = createComponent(($$result, $$props, $$slots) => {

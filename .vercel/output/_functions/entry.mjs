@@ -1,6 +1,6 @@
 import { renderers } from './renderers.mjs';
 import { c as createExports, s as serverEntrypointModule } from './chunks/_@astrojs-ssr-adapter_jvfoGmEc.mjs';
-import { manifest } from './manifest_DNFGvWhL.mjs';
+import { manifest } from './manifest_UTbA-pth.mjs';
 
 const serverIslandMap = new Map();;
 
@@ -54,8 +54,8 @@ const _page46 = () => import('./pages/tools/video-merger.astro.mjs');
 const _page47 = () => import('./pages/tools/video-to-gif.astro.mjs');
 const _page48 = () => import('./pages/tools/volume-booster.astro.mjs');
 const _page49 = () => import('./pages/tools.astro.mjs');
-const _page50 = () => import('./pages/_locale_/_---path_.astro.mjs');
-const _page51 = () => import('./pages/index.astro.mjs');
+const _page50 = () => import('./pages/index.astro.mjs');
+const _page51 = () => import('./pages/_---path_.astro.mjs');
 const pageMap = new Map([
     ["node_modules/astro/dist/assets/endpoint/generic.js", _page0],
     ["src/pages/about.astro", _page1],
@@ -107,8 +107,8 @@ const pageMap = new Map([
     ["src/pages/tools/video-to-gif.astro", _page47],
     ["src/pages/tools/volume-booster.astro", _page48],
     ["src/pages/tools.astro", _page49],
-    ["src/pages/[locale]/[...path].astro", _page50],
-    ["src/pages/index.astro", _page51]
+    ["src/pages/index.astro", _page50],
+    ["src/pages/[...path].astro", _page51]
 ]);
 
 const _manifest = Object.assign(manifest, {
@@ -119,7 +119,7 @@ const _manifest = Object.assign(manifest, {
     middleware: () => import('./_noop-middleware.mjs')
 });
 const _args = {
-    "middlewareSecret": "00633994-26a0-410c-aa2c-4cffe9516dae",
+    "middlewareSecret": "bb75397f-dc45-4980-985c-5efcc3cd3b30",
     "skewProtection": false
 };
 const _exports = createExports(_manifest, _args);

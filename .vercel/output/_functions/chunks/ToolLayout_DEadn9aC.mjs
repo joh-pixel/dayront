@@ -1,6 +1,6 @@
 import { a as createComponent, m as maybeRenderHead, b as renderTemplate, c as createAstro, r as renderComponent, d as addAttribute, u as unescapeHTML } from './astro/server_CayxtmO5.mjs';
 import 'piccolore';
-import { t as tools, $ as $$BaseLayout, a as $$AdSlot } from './BaseLayout_DUayu5R1.mjs';
+import { t as tools, $ as $$BaseLayout, a as $$AdSlot } from './BaseLayout_m8T0OSWF.mjs';
 import { useState as useState$1, useRef as useRef$1, useEffect } from 'preact/hooks';
 import { useState, useRef } from 'preact/compat';
 import { jsxs, jsx, Fragment } from 'preact/jsx-runtime';

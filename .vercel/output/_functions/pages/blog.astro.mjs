@@ -1,8 +1,8 @@
-import '../chunks/page-ssr_B6YcU95I.mjs';
+/* empty css                                  */
 import { c as createAstro, a as createComponent, r as renderComponent, e as renderScript, b as renderTemplate, m as maybeRenderHead, d as addAttribute, F as Fragment } from '../chunks/astro/server_CayxtmO5.mjs';
 import 'piccolore';
-import { g as getLangFromAstroUrl, $ as $$BaseLayout } from '../chunks/BaseLayout_DUayu5R1.mjs';
-import { g as getCollection } from '../chunks/_astro_content_lyMaeEuS.mjs';
+import { g as getLangFromAstroUrl, $ as $$BaseLayout } from '../chunks/BaseLayout_m8T0OSWF.mjs';
+import { g as getCollection } from '../chunks/_astro_content_5AxaQB7T.mjs';
 /* empty css                                 */
 export { renderers } from '../renderers.mjs';
 

@@ -1,8 +1,8 @@
-import '../../chunks/page-ssr_B6YcU95I.mjs';
-import { c as createAstro, a as createComponent } from '../../chunks/astro/server_CayxtmO5.mjs';
+/* empty css                                  */
+import { c as createAstro, a as createComponent } from '../chunks/astro/server_CayxtmO5.mjs';
 import 'piccolore';
 import 'clsx';
-export { renderers } from '../../renderers.mjs';
+export { renderers } from '../renderers.mjs';
 
 const $$Astro = createAstro("https://dayront.com");
 const $$ = createComponent(($$result, $$props, $$slots) => {
@@ -23,10 +23,10 @@ const $$ = createComponent(($$result, $$props, $$slots) => {
   }
   console.log("Redirecting to:", redirectTo);
   return Astro2.redirect(redirectTo, 302);
-}, "/home/dayront/src/pages/[locale]/[...path].astro", void 0);
+}, "/home/dayront/src/pages/[...path].astro", void 0);
 
-const $$file = "/home/dayront/src/pages/[locale]/[...path].astro";
-const $$url = "/[locale]/[...path]";
+const $$file = "/home/dayront/src/pages/[...path].astro";
+const $$url = "/[...path]";
 
 const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,

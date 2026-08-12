@@ -37,7 +37,6 @@ const { lang = 'en' } = Astro.props;
       <select
         id="lang-select"
         class="text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-1 text-black dark:text-white focus:border-sky focus:outline-none"
-        onchange="changeLang(this.value)"
       >
         <option value="en" selected={lang === 'en'}>EN</option>
         <option value="es" selected={lang === 'es'}>ES</option>
@@ -92,7 +91,6 @@ const { lang = 'en' } = Astro.props;
         <select
           id="lang-select-mobile"
           class="text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-1 text-black dark:text-white"
-          onchange="changeLang(this.value)"
         >
           <option value="en" selected={lang === 'en'}>EN</option>
           <option value="es" selected={lang === 'es'}>ES</option>
@@ -162,4 +160,16 @@ const { lang = 'en' } = Astro.props;
     url.searchParams.set('lang', lang);
     window.location.href = url.toString();
   }
+
+  // Attach event listeners to both dropdowns
+  const desktopLangSelect = document.getElementById('lang-select');
+  const mobileLangSelect = document.getElementById('lang-select-mobile');
+
+  desktopLangSelect?.addEventListener('change', (e) => {
+    changeLang(e.target.value);
+  });
+
+  mobileLangSelect?.addEventListener('change', (e) => {
+    changeLang(e.target.value);
+  });
 </script>
