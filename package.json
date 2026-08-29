@@ -26,7 +26,6 @@
     "@vitalets/google-translate-api": "^9.2.1",
     "astro": "^5.18.2",
     "astro-i18next": "^1.0.0-beta.21",
-    "astro-indexnow": "^2.3.10",
     "astro-robots-txt": "^1.0.0",
     "clsx": "^2.1.1",
     "deepl-node": "^1.27.0",
