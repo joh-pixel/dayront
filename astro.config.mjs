@@ -4,6 +4,7 @@ import sitemap from "@astrojs/sitemap";
 import robotsTxt from "astro-robots-txt";
 import preact from "@astrojs/preact";
 import tailwind from "@astrojs/tailwind";
+import indexnow from "astro-indexnow";
 
 export default defineConfig({
   site: "https://dayront.com",
@@ -19,6 +20,7 @@ export default defineConfig({
       },
     }),
     robotsTxt(),
+    indexnow(),
   ],
   i18n: {
     defaultLocale: "en",
