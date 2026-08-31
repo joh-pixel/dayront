@@ -140,6 +140,7 @@ async function readBlob(ff: FFmpeg, filename: string, format: string): Promise<B
 export async function convertFile(
   inputFile: File,
   outputFormat: string,
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void,
   bitrate?: string
 ): Promise<Blob> {
@@ -155,6 +156,7 @@ export async function convertFile(
     if (bitrate && (format === 'mp3' || format === 'aac')) {
       args.push('-b:a', bitrate);
     }
+    if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
     await execute(args, onProgress);
     return await readBlob(ff, outName, format);
@@ -169,6 +171,7 @@ export async function cutAudio(
   startSec: number,
   durationSec: number,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   if (!Number.isFinite(startSec) || startSec < 0) throw new Error('Start time cannot be negative.');
@@ -179,7 +182,10 @@ export async function cutAudio(
   const outName = makeName('cut-output', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-ss', String(startSec), '-i', inName, '-t', String(durationSec), '-c', 'copy', '-y', outName], onProgress);
+    const args = ['-ss', String(startSec), '-i', inName, '-t', String(durationSec), '-c', 'copy'];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -190,6 +196,7 @@ export async function cutAudio(
 export async function mergeAudio(
   files: File[],
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   if (!files.length) throw new Error('No audio files were provided.');
@@ -206,7 +213,10 @@ export async function mergeAudio(
     const outName = makeName('merged', format);
     const filterInputs = inputs.map((_, idx) => `[${idx}:a]`).join('');
     const concatFilter = `${filterInputs}concat=n=${inputs.length}:v=0:a=1[out]`;
-    await execute([...inputs.flatMap(n => ['-i', n]), '-filter_complex', concatFilter, '-map', '[out]', '-y', outName], onProgress);
+    const args = [...inputs.flatMap(n => ['-i', n]), '-filter_complex', concatFilter, '-map', '[out]'];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     for (const inp of inputs) await deleteFile(ff, inp);
@@ -217,6 +227,7 @@ export async function compressAudio(
   file: File,
   quality = 3,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -226,7 +237,10 @@ export async function compressAudio(
   const outName = makeName('compressed', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-i', inName, '-c:a', 'libmp3lame', '-q:a', String(safeQuality), '-y', outName], onProgress);
+    const args = ['-i', inName, '-c:a', 'libmp3lame', '-q:a', String(safeQuality)];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -238,6 +252,7 @@ export async function boostVolume(
   file: File,
   gainDb = 6,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   if (!Number.isFinite(gainDb)) throw new Error('Volume gain must be a valid number.');
@@ -247,7 +262,10 @@ export async function boostVolume(
   const outName = makeName('boosted', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-i', inName, '-af', `volume=${gainDb}dB`, '-y', outName], onProgress);
+    const args = ['-i', inName, '-af', `volume=${gainDb}dB`];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -259,6 +277,7 @@ export async function changeSpeed(
   file: File,
   factor = 1.5,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   if (!Number.isFinite(factor) || factor <= 0) throw new Error('Speed factor must be greater than zero.');
@@ -273,7 +292,10 @@ export async function changeSpeed(
     while (remaining < 0.5) { filters.push('atempo=0.5'); remaining /= 0.5; }
     filters.push(`atempo=${remaining}`);
     await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-i', inName, '-filter:a', filters.join(','), '-y', outName], onProgress);
+    const args = ['-i', inName, '-filter:a', filters.join(',')];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -284,6 +306,7 @@ export async function changeSpeed(
 export async function reverseAudio(
   file: File,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -292,7 +315,10 @@ export async function reverseAudio(
   const outName = makeName('reversed', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-i', inName, '-af', 'areverse', '-y', outName], onProgress);
+    const args = ['-i', inName, '-af', 'areverse'];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -303,6 +329,7 @@ export async function reverseAudio(
 export async function stereoToMono(
   file: File,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -311,26 +338,10 @@ export async function stereoToMono(
   const outName = makeName('mono-output', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-i', inName, '-ac', '1', '-y', outName], onProgress);
-    return await readBlob(ff, outName, format);
-  } finally {
-    await deleteFile(ff, inName);
-    await deleteFile(ff, outName);
-  }
-}
-
-export async function stripMetadata(
-  file: File,
-  outputFormat?: string
-): Promise<Blob> {
-  const inputExtension = getExtension(file.name);
-  const format = normalizeFormat(outputFormat || inputExtension);
-  const ff = await getFFmpeg();
-  const inName = makeName('metadata-input', inputExtension);
-  const outName = makeName('clean', format);
-  try {
-    await ff.writeFile(inName, await fetchFile(file));
-    await execute(['-i', inName, '-map_metadata', '-1', '-c', 'copy', '-y', outName]);
+    const args = ['-i', inName, '-ac', '1'];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -347,6 +358,7 @@ export async function compressVideo(
   crf = 23,
   preset = 'medium',
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -355,15 +367,17 @@ export async function compressVideo(
   const outName = makeName('vcompress-out', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-i', inName,
       '-c:v', 'libx264',
       '-crf', String(crf),
       '-preset', preset,
       '-c:a', 'aac',
-      '-b:a', '128k',
-      '-y', outName
-    ], onProgress);
+      '-b:a', '128k'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -376,6 +390,7 @@ export async function cutVideo(
   startSec: number,
   durationSec: number,
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -384,13 +399,15 @@ export async function cutVideo(
   const outName = makeName('vcut-out', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-ss', String(startSec),
       '-i', inName,
       '-t', String(durationSec),
-      '-c', 'copy',
-      '-y', outName
-    ], onProgress);
+      '-c', 'copy'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -401,6 +418,7 @@ export async function cutVideo(
 export async function mergeVideos(
   files: File[],
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -428,7 +446,7 @@ export async function mergeVideos(
     const filterComplex = `${filterParts.join('')}concat=n=${inputNames.length}:v=1:a=0 [outv]`;
 
     // 3. Merge video tracks and add silent audio
-    await execute([
+    const args = [
       ...inputNames.flatMap(n => ['-i', n]),
       '-filter_complex', filterComplex,
       '-map', '[outv]',                    // use the concatenated video
@@ -440,9 +458,12 @@ export async function mergeVideos(
       '-c:a', 'aac',
       '-b:a', '128k',
       '-map', '1:a',                       // silent audio input
-      '-shortest',
-      '-y', outName
-    ], onProgress);
+      '-shortest'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress);
 
     return await readBlob(ff, outName, format);
   } finally {
@@ -454,6 +475,7 @@ export async function videoToGif(
   file: File,
   fps = 10,
   width = 320,
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const ff = await getFFmpeg();
@@ -467,12 +489,14 @@ export async function videoToGif(
       '-vf', `fps=${fps},scale=${width}:-1:flags=lanczos,palettegen`,
       '-y', paletteName
     ]);
-    await execute([
+    const args = [
       '-i', inName,
       '-i', paletteName,
-      '-lavfi', `fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse`,
-      '-y', outName
-    ], onProgress);
+      '-lavfi', `fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse`
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, 'gif');
   } finally {
     await deleteFile(ff, inName);
@@ -483,6 +507,7 @@ export async function videoToGif(
 
 export async function gifToMp4(
   file: File,
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const ff = await getFFmpeg();
@@ -490,13 +515,15 @@ export async function gifToMp4(
   const outName = makeName('gif-out', 'mp4');
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-i', inName,
       '-movflags', 'faststart',
       '-pix_fmt', 'yuv420p',
-      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
-      '-y', outName
-    ], onProgress);
+      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, 'mp4');
   } finally {
     await deleteFile(ff, inName);
@@ -509,6 +536,7 @@ export async function resizeVideo(
   width: number,
   height: number,
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -517,12 +545,14 @@ export async function resizeVideo(
   const outName = makeName('resized', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-i', inName,
       '-vf', `scale=${width}:${height}`,
-      '-c:a', 'copy',
-      '-y', outName
-    ], onProgress);
+      '-c:a', 'copy'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -534,6 +564,7 @@ export async function cropVideo(
   file: File,
   x: number, y: number, w: number, h: number,
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -542,12 +573,14 @@ export async function cropVideo(
   const outName = makeName('cropped', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-i', inName,
       '-vf', `crop=${w}:${h}:${x}:${y}`,
-      '-c:a', 'copy',
-      '-y', outName
-    ], onProgress);
+      '-c:a', 'copy'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -559,6 +592,7 @@ export async function changeFPS(
   file: File,
   fps: number,
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -567,11 +601,13 @@ export async function changeFPS(
   const outName = makeName('fps-out', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-i', inName,
-      '-filter:v', `fps=${fps}`,
-      '-y', outName
-    ], onProgress);
+      '-filter:v', `fps=${fps}`
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -582,6 +618,7 @@ export async function changeFPS(
 export async function muteVideo(
   file: File,
   outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -590,12 +627,14 @@ export async function muteVideo(
   const outName = makeName('muted', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    await execute([
+    const args = [
       '-i', inName,
       '-an',
-      '-c:v', 'copy',
-      '-y', outName
-    ], onProgress);
+      '-c:v', 'copy'
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+    await execute(args, onProgress);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -606,6 +645,7 @@ export async function muteVideo(
 export async function extractAudio(
   file: File,
   outputFormat = 'mp3',
+  cleanMetadata: boolean = false,
   onProgress?: (p: number) => void
 ): Promise<Blob> {
   const format = normalizeFormat(outputFormat);
@@ -626,6 +666,7 @@ export async function extractAudio(
     } else {
       args.push('-c:a', 'copy');
     }
+    if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
     await execute(args, onProgress);
     return await readBlob(ff, outName, format);

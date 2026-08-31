@@ -12,7 +12,6 @@ import {
   changeSpeed,
   reverseAudio,
   stereoToMono,
-  stripMetadata,
   compressVideo,
   cutVideo,
   mergeVideos,
@@ -68,13 +67,13 @@ interface ToolConfig {
   settings?: SettingDef[];
 }
 
-/** Detect time‑related settings */
+/** Detect time-related settings */
 function isTimeSetting(name: string): boolean {
   const lower = name.toLowerCase();
   return lower.includes('start') || lower.includes('duration') || lower.includes('cut');
 }
 
-/** Human‑readable hint for range sliders */
+/** Human-readable hint for range sliders */
 function rangeHint(setting: SettingDef): string | null {
   const name = setting.name.toLowerCase();
   if (name === 'crf') return 'Lower = better quality, larger file';
@@ -169,6 +168,8 @@ export default function Converter({
       let output: Blob;
       const type = toolConfig.type;
 
+      // Pass the `privacy` boolean directly to FFmpeg functions
+      // so metadata is stripped in a single pass (saves memory)
       switch (type) {
         case 'cut': {
           const start = Math.max(0, Number(getSetting('start') ?? 0));
@@ -178,13 +179,14 @@ export default function Converter({
             start,
             duration,
             toolConfig.outputFormat || 'mp3',
+            privacy,
             updateProgress,
           );
           break;
         }
         case 'merge': {
           if (files.length < 2) throw new Error('Please select at least 2 audio files.');
-          output = await mergeAudio(files, toolConfig.outputFormat || 'mp3', updateProgress);
+          output = await mergeAudio(files, toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'compress': {
@@ -192,6 +194,7 @@ export default function Converter({
             files[0],
             Number(getSetting('quality') ?? 3),
             toolConfig.outputFormat || 'mp3',
+            privacy,
             updateProgress,
           );
           break;
@@ -201,6 +204,7 @@ export default function Converter({
             files[0],
             Number(getSetting('gain') ?? 6),
             toolConfig.outputFormat || 'mp3',
+            privacy,
             updateProgress,
           );
           break;
@@ -210,20 +214,21 @@ export default function Converter({
             files[0],
             Number(getSetting('factor') ?? 1.5),
             toolConfig.outputFormat || 'mp3',
+            privacy,
             updateProgress,
           );
           break;
         }
         case 'reverse': {
-          output = await reverseAudio(files[0], toolConfig.outputFormat || 'mp3', updateProgress);
+          output = await reverseAudio(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'stereo-to-mono': {
-          output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', updateProgress);
+          output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'convert': {
-          output = await convertFile(files[0], toolConfig.to || 'mp3', updateProgress);
+          output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
           break;
         }
         case 'video-compress': {
@@ -232,6 +237,7 @@ export default function Converter({
             Number(getSetting('crf') ?? 23),
             String(getSetting('preset') ?? 'medium'),
             toolConfig.outputFormat || 'mp4',
+            privacy,
             updateProgress,
           );
           break;
@@ -244,13 +250,14 @@ export default function Converter({
             start,
             duration,
             toolConfig.outputFormat || 'mp4',
+            privacy,
             updateProgress,
           );
           break;
         }
         case 'video-merge': {
           if (files.length < 2) throw new Error('Please select at least 2 video files.');
-          output = await mergeVideos(files, toolConfig.outputFormat || 'mp4', updateProgress);
+          output = await mergeVideos(files, toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'video-to-gif': {
@@ -258,12 +265,13 @@ export default function Converter({
             files[0],
             Number(getSetting('fps') ?? 10),
             Number(getSetting('width') ?? 320),
+            privacy,
             updateProgress,
           );
           break;
         }
         case 'gif-to-video': {
-          output = await gifToMp4(files[0], updateProgress);
+          output = await gifToMp4(files[0], privacy, updateProgress);
           break;
         }
         case 'resize-video': {
@@ -272,6 +280,7 @@ export default function Converter({
             Number(getSetting('width') ?? 1280),
             Number(getSetting('height') ?? 720),
             toolConfig.outputFormat || 'mp4',
+            privacy,
             updateProgress,
           );
           break;
@@ -284,6 +293,7 @@ export default function Converter({
             Number(getSetting('w') ?? 640),
             Number(getSetting('h') ?? 480),
             toolConfig.outputFormat || 'mp4',
+            privacy,
             updateProgress,
           );
           break;
@@ -293,35 +303,33 @@ export default function Converter({
             files[0],
             Number(getSetting('fps') ?? 30),
             toolConfig.outputFormat || 'mp4',
+            privacy,
             updateProgress,
           );
           break;
         }
         case 'mute-video': {
-          output = await muteVideo(files[0], toolConfig.outputFormat || 'mp4', updateProgress);
+          output = await muteVideo(files[0], toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'extract-audio': {
           output = await extractAudio(
             files[0],
             String(getSetting('format') ?? 'mp3'),
+            privacy,
             updateProgress,
           );
           break;
         }
         case 'convert-video': {
-          output = await convertFile(files[0], toolConfig.to || 'mp4', updateProgress);
+          output = await convertFile(files[0], toolConfig.to || 'mp4', privacy, updateProgress);
           break;
         }
         default:
           throw new Error('Unsupported tool.');
       }
 
-      if (privacy) {
-        updateProgress(Math.min(progress, 95));
-        output = await stripMetadata(new File([output], 'output', { type: output.type }));
-      }
-
+      // Save the result (privacy is now handled inside the FFmpeg operation)
       const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       await saveFile(id, output);
 
