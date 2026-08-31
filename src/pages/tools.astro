@@ -79,12 +79,16 @@ const categoryIcons: Record<string, string> = {
 const toolsJson = JSON.stringify(translatedTools);
 const categoryLabelsJson = JSON.stringify(categoryLabels);
 const categoryIconsJson = JSON.stringify(categoryIcons);
+
+// Get translated strings for props
+const pageTitle = t('tools_page_title', 'All Media Tools – Free & Private | Dayront');
+const pageDesc = t('tools_page_desc', 'Browse all free online media tools. Convert, cut, merge, boost, and more – 100% private, no upload.');
 ---
 
 <BaseLayout
   lang={lang}
-  title=<span data-i18n="tools_page_title">All Media Tools – Free &amp; Private | Dayront</span>
-  description=<span data-i18n="tools_page_desc">Browse all free online media tools. Convert, cut, merge, boost, and more – 100% private, no upload.</span>
+  title={pageTitle}
+  description={pageDesc}
 >
   <!-- HERO -->
   <section class="tools-hero relative overflow-hidden">
@@ -207,15 +211,15 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
             <input
               id="tool-search"
               type="text"
-              placeholder=<span data-i18n="search_tools_placeholder">Search tools...</span>
-              aria-label=<span data-i18n="search_tools">Search tools</span>
+              placeholder="Search tools..."
+              aria-label="Search tools"
               autocomplete="off"
             />
 
             <button
               id="clear-search"
               type="button"
-              aria-label=<span data-i18n="clear_search">Clear search</span>
+              aria-label="Clear search"
             >
               ×
             </button>
@@ -223,7 +227,7 @@ const categoryIconsJson = JSON.stringify(categoryIcons);
 
           <select
             id="tool-filter"
-            aria-label=<span data-i18n="filter_category">Filter tools by category</span>
+            aria-label="Filter tools by category"
           >
             <option value="all">
               <span data-i18n="all_categories">All Categories</span>
