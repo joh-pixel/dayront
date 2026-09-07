@@ -35,10 +35,11 @@ function translateTool(tool: typeof tools[0]) {
     category: tool.category,
     from: tool.from,
     to: tool.to,
+    // UPDATED: Removed ?lang=${lang} from both URLs
     url:
       tool.from && tool.to
-        ? `/convert/${tool.slug}?lang=${lang}`
-        : `/tools/${tool.slug}?lang=${lang}`,
+        ? `/convert/${tool.slug}`
+        : `/tools/${tool.slug}`,
   };
 }
 
