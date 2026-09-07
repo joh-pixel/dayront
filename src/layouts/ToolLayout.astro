@@ -4,6 +4,7 @@ import AdSlot from '../components/layout/AdSlot.astro';
 import Converter from '../components/conversion/Converter';
 import PrivacyBadge from '../components/ui/PrivacyBadge.astro';
 import { tools } from '../lib/tools';
+import { getLangFromAstroUrl } from '../lib/i18n';
 
 export interface Props {
   toolKey?: string;
@@ -17,6 +18,9 @@ export interface Props {
   };
   metaTitle?: string;
   metaDescription?: string;
+  // Added title/description as fallbacks
+  title?: string;
+  description?: string;
   toolName?: string;
   toolIcon?: string;
   howTo?: { title: string; text: string }[];
@@ -35,6 +39,8 @@ const {
   toolConfig: toolConfigProp,
   metaTitle: metaTitleProp,
   metaDescription: metaDescriptionProp,
+  title: titleProp,
+  description: descriptionProp,
   toolName: toolNameProp,
   toolIcon: toolIconProp,
   howTo: howToProp,
@@ -46,11 +52,9 @@ const {
 } = Astro.props;
 
 /* ------------------------------------------------------------------------
-   LANGUAGE DETECTION
+   LANGUAGE DETECTION (REMOVED ?lang= query param)
 ------------------------------------------------------------------------ */
-
-const lang =
-  new URL(Astro.url).searchParams.get('lang') || 'en';
+const lang = getLangFromAstroUrl(Astro.url);
 
 /* ------------------------------------------------------------------------
    LOAD TRANSLATIONS (tools + common)
@@ -79,8 +83,9 @@ try {
    BUILD TOOL DATA (with translation overrides)
 ------------------------------------------------------------------------ */
 
-let metaTitle = metaTitleProp || '';
-let metaDescription = metaDescriptionProp || '';
+// Prioritize metaTitle/metaDescription, fall back to title/description
+let metaTitle = metaTitleProp || titleProp || '';
+let metaDescription = metaDescriptionProp || descriptionProp || '';
 let toolName = toolNameProp || '';
 let toolIcon = toolIconProp || '';
 let howTo = howToProp || [];
