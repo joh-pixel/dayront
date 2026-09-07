@@ -13,13 +13,24 @@ export default defineConfig({
     preact({ compat: true }),
     mdx(),
     sitemap({
+      // This is the crucial part to fix your Search Console report:
+      filter: (page) => 
+        !page.includes('?lang=') &&
+        !page.includes('/tag/') &&
+        !page.includes('/category/'),
       i18n: {
         defaultLocale: "en",
         locales: { en: "en", es: "es", pt: "pt", de: "de", fr: "fr", ja: "ja" },
       },
     }),
-    robotsTxt(),
+    robotsTxt({
+      // Configuring the robots.txt plugin to block crawling of these sections
+      policy: [
+        { userAgent: "*", allow: "/", disallow: ["/blog/tag/", "/blog/category/", "/*?lang="] }
+      ]
+    }),
   ],
+  // ... rest of your config remains exactly the same
   i18n: {
     defaultLocale: "en",
     locales: ["en", "es", "pt", "de", "fr", "ja"],
