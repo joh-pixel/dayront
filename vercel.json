@@ -10,9 +10,6 @@
   ],
   "redirects": [
     { "source": "/convert", "destination": "/tools", "permanent": true },
-    { "source": "/blog", "destination": "/blog/en", "permanent": true },
-    { "source": "/blog/en", "destination": "/blog/en", "permanent": true },
-    { "source": "/blog/en/:slug", "destination": "/blog/en/:slug", "permanent": true },
-    { "source": "/blog/:slug", "destination": "/blog/en/:slug", "permanent": true }
+    { "source": "/blog", "destination": "/blog/en", "permanent": true }
   ]
 }
