@@ -1,31 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getLangFromAstroUrl } from '../lib/i18n';
-const lang = getLangFromAstroUrl(Astro.url);
 import { tools } from '../lib/tools';
 
-
-let pages: Record<string, any> = {};
-let common: Record<string, any> = {};
-try {
-  const [pagesRes, commonRes] = await Promise.all([
-    fetch(new URL(`/locales/${lang}/pages.json`, Astro.url.origin)),
-    fetch(new URL(`/locales/${lang}/common.json`, Astro.url.origin)),
-  ]);
-  if (pagesRes.ok) pages = await pagesRes.json();
-  if (commonRes.ok) common = await commonRes.json();
-} catch {}
-
-function t(key: string, fallback: string): string {
-  const keys = key.split('.');
-  let val: any = pages;
-  for (const k of keys) {
-    if (val && typeof val === 'object') val = val[k];
-    else return fallback;
-  }
-  return typeof val === 'string' ? val : fallback;
-}
-const tc = (key: string, fallback: string) => common[key] || fallback;
+// Homepage is at root, so default to 'en'
+const lang = Astro.params.locale || 'en';
 
 const toolCount = tools.length;
 
@@ -270,8 +248,8 @@ const workflow = [
 ---
 
 <BaseLayout lang={lang}
-  title={tc('site_title', 'Dayront – Free Media Tools, Private Browser Processing')}
-  description={tc('site_desc', "Convert, cut, merge, boost, and enhance audio/video directly in your browser. 100% free, no uploads, no sign-up, local processing. Fast, secure, and private.")}
+  title="Dayront – Free Media Tools, Private Browser Processing"
+  description="Convert, cut, merge, boost, and enhance audio/video directly in your browser. 100% free, no uploads, no sign-up, local processing. Fast, secure, and private."
 >
 
   <!-- =========================================================
@@ -311,7 +289,7 @@ const workflow = [
             <span class="button-icon">→</span>
           </a>
 
-          <a href="/blog" class="premium-button secondary-button">
+          <a href={`/blog/${lang}`} class="premium-button secondary-button">
             <span><span data-i18n="home_read_blog_84">Read Blog</span></span>
             <span class="button-icon">↗</span>
           </a>
@@ -506,7 +484,7 @@ const workflow = [
             Run conversions directly from your terminal. One command unlocks
             batch processing and scripting superpowers.
           </p>
-          <a href="/blog" class="text-link"><span data-i18n="home_learn_more_about_the_cli_97">Learn more about the CLI →</span></a>
+          <a href={`/blog/${lang}`} class="text-link"><span data-i18n="home_learn_more_about_the_cli_97">Learn more about the CLI →</span></a>
         </div>
       </div>
     </div>
@@ -766,7 +744,7 @@ const workflow = [
               <strong><span data-i18n="home_process_and_download_117">Process and download</span></strong>
             </div>
           </div>
-          <a href="/blog" class="text-link">
+          <a href={`/blog/${lang}`} class="text-link">
             Read the tutorials →
           </a>
         </div>
@@ -1044,7 +1022,7 @@ const workflow = [
 
         <div class="flex flex-wrap gap-3">
           <a href="/tools" class="small-button primary"><span data-i18n="home_browse_tools_140">Browse tools</span></a>
-          <a href="/blog" class="small-button secondary"><span data-i18n="home_read_guides_141">Read guides</span></a>
+          <a href={`/blog/${lang}`} class="small-button secondary"><span data-i18n="home_read_guides_141">Read guides</span></a>
         </div>
       </div>
 

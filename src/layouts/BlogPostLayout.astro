@@ -15,6 +15,7 @@ export interface Props {
   readingTime?: string;
   content: any;
   slug?: string;
+  locale?: string; // NEW: Passed from the [locale] dynamic route
 }
 
 const {
@@ -28,24 +29,19 @@ const {
   readingTime = '5 min read',
   content: Content,
   slug,
+  locale = 'en', // Default to English if not passed
 } = Astro.props;
 
 /* --------------------------------------------------------------------------
    LANGUAGE
 -------------------------------------------------------------------------- */
 
-// Language is passed via ?lang= query parameter.
-const lang = new URL(Astro.url).searchParams.get('lang') || 'en';
-
-// Load common translations for the current language
+// 1. Statically import the JSON files based on the passed locale
+// (This runs at build time, so Pinterest sees the translated text instantly)
 let common: Record<string, any> = {};
 try {
-  const commonRes = await fetch(
-    new URL(`/locales/${lang}/common.json`, Astro.url.origin)
-  );
-  if (commonRes.ok) {
-    common = await commonRes.json();
-  }
+  const commonModule = await import(`../../public/locales/${locale}/common.json`);
+  common = commonModule.default || commonModule;
 } catch {
   // Fallback silently – English will be used below
 }
@@ -60,7 +56,7 @@ function t(key: string, fallback: string): string {
 -------------------------------------------------------------------------- */
 
 const formattedDate = new Date(date).toLocaleDateString(
-  lang && lang !== 'en' ? lang : 'en-US',
+  locale && locale !== 'en' ? locale : 'en-US',
   { year: 'numeric', month: 'long', day: 'numeric' }
 );
 
@@ -70,11 +66,13 @@ const formattedDate = new Date(date).toLocaleDateString(
 
 let relatedPosts: any[] = [];
 if (relatedSlugs.length > 0) {
+  // Filter posts based on the passed locale, not the query param
   const allPosts = await getCollection('blog', (entry) =>
-    entry.id.startsWith(`${lang}/`)
+    entry.id.startsWith(`${locale}/`)
   );
+  
   relatedPosts = allPosts
-    .filter(p => relatedSlugs.includes(p.slug))
+    .filter(p => relatedSlugs.includes(p.slug)) 
     .map(p => ({
       title: p.data.title,
       description: p.data.description,
@@ -91,14 +89,17 @@ if (relatedSlugs.length > 0) {
       <!-- Breadcrumbs with translated labels -->
       <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
         <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
-          <li><a href={`/?lang=${lang}`} class="hover:text-sky transition">{t('home', 'Home')}</a></li>
+          <!-- Updated home link to include the locale prefix -->
+          <li><a href={`/${locale}`} class="hover:text-sky transition">{t('home', 'Home')}</a></li>
           <li aria-hidden="true">/</li>
-          <li><a href={`/blog?lang=${lang}`} class="hover:text-sky transition">{t('blog', 'Blog')}</a></li>
+          <!-- Updated blog link to include the locale prefix -->
+          <li><a href={`/blog/${locale}`} class="hover:text-sky transition">{t('blog', 'Blog')}</a></li>
           {categories[0] && (
             <>
               <li aria-hidden="true">/</li>
               <li>
-                <a href={`/blog/category/${categories[0].toLowerCase()}?lang=${lang}`} class="hover:text-sky transition">{categories[0]}</a>
+                <!-- Updated category link -->
+                <a href={`/blog/${locale}/category/${categories[0].toLowerCase()}`} class="hover:text-sky transition">{categories[0]}</a>
               </li>
             </>
           )}
@@ -120,14 +121,14 @@ if (relatedSlugs.length > 0) {
           {categories.length > 0 && (
             <div class="flex flex-wrap gap-2 mb-3">
               {categories.map(cat => (
-                <a href={`/blog/category/${cat.toLowerCase()}?lang=${lang}`} class="bg-sky-light dark:bg-sky/20 text-sky dark:text-sky-bright text-xs px-2.5 py-1 rounded-full hover:bg-sky/20 transition">{cat}</a>
+                <a href={`/blog/${locale}/category/${cat.toLowerCase()}`} class="bg-sky-light dark:bg-sky/20 text-sky dark:text-sky-bright text-xs px-2.5 py-1 rounded-full hover:bg-sky/20 transition">{cat}</a>
               ))}
             </div>
           )}
           {tags.length > 0 && (
             <div class="flex flex-wrap gap-2">
               {tags.map(tag => (
-                <a href={`/blog/tag/${tag.toLowerCase()}?lang=${lang}`} class="text-xs text-gray-500 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full hover:border-sky transition">#{tag}</a>
+                <a href={`/blog/${locale}/tag/${tag.toLowerCase()}`} class="text-xs text-gray-500 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full hover:border-sky transition">#{tag}</a>
               ))}
             </div>
           )}
@@ -156,12 +157,13 @@ if (relatedSlugs.length > 0) {
                   <div class="p-4">
                     <time class="text-xs text-gray-500" datetime={post.date}>
                       {new Date(post.date).toLocaleDateString(
-                        lang && lang !== 'en' ? lang : 'en-US',
+                        locale && locale !== 'en' ? locale : 'en-US',
                         { month: 'short', day: 'numeric' }
                       )}
                     </time>
                     <h3 class="font-semibold text-black dark:text-white mt-1 mb-2 line-clamp-2">{post.title}</h3>
-                    <a href={`/blog/${post.slug}?lang=${lang}`} class="text-sky text-sm font-medium hover:underline">Read →</a>
+                    <!-- Updated link to include the locale prefix -->
+                    <a href={`/blog/${locale}/${post.slug}`} class="text-sky text-sm font-medium hover:underline">Read →</a>
                   </div>
                 </div>
               ))}

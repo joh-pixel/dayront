@@ -11,10 +11,13 @@ export async function GET(context) {
     description: 'Privacy-first media tools – updates, guides, and news.',
     site: context.site,
     items: sortedPosts.map(post => {
-      // 1. Ensure absolute URL for Pinterest redirection
-      const absoluteLink = new URL(`/blog/${post.slug || post.id}`, context.site).toString();
+      // 1. Clean slug: Remove the 'en/' prefix and the file extension from the ID
+      const cleanSlug = post.id.replace(/\.(mdx|md)$/, '').replace(/^en\//, '');
       
-      // 2. Fetch the external online image URL directly from your frontmatter
+      // 2. Build the absolute URL with the /en/ prefix
+      const absoluteLink = new URL(`/blog/en/${cleanSlug}`, context.site).toString();
+      
+      // 3. Fetch the external online image URL
       const imageSrc = post.data.image || '';
 
       return {
@@ -22,7 +25,7 @@ export async function GET(context) {
         description: post.data.description,
         pubDate: post.data.date,
         link: absoluteLink,
-        // 3. Inject media enclosure so Pinterest successfully auto-generates the visual Pin image
+        // 4. Inject media enclosure so Pinterest successfully auto-generates the visual Pin image
         ...(imageSrc && {
           enclosure: {
             url: imageSrc,

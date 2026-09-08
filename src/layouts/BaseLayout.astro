@@ -14,19 +14,21 @@ export interface Props {
   description: string;
   ogImage?: string;
   canonicalURL?: string;
+  lang?: string; // Allow pages to pass lang manually
 }
 
-const { title, description, ogImage, canonicalURL } = Astro.props;
-const lang = 'en'; // static build – client-side script will adjust after load
+// Get lang from the URL path OR the passed prop
+const { title, description, ogImage, canonicalURL, lang: propLang } = Astro.props;
+const lang = propLang || Astro.params.locale || 'en'; 
 
-// Search data (unchanged)
+// Search data (Updated to include /en/ path)
 let blogItems: any[] = [];
 try {
-  const blogPosts = await getCollection('blog');
+  const blogPosts = await getCollection('blog', (entry) => entry.id.startsWith(`${lang}/`));
   blogItems = blogPosts.map(post => ({
     title: post.data.title,
     description: post.data.description,
-    url: `/blog/${post.id.replace(/\.mdx$/, '').replace(/^en\//, '')}`,
+    url: `/blog/${lang}/${post.id.replace(/\.mdx$/, '').replace(new RegExp(`^${lang}\/`), '')}`,
     type: 'blog',
     icon: '📝',
   }));
@@ -85,14 +87,25 @@ const allSearchItems = [...toolItems, ...blogItems];
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Dayront" />
 
-    <!-- Client‑side translation -->
+    <!-- Client‑side translation (Updated for path-based i18n) -->
     <script src="/i18n.js" defer></script>
 
-    <!-- Synchronise language dropdown and <html lang> from URL/localStorage -->
+    <!-- Synchronise language dropdown and <html lang> from URL path -->
     <script is:inline>
       (() => {
-        const params = new URLSearchParams(window.location.search);
-        const lang = params.get('lang') || localStorage.getItem('dayront-lang') || 'en';
+        // Get lang from path (e.g., /es -> es, /blog/en -> en)
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const supportedLocales = ['en', 'es', 'pt', 'de', 'fr', 'ja'];
+        let lang = 'en';
+        
+        // If the first segment is a supported locale, use it
+        if (supportedLocales.includes(pathSegments[0])) {
+          lang = pathSegments[0];
+        } else {
+          // Fallback: check localStorage
+          lang = localStorage.getItem('dayront-lang') || 'en';
+        }
+
         document.documentElement.lang = lang;
 
         document.querySelectorAll('#lang-select, #lang-select-mobile').forEach(sel => {

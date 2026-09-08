@@ -6,25 +6,38 @@ export type Lang = (typeof SUPPORTED_LANGS)[number];
 export const DEFAULT_LANG: Lang = 'en';
 
 /**
- * Server‑side / Astro frontmatter: extract lang from URL query parameter.
- * Safe to use in .astro files’ frontmatter.
+ * Server‑side helper: Extract lang from the URL path.
+ * Works with `/blog/en/...` (prefixDefaultLocale: false) and `/es/...` 
+ * Handles the case where `blog` is the first segment.
  */
 export function getLangFromAstroUrl(url: URL): Lang {
-  const params = new URLSearchParams(url.search);
-  const lang = params.get('lang') as Lang;
+  const segments = url.pathname.split('/').filter(Boolean);
+  // If the first segment is 'blog', check the second segment (e.g., /blog/en/...)
+  const potentialLang = segments[0] === 'blog' ? segments[1] : segments[0];
+  const lang = potentialLang as Lang;
   return lang && SUPPORTED_LANGS.includes(lang) ? lang : DEFAULT_LANG;
 }
 
 /**
- * Client‑side only: determine language from URL → localStorage → browser.
+ * Server‑side helper: Extract lang from Astro.params.
+ * This is the most direct way for pages using dynamic routes like [locale].
+ */
+export function getLangFromParams(locale: string | undefined): Lang {
+  const lang = locale as Lang;
+  return lang && SUPPORTED_LANGS.includes(lang) ? lang : DEFAULT_LANG;
+}
+
+/**
+ * Client‑side only: Determine language from URL path → localStorage → browser.
  * Must be called in a browser context (e.g., inside <script>).
  */
 export function getLangFromURL(): Lang {
   if (typeof window === 'undefined') return DEFAULT_LANG;
 
-  // 1. Check URL query parameter
-  const params = new URLSearchParams(window.location.search);
-  const urlLang = params.get('lang') as Lang;
+  // 1. Check URL pathname (handles /blog/en, /es, etc.)
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  const potentialLang = segments[0] === 'blog' ? segments[1] : segments[0];
+  const urlLang = potentialLang as Lang;
   if (urlLang && SUPPORTED_LANGS.includes(urlLang)) {
     localStorage.setItem('dayront-lang', urlLang);
     return urlLang;

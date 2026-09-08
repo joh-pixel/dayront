@@ -1,0 +1,66 @@
+---
+export const prerender = true;
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import BlogPostLayout from '../../../layouts/BlogPostLayout.astro';
+
+export async function getStaticPaths() {
+  // 1. Fetch ALL posts
+  const posts = await getCollection('blog');
+
+  // 2. Define your active locales (add 'es', 'fr', etc. when ready)
+  const locales = ['en']; 
+
+  return locales.flatMap((locale) =>
+    posts
+      // 3. Only fetch posts that match the current locale prefix (e.g., 'en/')
+      .filter((post) => post.id.startsWith(`${locale}/`))
+      .map((post) => {
+        // 4. Extract the clean slug WITHOUT the locale prefix
+        // FIXED: Use new RegExp() so the variable 'locale' works
+        const slug = post.id
+          .replace(/\.(mdx|md)$/, '')
+          .replace(new RegExp(`^${locale}\/`), '');
+        
+        return {
+          params: { locale, slug },
+          props: { post, locale },
+        };
+      })
+  );
+}
+
+const { post, locale } = Astro.props;
+
+if (!post) {
+  return new Response('Not Found', { status: 404 });
+}
+
+const { Content } = await render(post);
+
+// Word count & reading time
+const rawBody = post.body || '';
+const wordCount = rawBody.split(/\s+/).filter(Boolean).length;
+const readingTime = `${Math.max(1, Math.ceil(wordCount / 225))} min read`;
+
+// 5. Build the correct URL for the layout
+// FIXED: Use new RegExp() here too
+const displaySlug = post.id
+  .replace(/\.(mdx|md)$/, '')
+  .replace(new RegExp(`^${locale}\/`), '');
+
+const postData = {
+  title: post.data.title,
+  description: post.data.description,
+  date: post.data.date,
+  author: post.data.author || 'Dayront Team',
+  categories: post.data.categories || [],
+  tags: post.data.tags || [],
+  relatedSlugs: post.data.relatedPosts || [],
+  readingTime,
+};
+
+// 6. Pass locale to the layout so it can load the correct public/locales/[locale]/*.json files
+---
+
+<BlogPostLayout {...postData} content={Content} slug={displaySlug} locale={locale} />

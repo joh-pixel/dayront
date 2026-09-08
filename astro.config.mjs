@@ -13,29 +13,31 @@ export default defineConfig({
     preact({ compat: true }),
     mdx(),
     sitemap({
-      // This is the crucial part to fix your Search Console report:
+      // Keep this to filter out unwanted URLs from your sitemap
       filter: (page) => 
         !page.includes('?lang=') &&
         !page.includes('/tag/') &&
         !page.includes('/category/'),
+      // ✅ FIXED: Sitemap plugin expects an OBJECT format for locales
       i18n: {
         defaultLocale: "en",
         locales: { en: "en", es: "es", pt: "pt", de: "de", fr: "fr", ja: "ja" },
       },
     }),
     robotsTxt({
-      // Configuring the robots.txt plugin to block crawling of these sections
       policy: [
         { userAgent: "*", allow: "/", disallow: ["/blog/tag/", "/blog/category/", "/*?lang="] }
       ]
     }),
   ],
-  // ... rest of your config remains exactly the same
+  // Root i18n settings (Astro core expects an ARRAY here)
   i18n: {
     defaultLocale: "en",
     locales: ["en", "es", "pt", "de", "fr", "ja"],
     routing: {
-      prefixDefaultLocale: false,
+      // IMPORTANT: Keep this FALSE!
+      // If true, it becomes /en/blog/. We want /blog/en/
+      prefixDefaultLocale: false, 
     },
   },
   vite: {
