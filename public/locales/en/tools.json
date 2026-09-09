@@ -2,7 +2,7 @@
   "audio-cutter": {
     "title": "Audio Cutter",
     "metaTitle": "Audio Cutter – Trim MP3, WAV Online Free | Dayront",
-    "metaDescription": "Cut audio files online without uploading. Trim MP3, WAV, M4A, and more. 100% private.",
+    "metaDescription": "Cut audio files online without uploading. Trim MP3, WAV, M4A, OGG, and FLAC formats directly in your browser. 100% private, secure, and completely free to use.",
     "icon": "✂️",
     "howTo": [
       {
@@ -41,7 +41,7 @@
   "audio-merger": {
     "title": "Audio Merger",
     "metaTitle": "Audio Merger – Combine Audio Files Online Free | Dayront",
-    "metaDescription": "Merge multiple audio tracks into one file. Supports MP3, WAV, M4A, and more.",
+    "metaDescription": "Merge multiple audio tracks into one file easily. Supports MP3, WAV, M4A, OGG, FLAC, and more. 100% private, no uploads, and completely free to use.",
     "icon": "🔗",
     "howTo": [
       {
@@ -80,7 +80,7 @@
   "audio-compressor": {
     "title": "Audio Compressor",
     "metaTitle": "Audio Compressor – Reduce Audio File Size Online | Dayront",
-    "metaDescription": "Compress MP3, WAV, M4A files in your browser. No uploads, 100% private.",
+    "metaDescription": "Compress MP3, WAV, M4A, OGG, and FLAC files directly in your browser. No uploads required, secure local processing, and completely free to use every day.",
     "icon": "📦",
     "howTo": [
       {
@@ -119,7 +119,7 @@
   "volume-booster": {
     "title": "Volume Booster",
     "metaTitle": "Volume Booster – Increase Audio Volume Online Free | Dayront",
-    "metaDescription": "Make audio files louder instantly. No upload, 100% private.",
+    "metaDescription": "Make audio files louder instantly with our free Volume Booster. No upload required, 100% private local processing, and compatible with major audio formats.",
     "icon": "🔊",
     "howTo": [
       {
@@ -158,7 +158,7 @@
   "speed-changer": {
     "title": "Speed Changer",
     "metaTitle": "Audio Speed Changer – Change Playback Speed Online Free | Dayront",
-    "metaDescription": "Speed up or slow down audio files in your browser. No upload, 100% private.",
+    "metaDescription": "Speed up or slow down audio files directly in your browser. No upload needed, 100% private, and completely free. Preserves pitch while adjusting tempo.",
     "icon": "⏩",
     "howTo": [
       {
@@ -197,7 +197,7 @@
   "reverse-audio": {
     "title": "Reverse Audio",
     "metaTitle": "Reverse Audio – Play Audio Backwards Free Online | Dayront",
-    "metaDescription": "Reverse audio files online. No upload needed. 100% private.",
+    "metaDescription": "Reverse audio files online instantly with our free tool. No upload needed, fully private local processing, and compatible with MP3, WAV, and more.",
     "icon": "↩️",
     "howTo": [
       {
@@ -236,7 +236,7 @@
   "stereo-to-mono": {
     "title": "Stereo to Mono",
     "metaTitle": "Stereo to Mono Converter – Free Online Tool | Dayront",
-    "metaDescription": "Convert stereo audio to mono instantly. No upload, 100% private.",
+    "metaDescription": "Convert stereo audio to mono instantly in your browser. No upload required, fully private processing, compatible with MP3, WAV, FLAC, and OGG files.",
     "icon": "🔉",
     "howTo": [
       {
@@ -275,7 +275,7 @@
   "mp3-to-wav": {
     "title": "MP3 to WAV",
     "metaTitle": "MP3 to WAV Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert MP3 to lossless WAV in your browser. No upload, 100% private.",
+    "metaDescription": "Convert MP3 to lossless WAV directly in your browser. No upload required, fully private, and completely free. Ideal for editing and archiving your music.",
     "icon": "🎵",
     "howTo": [
       {
@@ -314,7 +314,7 @@
   "wav-to-mp3": {
     "title": "WAV to MP3",
     "metaTitle": "WAV to MP3 Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert WAV to MP3 in your browser. No upload, fully private.",
+    "metaDescription": "Convert WAV audio files to MP3 format directly in your browser. No upload needed, fully private processing, and completely free with unlimited conversions.",
     "icon": "🎵",
     "howTo": [
       {
@@ -353,7 +353,7 @@
   "m4a-to-mp3": {
     "title": "M4A to MP3",
     "metaTitle": "M4A to MP3 Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert M4A to MP3 in your browser. No upload, fully private.",
+    "metaDescription": "Convert M4A audio files to MP3 format directly in your browser. No upload required, fully private and secure, with unlimited free conversions every day.",
     "icon": "🎵",
     "howTo": [
       {
@@ -392,7 +392,7 @@
   "mp3-to-m4a": {
     "title": "MP3 to M4A",
     "metaTitle": "MP3 to M4A Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert MP3 to M4A in your browser. Keep quality, reduce size.",
+    "metaDescription": "Convert MP3 files to M4A format directly in your browser. Keep quality and reduce file size with 100% private, no-upload processing. Completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -431,7 +431,7 @@
   "flac-to-mp3": {
     "title": "FLAC to MP3",
     "metaTitle": "FLAC to MP3 Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert FLAC to MP3 in your browser. 100% private, fast and free.",
+    "metaDescription": "Convert FLAC audio files to MP3 format directly in your browser. No upload required, fully private processing, fast, secure, and completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -470,7 +470,7 @@
   "ogg-to-mp3": {
     "title": "OGG to MP3",
     "metaTitle": "OGG to MP3 Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert OGG to MP3 in your browser. No upload, fully private.",
+    "metaDescription": "Convert OGG Vorbis audio files to MP3 format directly in your browser. No upload needed, fully private processing, and completely free with no registration.",
     "icon": "🎵",
     "howTo": [
       {
@@ -509,7 +509,7 @@
   "mp3-to-ogg": {
     "title": "MP3 to OGG",
     "metaTitle": "MP3 to OGG Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Convert MP3 to OGG in your browser. No upload, completely private.",
+    "metaDescription": "Convert MP3 audio files to OGG format directly in your browser. No upload required, completely private local processing, secure, and completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -548,7 +548,7 @@
   "ape-to-mp3": {
     "title": "APE to MP3",
     "metaTitle": "APE to MP3 Converter – Free Online | Dayront",
-    "metaDescription": "Convert APE files to MP3 in your browser. No upload, private.",
+    "metaDescription": "Convert APE audio files to MP3 format directly in your browser. No upload required, fully private processing, fast, secure, and completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -574,7 +574,7 @@
   "opus-to-mp3": {
     "title": "OPUS to MP3",
     "metaTitle": "OPUS to MP3 Converter – Free Online | Dayront",
-    "metaDescription": "Convert OPUS to MP3 in your browser. No upload.",
+    "metaDescription": "Convert OPUS audio files to MP3 format directly in your browser. No upload required, fully private local processing, secure, and completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -600,7 +600,7 @@
   "aiff-to-mp3": {
     "title": "AIFF to MP3",
     "metaTitle": "AIFF to MP3 Converter – Free Online | Dayront",
-    "metaDescription": "Convert AIFF files to MP3 in your browser. No upload.",
+    "metaDescription": "Convert AIFF audio files to MP3 format directly in your browser. No upload required, completely private and secure, with unlimited free conversions.",
     "icon": "🎵",
     "howTo": [
       {
@@ -626,7 +626,7 @@
   "aac-to-mp3": {
     "title": "AAC to MP3",
     "metaTitle": "AAC to MP3 Converter – Free Online | Dayront",
-    "metaDescription": "Convert AAC to MP3 in your browser. No upload.",
+    "metaDescription": "Convert AAC audio files to MP3 format directly in your browser. No upload required, fully private local processing, secure, and completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -652,7 +652,7 @@
   "amr-to-mp3": {
     "title": "AMR to MP3",
     "metaTitle": "AMR to MP3 Converter – Free Online | Dayront",
-    "metaDescription": "Convert AMR files to MP3 in your browser. No upload.",
+    "metaDescription": "Convert AMR audio files to MP3 format directly in your browser. No upload required, fully private processing, secure, and completely free.",
     "icon": "🎵",
     "howTo": [
       {
@@ -678,7 +678,7 @@
   "mp4-to-mp3": {
     "title": "MP4 to MP3",
     "metaTitle": "MP4 to MP3 Converter – Extract Audio Free Online | Dayront",
-    "metaDescription": "Convert MP4 video to MP3 audio in your browser. No upload, fully private.",
+    "metaDescription": "Convert MP4 video to MP3 audio directly in your browser. Extract sound from videos with no uploads and no account required. 100% private and free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -717,7 +717,7 @@
   "mov-to-mp3": {
     "title": "MOV to MP3",
     "metaTitle": "MOV to MP3 Converter – Extract Audio Free Online | Dayront",
-    "metaDescription": "Convert MOV video to MP3 audio in your browser. No upload, 100% private.",
+    "metaDescription": "Convert MOV video to MP3 audio directly in your browser. No uploads, no sign-up required, fully private, secure, and completely free to use.",
     "icon": "🎬",
     "howTo": [
       {
@@ -756,7 +756,7 @@
   "mkv-to-mp3": {
     "title": "MKV to MP3",
     "metaTitle": "MKV to MP3 Converter – Extract Audio Free Online | Dayront",
-    "metaDescription": "Convert MKV video to MP3 audio in your browser. No upload, completely private.",
+    "metaDescription": "Convert MKV video to MP3 audio directly in your browser. No uploads, no sign-up required, fully private processing, secure, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -795,7 +795,7 @@
   "avi-to-mp3": {
     "title": "AVI to MP3",
     "metaTitle": "AVI to MP3 Converter – Extract Audio Free Online | Dayront",
-    "metaDescription": "Convert AVI video to MP3 audio in your browser. No upload, 100% private.",
+    "metaDescription": "Convert AVI video to MP3 audio directly in your browser. No uploads, no sign-up required, fully private local processing, secure, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -834,7 +834,7 @@
   "webm-to-mp3": {
     "title": "WebM to MP3",
     "metaTitle": "WebM to MP3 Converter – Extract MP3 Audio Free Online | Dayront",
-    "metaDescription": "Convert WebM video to MP3 audio in your browser. No upload, private, and free.",
+    "metaDescription": "Convert WebM video to MP3 audio directly in your browser. No uploads, no sign-up required, fully private processing, secure, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -873,7 +873,7 @@
   "mp4-to-wav": {
     "title": "MP4 to WAV",
     "metaTitle": "MP4 to WAV Converter – Extract Audio Free Online | Dayront",
-    "metaDescription": "Convert MP4 video to WAV audio in your browser. No upload, fully private.",
+    "metaDescription": "Convert MP4 video to WAV audio directly in your browser. Extract lossless sound with no uploads, no sign-up required, fully private, and free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -912,7 +912,7 @@
   "webm-to-wav": {
     "title": "WebM to WAV",
     "metaTitle": "WebM to WAV Converter – Free Online, No Upload | Dayront",
-    "metaDescription": "Extract lossless WAV from WebM files in your browser. No upload, 100% private.",
+    "metaDescription": "Extract lossless WAV audio from WebM video files directly in your browser. No uploads required, fully private processing, secure, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -951,7 +951,7 @@
   "flv-to-mp3": {
     "title": "FLV to MP3",
     "metaTitle": "FLV to MP3 Converter – Free Online | Dayront",
-    "metaDescription": "Convert FLV to MP3 in your browser. No upload, private.",
+    "metaDescription": "Convert FLV video files to MP3 audio directly in your browser. No uploads, no sign-up required, fully private local processing, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -977,7 +977,7 @@
   "flv-to-mp4": {
     "title": "FLV to MP4",
     "metaTitle": "FLV to MP4 Converter – Free Online | Dayront",
-    "metaDescription": "Convert FLV to MP4 in your browser. No upload.",
+    "metaDescription": "Convert FLV video files to MP4 format directly in your browser. No uploads, no sign-up required, fully private processing, secure, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -1003,7 +1003,7 @@
   "flv-to-webm": {
     "title": "FLV to WebM",
     "metaTitle": "FLV to WebM Converter – Free Online | Dayront",
-    "metaDescription": "Convert FLV to WebM in your browser. No upload.",
+    "metaDescription": "Convert FLV video files to WebM format directly in your browser. No uploads, no sign-up required, fully private local processing, and completely free.",
     "icon": "🎬",
     "howTo": [
       {
@@ -1029,7 +1029,7 @@
   "video-compressor": {
     "title": "Video Compressor",
     "metaTitle": "Video Compressor – Reduce Video Size Online Free | Dayront",
-    "metaDescription": "Compress MP4, WebM, MOV files in your browser. Adjust quality and speed. 100% private.",
+    "metaDescription": "Compress MP4, WebM, and MOV video files directly in your browser. Adjust quality and speed to reduce file size. 100% private, no uploads, and free.",
     "icon": "📉",
     "howTo": [
       {
@@ -1048,7 +1048,7 @@
     "faq": [
       {
         "question": "Will quality be lost?",
-        "answer": "Yes, but you can control the trade‑off with the CRF slider. Lower CRF = better quality, larger file."
+        "answer": "Yes, but you can control the trade-off with the CRF slider. Lower CRF = better quality, larger file."
       },
       {
         "question": "Is it really free?",
@@ -1064,7 +1064,7 @@
   "video-cutter": {
     "title": "Video Cutter",
     "metaTitle": "Video Cutter – Trim Video Online Free | Dayront",
-    "metaDescription": "Cut MP4, WebM, MOV videos in your browser. No upload, 100% private.",
+    "metaDescription": "Cut MP4, WebM, and MOV videos directly in your browser. No uploads required, fully private local processing, secure, and completely free to use.",
     "icon": "✂️",
     "howTo": [
       {
@@ -1082,7 +1082,7 @@
     ],
     "faq": [
       {
-        "question": "Does it re‑encode?",
+        "question": "Does it re-encode?",
         "answer": "No, we use stream copy for speed and no quality loss."
       }
     ],
@@ -1095,7 +1095,7 @@
   "video-merger": {
     "title": "Video Merger",
     "metaTitle": "Video Merger – Combine Videos Online Free | Dayront",
-    "metaDescription": "Merge MP4, WebM, MOV clips in your browser. No upload, private.",
+    "metaDescription": "Merge MP4, WebM, and MOV video clips directly in your browser. No uploads required, fully private processing, secure, and completely free.",
     "icon": "🔗",
     "howTo": [
       {
@@ -1126,7 +1126,7 @@
   "video-to-gif": {
     "title": "Video to GIF",
     "metaTitle": "Video to GIF Converter – Free Online | Dayront",
-    "metaDescription": "Turn MP4, WebM, MOV into GIFs. Adjust FPS and size. 100% private.",
+    "metaDescription": "Turn MP4, WebM, and MOV videos into animated GIFs directly in your browser. Adjust FPS and size with 100% private, no-upload processing. Free.",
     "icon": "🖼️",
     "howTo": [
       {
@@ -1157,7 +1157,7 @@
   "gif-to-video": {
     "title": "GIF to MP4",
     "metaTitle": "GIF to MP4 Converter – Free Online | Dayront",
-    "metaDescription": "Turn GIFs into MP4 videos. No upload, private.",
+    "metaDescription": "Turn GIF images into MP4 video files directly in your browser. No uploads required, fully private processing, secure, and completely free.",
     "icon": "🎞️",
     "howTo": [
       {
@@ -1188,7 +1188,7 @@
   "resize-video": {
     "title": "Resize Video",
     "metaTitle": "Resize Video – Change Resolution Online Free | Dayront",
-    "metaDescription": "Resize MP4, WebM, MOV videos. Set custom width and height. Private.",
+    "metaDescription": "Resize MP4, WebM, and MOV videos to custom dimensions directly in your browser. No uploads required, fully private processing, secure, and free.",
     "icon": "↔️",
     "howTo": [
       {
@@ -1219,7 +1219,7 @@
   "crop-video": {
     "title": "Crop Video",
     "metaTitle": "Crop Video – Cut Region Online Free | Dayront",
-    "metaDescription": "Crop MP4, WebM, MOV videos. Specify X, Y, width, height. Private.",
+    "metaDescription": "Crop MP4, WebM, and MOV videos by specifying exact X, Y coordinates, width, and height. No uploads required, fully private processing, and free.",
     "icon": "🔲",
     "howTo": [
       {
@@ -1245,7 +1245,7 @@
   "change-fps": {
     "title": "Change FPS",
     "metaTitle": "Change FPS – Adjust Frame Rate Online Free | Dayront",
-    "metaDescription": "Change FPS of MP4, WebM, MOV videos. No upload, private.",
+    "metaDescription": "Change the frame rate of MP4, WebM, and MOV videos directly in your browser. No uploads required, fully private local processing, and completely free.",
     "icon": "⏱️",
     "howTo": [
       {
@@ -1271,7 +1271,7 @@
   "mute-video": {
     "title": "Mute Video",
     "metaTitle": "Mute Video – Remove Audio Online Free | Dayront",
-    "metaDescription": "Mute MP4, WebM, MOV videos. No upload, private.",
+    "metaDescription": "Mute MP4, WebM, and MOV videos by removing the audio track directly in your browser. No uploads required, fully private processing, and free.",
     "icon": "🔇",
     "howTo": [
       {
@@ -1297,7 +1297,7 @@
   "extract-audio": {
     "title": "Extract Audio",
     "metaTitle": "Extract Audio – Get Sound from Video Online Free | Dayront",
-    "metaDescription": "Extract audio from MP4, WebM, MOV, etc. to MP3. Private.",
+    "metaDescription": "Extract audio from MP4, WebM, MOV, and other video formats into MP3 files directly in your browser. No uploads required, fully private, and free.",
     "icon": "🎧",
     "howTo": [
       {

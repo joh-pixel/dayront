@@ -1,6 +1,8 @@
 {
   "site_title": "Dayront – Free Media Tools, Private Browser Processing",
-  "site_desc": "Convert, cut, merge, compress and edit audio and video with Dayront's browser-based media tools.",
+  "site_desc": "Convert, cut, merge, compress, and easily enhance audio/video files with Dayront's browser-based media tools. 100% private, no uploads, no sign-up.",
+  "tools_page_title": "All Media Tools – Free & Private | Dayront",
+  "tools_page_desc": "Browse all free online media tools. Convert, cut, merge, boost, and enhance your audio and video files directly in your browser. 100% private, no sign-up, no uploads required.",
   "home": "Home",
   "blog": "Blog",
   "about": "About",
@@ -47,7 +49,7 @@
   "free_tools_callout": "Free tools",
   "no_hidden_fees": "No hidden fees",
   "search_page_title": "Search – Dayront",
-  "search_page_desc": "Search across all media tools, blog articles, and FAQs.",
+  "search_page_desc": "Search across all of Dayront's free online media tools, helpful blog articles, and FAQs to find exactly what you need, all in one easy private place.",
   "search_heading": "Search",
   "search_subtitle": "Find tools, articles, and answers instantly.",
   "search_placeholder": "Type to search…",
