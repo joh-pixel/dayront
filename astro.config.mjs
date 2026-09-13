@@ -4,10 +4,14 @@ import sitemap from "@astrojs/sitemap";
 import robotsTxt from "astro-robots-txt";
 import preact from "@astrojs/preact";
 import tailwind from "@astrojs/tailwind";
+import vercel from "@astrojs/vercel";
 
 export default defineConfig({
   site: "https://dayront.com",
   output: "static",
+  adapter: vercel({
+    edgeMiddleware: false,
+  }),
   integrations: [
     tailwind(),
     preact({ compat: true }),
