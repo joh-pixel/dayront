@@ -964,7 +964,8 @@ export const tools: Tool[] = [
       { title: 'AI transcribes', text: 'Whisper AI generates captions.' },
       { title: 'Download', text: 'Get video with subtitles.' },
     ],
-    relatedTools: ['extract-audio', 'ai-video-upscaler', 'video-cutter'],
+    // ★ FIXED: 'ai-video-upscaler' → 'burn-subtitles' (removed tool)
+    relatedTools: ['extract-audio', 'burn-subtitles', 'video-cutter'],
   },
   {
     slug: 'ai-background-remover',
@@ -1004,27 +1005,26 @@ export const tools: Tool[] = [
     ],
     relatedTools: ['ai-background-remover', 'resize-video', 'crop-video'],
   },
-  
   {
-  slug: 'burn-subtitles',
-  name: 'Burn Subtitles',
-  category: 'ai',
-  description: 'Burn SRT subtitles into any video with custom fonts, colors, and positioning.',
-  metaTitle: 'Burn Subtitles into Video – Free, Styled, No Upload | Dayront',
-  metaDescription: 'Burn SRT subtitles into any video with custom fonts, colors, and positioning. Audio preserved. 100% private.',
-  icon: '🎬',
-  type: 'burn-subtitles',
-  outputFormat: 'mp4',
-  settings: [],
-  faq: [
-    { question: 'Is audio preserved?', answer: 'Yes — the original audio track is included.' },
-    { question: 'Does it work on iPhone?', answer: 'Yes — output is MP4 (H.264 + AAC).' },
-  ],
-  howTo: [
-    { title: 'Upload your video', text: 'Select MP4, WebM, or MOV.' },
-    { title: 'Add subtitles', text: 'Upload .SRT, paste text, or generate with AI.' },
-    { title: 'Style & burn', text: 'Customize and render.' },
-  ],
-  relatedTools: ['ai-video-captions', 'video-cutter', 'video-compressor'],
-},
+    slug: 'burn-subtitles',
+    name: 'Burn Subtitles',
+    category: 'ai',
+    description: 'Burn SRT subtitles into any video with custom fonts, colors, and positioning.',
+    metaTitle: 'Burn Subtitles into Video – Free, Styled, No Upload | Dayront',
+    metaDescription: 'Burn SRT subtitles into any video with custom fonts, colors, and positioning. Audio preserved. 100% private.',
+    icon: '🎬',
+    type: 'burn-subtitles',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [
+      { question: 'Is audio preserved?', answer: 'Yes — the original audio track is included.' },
+      { question: 'Does it work on iPhone?', answer: 'Yes — output is MP4 (H.264 + AAC).' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Select MP4, WebM, or MOV.' },
+      { title: 'Add subtitles', text: 'Upload .SRT, paste text, or generate with AI.' },
+      { title: 'Style & burn', text: 'Customize and render.' },
+    ],
+    relatedTools: ['ai-video-captions', 'video-cutter', 'video-compressor'],
+  },
 ];
