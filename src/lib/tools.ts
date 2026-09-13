@@ -946,50 +946,7 @@ export const tools: Tool[] = [
   },
 
   // ── AI TOOLS ─────────────────────────────
-  {
-    slug: 'ai-video-upscaler',
-    name: 'AI Video Upscaler',
-    category: 'ai',
-    description: 'Upscale videos to 4K Ultra HD using AI directly in your browser.',
-    metaTitle: 'Free AI Video Upscaler (Ultra HD) – Upscale in Browser | Dayront',
-    metaDescription: 'Upscale videos to 4K using AI directly in your browser. No uploads, 100% private.',
-    icon: '✨',
-    type: 'ai-upscale',
-    outputFormat: 'mp4',
-    settings: [
-      { name: 'model', label: 'AI Model', type: 'select', options: ['anime4k/cnn-2x-s', 'anime4k/cnn-2x-m'], default: 'anime4k/cnn-2x-s' },
-      { name: 'scale', label: 'Scale Factor', type: 'range', min: 2, max: 4, default: 2 },
-    ],
-    faq: [
-      { question: 'Is it really free?', answer: 'Yes, all processing happens on your device.' },
-      { question: 'Does it work on mobile?', answer: 'Currently requires a desktop browser with WebGPU (Chrome/Edge 113+).' },
-    ],
-    howTo: [
-      { title: 'Upload your video', text: 'Select the low-res video you want to upscale.' },
-      { title: 'AI Model loads', text: 'Our AI model initializes directly in your browser.' },
-      { title: 'Upscale & Export', text: 'WebGPU processes the video frame-by-frame.' },
-    ],
-    relatedTools: ['ai-frame-interpolation', 'video-compressor', 'resize-video'],
-  },
-  {
-    slug: 'ai-frame-interpolation',
-    name: 'AI Frame Interpolation',
-    category: 'ai',
-    description: 'Make your videos smooth by generating intermediate frames with AI.',
-    metaTitle: 'AI Frame Interpolation – Smooth Video Online Free | Dayront',
-    metaDescription: 'Increase video frame rate smoothly with AI. No upload, 100% private.',
-    icon: '🎞️',
-    type: 'ai-interpolate',
-    outputFormat: 'mp4',
-    settings: [],
-    faq: [],
-    howTo: [
-      { title: 'Upload video', text: 'Select a video.' },
-      { title: 'AI processes', text: 'AI generates new frames.' },
-      { title: 'Download', text: 'Get smooth video.' },
-    ],
-    relatedTools: ['ai-video-upscaler', 'change-fps', 'video-compressor'],
-  },
+
   {
     slug: 'ai-video-captions',
     name: 'AI Video Captions',
