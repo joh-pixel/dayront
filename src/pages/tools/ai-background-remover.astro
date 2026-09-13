@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "ai-background-remover",
+  name: "AI Background Remover",
+  metaTitle: "AI Background Remover – Free Online, No Upload | Dayront",
+  metaDescription: "Remove image backgrounds instantly with AI. No uploads, 100% private, transparent PNG output.",
+  icon: "🪄",
+  howTo: [
+    { title: "Upload your image", text: "Select a JPG, PNG, or WebP photo." },
+    { title: "AI removes the background", text: "A neural network identifies the subject and removes everything else." },
+    { title: "Download transparent PNG", text: "Get a clean cutout with a transparent background." }
+  ],
+  faq: [
+    { question: "Is it really free?", answer: "Yes, completely free with no watermarks or sign-ups." },
+    { question: "Are my images uploaded?", answer: "No. The AI model runs entirely in your browser — your images never leave your device." },
+    { question: "What output format do I get?", answer: "A transparent PNG at the same resolution as your original image." },
+    { question: "What kinds of images work best?", answer: "Portraits, product photos, and any image with a clearly distinguishable subject." }
+  ],
+  relatedTools: [
+    { href: "/tools/ai-photo-editor", icon: "🎨", name: "AI Photo Editor" },
+    { href: "/tools/crop-video", icon: "🔲", name: "Crop Video" },
+    { href: "/tools/video-compressor", icon: "📉", name: "Video Compressor" }
+  ],
+  type: "ai-remove-bg",
+  from: undefined,
+  to: undefined,
+  outputFormat: "png",
+  settings: [],
+  tutorial: `
+    <h2>Using Our AI Background Remover</h2>
+    <p>Our AI Background Remover uses the U²-Net neural network (via rembg-web and ONNX Runtime) to intelligently isolate your subject from any photo. Unlike chroma key tools, this works on any background — busy streets, cluttered rooms, complex scenery — without a green screen.</p>
+    <h3>Perfect for:</h3>
+    <ul>
+      <li>Product photos for e-commerce</li>
+      <li>Profile pictures and headshots</li>
+      <li>Marketing graphics and thumbnails</li>
+      <li>Anyone who needs a quick, clean cutout</li>
+    </ul>
+    <h3>Why Choose Dayront?</h3>
+    <ul>
+      <li>No uploads – your images stay private.</li>
+      <li>Runs on WebGPU for fast inference.</li>
+      <li>Free, unlimited, no watermarks.</li>
+    </ul>
+  `,
+  relatedBlogs: []
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "burn-subtitles",
+  name: "Burn Subtitles",
+  metaTitle: "Burn Subtitles into Video – Free, Styled, No Upload | Dayront",
+  metaDescription: "Burn SRT subtitles into any video with custom fonts, colors, and positioning. Audio preserved. 100% private.",
+  icon: "🎬",
+  howTo: [
+    { title: "Upload your video", text: "Select MP4, WebM, or MOV." },
+    { title: "Add subtitles", text: "Upload an .SRT file, paste text, or auto-generate with AI." },
+    { title: "Style & burn", text: "Customize font, color, and position, then render." }
+  ],
+  faq: [
+    { question: "Is audio preserved?", answer: "Yes — the original audio track is included in the output." },
+    { question: "Does it work on iPhone?", answer: "Output is MP4 (H.264 + AAC), playable everywhere." },
+    { question: "Is it private?", answer: "Yes — everything runs in your browser." }
+  ],
+  relatedTools: [
+    { href: "/tools/ai-video-captions", icon: "📝", name: "AI Video Captions" },
+    { href: "/tools/video-cutter", icon: "✂️", name: "Video Cutter" },
+    { href: "/tools/video-compressor", icon: "📉", name: "Video Compressor" }
+  ],
+  type: "burn-subtitles",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [],
+  tutorial: `
+    <h2>Burn Subtitles into Video</h2>
+    <p>Add permanent subtitles to any video with full styling control. Upload a video, add your .SRT file (or auto-generate with AI), customize the look, then render.</p>
+    <h3>Features</h3>
+    <ul>
+      <li>Multiple font families, sizes, and colors</li>
+      <li>Background bar, outline, or shadow</li>
+      <li>Top, middle, or bottom positioning</li>
+      <li>Audio preserved in the output</li>
+      <li>MP4 output — plays on iPhone, Android, Windows, Mac</li>
+    </ul>
+  `,
+  relatedBlogs: []
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

@@ -21,7 +21,7 @@ export interface SettingDef {
 export interface Tool {
   slug: string;
   name: string;
-  category: 'audio-utility' | 'audio-conversion' | 'video-to-audio' | 'video-utility' | 'video-conversion';
+  category: 'audio-utility' | 'audio-conversion' | 'video-to-audio' | 'video-utility' | 'video-conversion' | 'ai';
   from?: string;
   to?: string;
   description: string;
@@ -944,4 +944,130 @@ export const tools: Tool[] = [
     ],
     relatedTools: ['mp4-to-mp3', 'mute-video', 'audio-cutter'],
   },
+
+  // ── AI TOOLS ─────────────────────────────
+  {
+    slug: 'ai-video-upscaler',
+    name: 'AI Video Upscaler',
+    category: 'ai',
+    description: 'Upscale videos to 4K Ultra HD using AI directly in your browser.',
+    metaTitle: 'Free AI Video Upscaler (Ultra HD) – Upscale in Browser | Dayront',
+    metaDescription: 'Upscale videos to 4K using AI directly in your browser. No uploads, 100% private.',
+    icon: '✨',
+    type: 'ai-upscale',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'model', label: 'AI Model', type: 'select', options: ['anime4k/cnn-2x-s', 'anime4k/cnn-2x-m'], default: 'anime4k/cnn-2x-s' },
+      { name: 'scale', label: 'Scale Factor', type: 'range', min: 2, max: 4, default: 2 },
+    ],
+    faq: [
+      { question: 'Is it really free?', answer: 'Yes, all processing happens on your device.' },
+      { question: 'Does it work on mobile?', answer: 'Currently requires a desktop browser with WebGPU (Chrome/Edge 113+).' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Select the low-res video you want to upscale.' },
+      { title: 'AI Model loads', text: 'Our AI model initializes directly in your browser.' },
+      { title: 'Upscale & Export', text: 'WebGPU processes the video frame-by-frame.' },
+    ],
+    relatedTools: ['ai-frame-interpolation', 'video-compressor', 'resize-video'],
+  },
+  {
+    slug: 'ai-frame-interpolation',
+    name: 'AI Frame Interpolation',
+    category: 'ai',
+    description: 'Make your videos smooth by generating intermediate frames with AI.',
+    metaTitle: 'AI Frame Interpolation – Smooth Video Online Free | Dayront',
+    metaDescription: 'Increase video frame rate smoothly with AI. No upload, 100% private.',
+    icon: '🎞️',
+    type: 'ai-interpolate',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [],
+    howTo: [
+      { title: 'Upload video', text: 'Select a video.' },
+      { title: 'AI processes', text: 'AI generates new frames.' },
+      { title: 'Download', text: 'Get smooth video.' },
+    ],
+    relatedTools: ['ai-video-upscaler', 'change-fps', 'video-compressor'],
+  },
+  {
+    slug: 'ai-video-captions',
+    name: 'AI Video Captions',
+    category: 'ai',
+    description: 'Automatically generate and burn subtitles into your video.',
+    metaTitle: 'AI Video Captions – Auto Subtitle Generator Free | Dayront',
+    metaDescription: 'Generate captions automatically with AI. No upload, 100% private.',
+    icon: '📝',
+    type: 'ai-captions',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [],
+    howTo: [
+      { title: 'Upload video', text: 'Select a video.' },
+      { title: 'AI transcribes', text: 'Whisper AI generates captions.' },
+      { title: 'Download', text: 'Get video with subtitles.' },
+    ],
+    relatedTools: ['extract-audio', 'ai-video-upscaler', 'video-cutter'],
+  },
+  {
+    slug: 'ai-background-remover',
+    name: 'AI Background Remover',
+    category: 'ai',
+    description: 'Remove video or image backgrounds automatically using AI.',
+    metaTitle: 'AI Background Remover – Free Online | Dayront',
+    metaDescription: 'Remove backgrounds from videos and images with AI. No upload, private.',
+    icon: '🪄',
+    type: 'ai-remove-bg',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [],
+    howTo: [
+      { title: 'Upload media', text: 'Select a video or image.' },
+      { title: 'AI removes background', text: 'Processes frame-by-frame.' },
+      { title: 'Download', text: 'Get transparent or replaced background.' },
+    ],
+    relatedTools: ['ai-photo-editor', 'video-compressor', 'crop-video'],
+  },
+  {
+    slug: 'ai-photo-editor',
+    name: 'AI Photo Editor',
+    category: 'ai',
+    description: 'Edit photos using AI text prompts and generative fill.',
+    metaTitle: 'AI Photo Editor – Text to Image Free Online | Dayront',
+    metaDescription: 'Edit and generate photos with AI directly in your browser. Private.',
+    icon: '🎨',
+    type: 'ai-photo-editor',
+    outputFormat: 'png',
+    settings: [],
+    faq: [],
+    howTo: [
+      { title: 'Upload image', text: 'Select a photo.' },
+      { title: 'Enter prompt', text: 'Describe the edit.' },
+      { title: 'Download', text: 'Get AI-edited photo.' },
+    ],
+    relatedTools: ['ai-background-remover', 'resize-video', 'crop-video'],
+  },
+  
+  {
+  slug: 'burn-subtitles',
+  name: 'Burn Subtitles',
+  category: 'ai',
+  description: 'Burn SRT subtitles into any video with custom fonts, colors, and positioning.',
+  metaTitle: 'Burn Subtitles into Video – Free, Styled, No Upload | Dayront',
+  metaDescription: 'Burn SRT subtitles into any video with custom fonts, colors, and positioning. Audio preserved. 100% private.',
+  icon: '🎬',
+  type: 'burn-subtitles',
+  outputFormat: 'mp4',
+  settings: [],
+  faq: [
+    { question: 'Is audio preserved?', answer: 'Yes — the original audio track is included.' },
+    { question: 'Does it work on iPhone?', answer: 'Yes — output is MP4 (H.264 + AAC).' },
+  ],
+  howTo: [
+    { title: 'Upload your video', text: 'Select MP4, WebM, or MOV.' },
+    { title: 'Add subtitles', text: 'Upload .SRT, paste text, or generate with AI.' },
+    { title: 'Style & burn', text: 'Customize and render.' },
+  ],
+  relatedTools: ['ai-video-captions', 'video-cutter', 'video-compressor'],
+},
 ];

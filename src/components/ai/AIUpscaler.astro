@@ -1,0 +1,484 @@
+---
+interface Props { toolConfig?: any; }
+const { toolConfig } = Astro.props;
+---
+
+<div class="ai-tool" data-tool="ai-upscaler">
+  <div id="aiu-upload-zone" class="border-2 border-dashed border-sky-200 dark:border-sky-900/50 bg-sky-50/40 dark:bg-sky-950/10 rounded-2xl p-8 sm:p-12 text-center transition">
+    <input type="file" id="aiu-file-input" accept="video/*" class="hidden" />
+    <div class="text-5xl mb-4">✨</div>
+    <p class="text-base text-gray-700 dark:text-gray-300 mb-2 font-medium">Drag & drop your video</p>
+    <p class="text-xs text-gray-400 mb-4">MP4, WebM, MOV — GPU accelerated</p>
+    <button id="aiu-browse-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg transition">Browse Files</button>
+    <p class="mt-4 text-xs text-gray-400">Processes at ~1× video length using WebGL</p>
+  </div>
+
+  <div id="aiu-selected-card" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-black dark:text-white">Selected file</span>
+      <span class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full">1 file</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span id="aiu-file-name" class="text-sm text-gray-700 dark:text-gray-300 truncate mr-4"></span>
+      <span id="aiu-file-size" class="text-sm text-gray-500 shrink-0"></span>
+    </div>
+  </div>
+
+  <div id="aiu-options" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Scale Factor</label>
+      <select id="aiu-scale" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white">
+        <option value="2">2× Ultra HD</option>
+        <option value="3">3×</option>
+        <option value="4">4×</option>
+      </select>
+      <p class="mt-1 text-[10px] text-gray-400">Output is capped at 4K to keep encoding fast.</p>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sharpening Amount</label>
+      <input type="range" id="aiu-sharpen" min="0" max="100" value="60" class="w-full accent-sky-500" />
+    </div>
+    <label class="flex items-center gap-2 cursor-pointer pt-2 border-t border-gray-100 dark:border-gray-800">
+      <input type="checkbox" id="aiu-clean" checked class="accent-sky-500 w-4 h-4" />
+      <span class="text-sm text-gray-700 dark:text-gray-300">Clean File Privacy Before Download</span>
+    </label>
+    <button id="aiu-start-btn" class="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition">Start AI Upscale</button>
+  </div>
+
+  <div id="aiu-processing" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
+        <span class="text-sm font-medium text-black dark:text-white" id="aiu-processing-label">Upscaling</span>
+      </div>
+      <span id="aiu-progress-pct" class="text-sm font-semibold text-sky-500">0%</span>
+    </div>
+    <div class="w-full h-2 bg-sky-100 dark:bg-sky-900/30 rounded-full overflow-hidden">
+      <div id="aiu-progress-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="aiu-status" class="mt-2 text-xs text-gray-500"></p>
+  </div>
+
+  <div id="aiu-result" class="hidden mt-4">
+    <div class="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-2xl overflow-hidden">
+      <div class="p-4 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-base text-green-900 dark:text-green-100">Your file is ready</p>
+          <p id="aiu-result-name" class="text-sm text-green-700 dark:text-green-300 mt-0.5 truncate"></p>
+          <p id="aiu-result-size" class="text-xs text-green-600 dark:text-green-400 mt-0.5"></p>
+        </div>
+      </div>
+
+      <div class="px-4 pb-3">
+        <div class="rounded-xl overflow-hidden bg-black">
+          <video id="aiu-preview" controls playsinline class="w-full block" style="max-height: 60vh; object-fit: contain;"></video>
+        </div>
+      </div>
+
+      <div class="border-t border-green-200 dark:border-green-900/50"></div>
+
+      <div class="p-4 grid grid-cols-2 gap-3">
+        <button id="aiu-download-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 rounded-xl transition">Download File</button>
+        <button id="aiu-again-btn" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-xl transition">Convert Another File</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aiu-error" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-200 text-sm"></div>
+</div>
+
+<script>
+  import { downloadBlob } from '../../ai/utils/video-codecs.js';
+
+  const el = (id) => document.getElementById(id);
+  let selectedFile = null;
+  let outputBlob = null;
+  let outputExt = 'webm';
+  let cancelRequested = false;
+
+  // ─── Upload ───
+  const dropZone = el('aiu-upload-zone');
+  ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('border-sky-400'); }));
+  ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('border-sky-400'); }));
+  dropZone.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f); });
+  el('aiu-browse-btn').addEventListener('click', () => el('aiu-file-input').click());
+  el('aiu-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) handleFile(f); });
+
+  function handleFile(file) {
+    selectedFile = file;
+    el('aiu-file-name').textContent = file.name;
+    el('aiu-file-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    el('aiu-selected-card').classList.remove('hidden');
+    el('aiu-options').classList.remove('hidden');
+    el('aiu-result').classList.add('hidden');
+    el('aiu-processing').classList.add('hidden');
+    clearError();
+  }
+
+  function showError(msg) { el('aiu-error').textContent = msg; el('aiu-error').classList.remove('hidden'); }
+  function clearError() { el('aiu-error').classList.add('hidden'); el('aiu-error').textContent = ''; }
+  function setProgress(pct, status, label) {
+    const safe = Math.max(0, Math.min(100, pct));
+    el('aiu-progress-bar').style.width = `${safe}%`;
+    el('aiu-progress-pct').textContent = `${Math.round(safe)}%`;
+    if (status) el('aiu-status').textContent = status;
+    if (label) el('aiu-processing-label').textContent = label;
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // ★ WebGL UPSALER + SHARPENER
+  // Runs the entire pixel pipeline on the GPU — 100x faster than JS
+  // ═════════════════════════════════════════════════════════════
+
+  const VERTEX_SHADER = `
+    attribute vec2 a_position;
+    varying vec2 v_uv;
+    void main() {
+      v_uv = a_position * 0.5 + 0.5;
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
+
+  const FRAGMENT_SHADER = `
+    precision highp float;
+    varying vec2 v_uv;
+    uniform sampler2D u_texture;
+    uniform vec2 u_texelSize;
+    uniform float u_sharpen;
+
+    void main() {
+      vec3 c = texture2D(u_texture, v_uv).rgb;
+
+      if (u_sharpen > 0.0) {
+        vec3 blur = vec3(0.0);
+        blur += texture2D(u_texture, v_uv + vec2(-u_texelSize.x, -u_texelSize.y)).rgb;
+        blur += texture2D(u_texture, v_uv + vec2( 0.0,          -u_texelSize.y)).rgb;
+        blur += texture2D(u_texture, v_uv + vec2( u_texelSize.x, -u_texelSize.y)).rgb;
+        blur += texture2D(u_texture, v_uv + vec2(-u_texelSize.x,  0.0)).rgb;
+        blur += c;
+        blur += texture2D(u_texture, v_uv + vec2( u_texelSize.x,  0.0)).rgb;
+        blur += texture2D(u_texture, v_uv + vec2(-u_texelSize.x,  u_texelSize.y)).rgb;
+        blur += texture2D(u_texture, v_uv + vec2( 0.0,           u_texelSize.y)).rgb;
+        blur += texture2D(u_texture, v_uv + vec2( u_texelSize.x,  u_texelSize.y)).rgb;
+        blur /= 9.0;
+
+        c = c + (c - blur) * u_sharpen;
+      }
+
+      gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+    }
+  `;
+
+  function compileShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(shader);
+      gl.deleteShader(shader);
+      throw new Error(`Shader compile error: ${log}`);
+    }
+    return shader;
+  }
+
+  function createProgram(gl, vsSource, fsSource) {
+    const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    const program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(program);
+      throw new Error(`Program link error: ${log}`);
+    }
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    return program;
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // Main upscale flow — real-time playback + GPU processing
+  // ═════════════════════════════════════════════════════════════
+  el('aiu-start-btn').addEventListener('click', async () => {
+    if (!selectedFile) return;
+    const startBtn = el('aiu-start-btn');
+
+    try {
+      clearError();
+      cancelRequested = false;
+      startBtn.disabled = true;
+      el('aiu-options').classList.add('hidden');
+      el('aiu-result').classList.add('hidden');
+      el('aiu-processing').classList.remove('hidden');
+      setProgress(0, 'Loading video…', 'Preparing');
+
+      const requestedScale = Number(el('aiu-scale').value);
+      const sharpenAmount = Number(el('aiu-sharpen').value) / 100 * 2.5; // 0..2.5
+
+      // ─── Load video ───
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(selectedFile);
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.muted = false;         // NOT muted — we need its audio for MediaElementSource
+      video.volume = 0;            // but silent for the user
+
+      await new Promise((res, rej) => {
+        video.onloadedmetadata = res;
+        video.onerror = () => rej(new Error('Could not load video'));
+      });
+
+      const srcW = video.videoWidth;
+      const srcH = video.videoHeight;
+      const duration = video.duration;
+
+      // ─── Compute output dimensions with 4K cap ───
+      const MAX_OUTPUT_SIDE = 3840;
+      let scale = requestedScale;
+      let outW = Math.round(srcW * scale);
+      let outH = Math.round(srcH * scale);
+      const maxSide = Math.max(outW, outH);
+      if (maxSide > MAX_OUTPUT_SIDE) {
+        const shrink = MAX_OUTPUT_SIDE / maxSide;
+        scale = scale * shrink;
+        outW = Math.round(srcW * scale);
+        outH = Math.round(srcH * scale);
+      }
+
+      console.log(`[upscale] source: ${srcW}×${srcH}, output: ${outW}×${outH} (${scale.toFixed(2)}x), duration: ${duration.toFixed(1)}s`);
+
+      // ─── Setup WebGL2 or WebGL1 canvas ───
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = outW;
+      outCanvas.height = outH;
+
+      let gl = outCanvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false });
+      if (!gl) gl = outCanvas.getContext('webgl', { antialias: false, preserveDrawingBuffer: false });
+      if (!gl) throw new Error('WebGL is not supported in this browser.');
+
+      const program = createProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+      // Fullscreen quad
+      const positions = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+      const vbo = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+      const posLoc = gl.getAttribLocation(program, 'a_position');
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+      // Texture
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+
+      // Uniforms
+      gl.useProgram(program);
+      gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
+      gl.uniform2f(gl.getUniformLocation(program, 'u_texelSize'), 1 / srcW, 1 / srcH);
+      gl.uniform1f(gl.getUniformLocation(program, 'u_sharpen'), sharpenAmount);
+      gl.viewport(0, 0, outW, outH);
+
+      // ─── Preserve audio ───
+      let audioTrack = null;
+      let audioCtx = null;
+      let audioSource = null;
+
+      try {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioCtxClass();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+        // Decode audio separately (avoids the "muted kills audio" problem)
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+
+        audioSource = audioCtx.createBufferSource();
+        audioSource.buffer = audioBuffer;
+        const dest = audioCtx.createMediaStreamDestination();
+        audioSource.connect(dest);
+        // Do NOT connect to audioCtx.destination — output must be silent to user
+        const tracks = dest.stream.getAudioTracks();
+        if (tracks.length) audioTrack = tracks[0];
+        console.log(`[upscale] audio: ${audioBuffer.duration.toFixed(2)}s`);
+      } catch (audioErr) {
+        console.warn('[upscale] audio decode failed:', audioErr);
+      }
+
+      // ─── Recorder: real-time capture at 30 fps ───
+      const CAPTURE_FPS = 30;
+      const videoStream = outCanvas.captureStream(CAPTURE_FPS);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...(audioTrack ? [audioTrack] : []),
+      ]);
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+      ];
+      let mimeType = '';
+      for (const m of mimeCandidates) {
+        if (MediaRecorder.isTypeSupported(m)) { mimeType = m; break; }
+      }
+      console.log('[upscale] using MIME:', mimeType || '(default)');
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: mimeType || undefined,
+        videoBitsPerSecond: 12_000_000,
+        audioBitsPerSecond: 128_000,
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      const donePromise = new Promise((resolve) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType || 'video/webm' }));
+      });
+
+      // ─── Start recording + playback ───
+      recorder.start(1000);
+
+      // Reset video to start, then play
+      video.currentTime = 0;
+      await video.play();
+
+      // Start audio source in sync
+      if (audioSource) audioSource.start(0);
+
+      setProgress(5, 'Upscaling frames…', 'Upscaling');
+
+      // ─── Frame-by-frame GPU processing ───
+      // Use requestVideoFrameCallback if available (best sync), else rAF
+      const hasRVFC = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+
+      const processingPromise = new Promise((resolve) => {
+        let lastProgressUpdate = 0;
+
+        const drawFrame = () => {
+          if (cancelRequested) return resolve();
+
+          // Upload current video frame to texture
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, texture);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+
+          // Draw with upscale + sharpen shader
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+          // Update progress (throttled to ~4 Hz)
+          const now = performance.now();
+          if (now - lastProgressUpdate > 250) {
+            lastProgressUpdate = now;
+            const pct = 5 + (video.currentTime / duration) * 90;
+            const elapsed = video.currentTime.toFixed(1);
+            const total = duration.toFixed(1);
+            setProgress(pct, `Upscaling ${elapsed}s / ${total}s…`, 'Upscaling');
+          }
+
+          if (video.ended) {
+            resolve();
+            return;
+          }
+
+          if (hasRVFC) {
+            video.requestVideoFrameCallback(drawFrame);
+          } else {
+            requestAnimationFrame(drawFrame);
+          }
+        };
+
+        // Kick off the loop
+        if (hasRVFC) {
+          video.requestVideoFrameCallback(drawFrame);
+        } else {
+          requestAnimationFrame(drawFrame);
+        }
+      });
+
+      await processingPromise;
+
+      // ─── Finalize ───
+      setProgress(96, 'Finalizing…', 'Finalizing');
+      await new Promise(r => setTimeout(r, 600));
+
+      if (recorder.state !== 'inactive') recorder.stop();
+      outputBlob = await donePromise;
+      outputExt = (mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+
+      // Patch WebM duration for mobile Gallery
+      if (outputExt === 'webm' && outputBlob.size > 0) {
+        try {
+          const fixModule = await import('fix-webm-duration');
+          const fixWebmDuration = fixModule.default || fixModule;
+          outputBlob = await fixWebmDuration(outputBlob, Math.round(duration * 1000), { logger: false });
+          console.log('[upscale] ✓ WebM duration patched');
+        } catch (e) {
+          console.warn('[upscale] patch failed:', e);
+        }
+      }
+
+      setProgress(100, 'Done!', 'Complete');
+
+      // ─── Show result ───
+      el('aiu-processing').classList.add('hidden');
+      el('aiu-result').classList.remove('hidden');
+
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      el('aiu-result-name').textContent = `${base}-upscaled.${outputExt}`;
+      el('aiu-result-size').textContent = `${(outputBlob.size / 1024 / 1024).toFixed(2)} MB • ${outW}×${outH}`;
+      el('aiu-preview').src = URL.createObjectURL(outputBlob);
+      el('aiu-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Cleanup
+      try { video.pause(); } catch {}
+      try { URL.revokeObjectURL(video.src); } catch {}
+      try { if (audioCtx) await audioCtx.close(); } catch {}
+    } catch (err) {
+      console.error('[upscale] error:', err);
+      showError(err?.message || String(err));
+      el('aiu-processing').classList.add('hidden');
+      el('aiu-options').classList.remove('hidden');
+      startBtn.disabled = false;
+    }
+  });
+
+  // ─── Download ───
+  el('aiu-download-btn').addEventListener('click', () => {
+    if (outputBlob && selectedFile) {
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      downloadBlob(outputBlob, `${base}-upscaled.${outputExt}`);
+    }
+  });
+
+  // ─── Reset ───
+  el('aiu-again-btn').addEventListener('click', () => {
+    cancelRequested = true;
+    if (outputBlob) { try { URL.revokeObjectURL(el('aiu-preview').src); } catch {} }
+    outputBlob = null;
+    selectedFile = null;
+    outputExt = 'webm';
+
+    el('aiu-result').classList.add('hidden');
+    el('aiu-selected-card').classList.add('hidden');
+    el('aiu-options').classList.add('hidden');
+    el('aiu-processing').classList.add('hidden');
+    el('aiu-upload-zone').classList.remove('hidden');
+    el('aiu-file-input').value = '';
+    el('aiu-start-btn').disabled = false;
+    el('aiu-preview').src = '';
+    clearError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>

@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "ai-frame-interpolation",
+  name: "AI Frame Interpolation",
+  metaTitle: "AI Frame Interpolation – Smooth Video Online Free | Dayront",
+  metaDescription: "Make any video buttery smooth with AI-powered frame interpolation. No uploads, 100% private, runs on WebGPU.",
+  icon: "🎞️",
+  howTo: [
+    { title: "Upload your video", text: "Select a video file (MP4, WebM, or MOV)." },
+    { title: "AI loads the RIFE model", text: "The AI model downloads and initializes on your GPU." },
+    { title: "Get a smoother video", text: "AI generates in-between frames and you download the result." }
+  ],
+  faq: [
+    { question: "What does frame interpolation do?", answer: "It generates new in-between frames so your video plays at double the frame rate — perfect for shaky footage or 24fps film." },
+    { question: "Is it really free?", answer: "Yes, everything runs on your device using open-source AI models." },
+    { question: "Does it work on mobile?", answer: "Requires a desktop browser with WebGPU (Chrome or Edge 113+)." },
+    { question: "Will it add audio?", answer: "The output is a smooth video stream. Audio is preserved from the original." }
+  ],
+  relatedTools: [
+    { href: "/tools/ai-video-upscaler", icon: "✨", name: "AI Video Upscaler" },
+    { href: "/tools/change-fps", icon: "⏱️", name: "Change FPS" },
+    { href: "/tools/video-compressor", icon: "📉", name: "Video Compressor" }
+  ],
+  type: "ai-interpolate",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [],
+  tutorial: `
+    <h2>Using Our AI Frame Interpolation</h2>
+    <p>AI Frame Interpolation uses a state-of-the-art neural network (RIFE) to analyze the motion between two consecutive frames and synthesize brand-new frames that never existed in the original video. This turns choppy 24fps or 30fps footage into smooth 48fps or 60fps.</p>
+    <h3>Perfect for:</h3>
+    <ul>
+      <li>Smoothing shaky handheld footage</li>
+      <li>Making 24fps film look like 60fps video</li>
+      <li>Upscaling old home videos for modern displays</li>
+      <li>Creating slow-motion clips without stutter</li>
+    </ul>
+    <h3>Why Choose Dayront?</h3>
+    <ul>
+      <li>No uploads – everything is local to your browser.</li>
+      <li>Runs on WebGPU via ONNX Runtime for real-time AI inference.</li>
+      <li>Free, private, and no watermarks.</li>
+    </ul>
+  `,
+  relatedBlogs: []
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

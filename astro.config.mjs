@@ -13,12 +13,10 @@ export default defineConfig({
     preact({ compat: true }),
     mdx(),
     sitemap({
-      // Keep this to filter out unwanted URLs from your sitemap
-      filter: (page) => 
+      filter: (page) =>
         !page.includes('?lang=') &&
         !page.includes('/tag/') &&
         !page.includes('/category/'),
-      // ✅ FIXED: Sitemap plugin expects an OBJECT format for locales
       i18n: {
         defaultLocale: "en",
         locales: { en: "en", es: "es", pt: "pt", de: "de", fr: "fr", ja: "ja" },
@@ -30,14 +28,11 @@ export default defineConfig({
       ]
     }),
   ],
-  // Root i18n settings (Astro core expects an ARRAY here)
   i18n: {
     defaultLocale: "en",
     locales: ["en", "es", "pt", "de", "fr", "ja"],
     routing: {
-      // IMPORTANT: Keep this FALSE!
-      // If true, it becomes /en/blog/. We want /blog/en/
-      prefixDefaultLocale: false, 
+      prefixDefaultLocale: false,
     },
   },
   vite: {
@@ -48,13 +43,16 @@ export default defineConfig({
         "react/jsx-runtime": "preact/jsx-runtime",
       },
     },
+    worker: {
+      format: 'es',
+    },
     plugins: [
       {
         name: 'configure-response-headers',
         configureServer: (server) => {
           server.middlewares.use((_req, res, next) => {
             res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-            res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+            res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
             if (_req.url?.startsWith('/ffmpeg/')) {
               if (_req.url.endsWith('.js')) res.setHeader('Content-Type', 'text/javascript');
               else if (_req.url.endsWith('.wasm')) res.setHeader('Content-Type', 'application/wasm');
@@ -65,7 +63,7 @@ export default defineConfig({
         configurePreviewServer: (server) => {
           server.middlewares.use((_req, res, next) => {
             res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-            res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+            res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
             if (_req.url?.startsWith('/ffmpeg/')) {
               if (_req.url.endsWith('.js')) res.setHeader('Content-Type', 'text/javascript');
               else if (_req.url.endsWith('.wasm')) res.setHeader('Content-Type', 'application/wasm');
@@ -80,6 +78,9 @@ export default defineConfig({
         '@ffmpeg/ffmpeg',
         '@ffmpeg/util',
         '@ffmpeg/core',
+        '@huggingface/transformers',
+        'onnxruntime-web',
+        '@imgly/background-removal',
       ],
     },
   },

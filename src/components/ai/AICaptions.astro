@@ -1,0 +1,839 @@
+---
+interface Props { toolConfig?: any; }
+const { toolConfig } = Astro.props;
+---
+
+<div class="ai-tool" data-tool="ai-captions">
+  <div id="aic-mobile-warning" class="hidden mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-900 dark:text-amber-200 text-sm">
+    <strong>Tip:</strong> We try local transcription first (private, no size limit). If it fails, we auto-split your audio into small chunks and transcribe via server — works for any file size.
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div id="aic-upload-zone" class="border-2 border-dashed border-sky-200 dark:border-sky-900/50 bg-sky-50/40 dark:bg-sky-950/10 rounded-2xl p-8 sm:p-12 text-center transition">
+    <input type="file" id="aic-file-input" accept="video/*,audio/*" class="hidden" />
+    <p class="text-base text-gray-700 dark:text-gray-300 mb-2 font-medium">Drag & drop your files</p>
+    <p class="text-xs text-gray-400 mb-4">or</p>
+    <button id="aic-browse-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg transition">Browse Files</button>
+    <p class="mt-4 text-xs text-gray-400">No size limit — long videos are split automatically</p>
+  </div>
+
+  <div id="aic-selected-card" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-black dark:text-white">Selected files</span>
+      <span class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full">1 file</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span id="aic-file-name" class="text-sm text-gray-700 dark:text-gray-300 truncate mr-4"></span>
+      <span id="aic-file-size" class="text-sm text-gray-500 shrink-0"></span>
+    </div>
+  </div>
+
+  <div id="aic-options" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
+    <button id="aic-start-btn" class="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition">Generate Captions</button>
+  </div>
+
+  <!-- STEP 2: PROCESSING -->
+  <div id="aic-processing" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
+        <span class="text-sm font-medium text-black dark:text-white" id="aic-processing-label">Starting…</span>
+      </div>
+      <span id="aic-progress-pct" class="text-sm font-semibold text-sky-500">0%</span>
+    </div>
+    <div class="w-full h-2 bg-sky-100 dark:bg-sky-900/30 rounded-full overflow-hidden">
+      <div id="aic-progress-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="aic-status" class="mt-2 text-xs text-gray-500">Getting ready…</p>
+    <button id="aic-retry-btn" class="hidden mt-3 w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium py-2 rounded-lg text-xs transition">Retry</button>
+  </div>
+
+  <!-- STEP 3: FINAL RESULT -->
+  <div id="aic-result" class="hidden mt-4">
+    <div class="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-2xl overflow-hidden">
+      <div class="p-4 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-base text-green-900 dark:text-green-100">Your file is ready</p>
+          <p id="aic-result-name" class="text-sm text-green-700 dark:text-green-300 mt-0.5 truncate"></p>
+          <p id="aic-result-size" class="text-xs text-green-600 dark:text-green-400 mt-0.5"></p>
+        </div>
+      </div>
+
+      <div id="aic-preview-wrap" class="hidden px-4 pb-3">
+        <div class="rounded-xl overflow-hidden bg-black" style="border-radius: 0.75rem;">
+          <video id="aic-preview" controls playsinline preload="metadata" class="w-full block" style="border-radius: inherit; max-height: 60vh; object-fit: contain;"></video>
+        </div>
+      </div>
+
+      <div class="border-t border-green-200 dark:border-green-900/50"></div>
+
+      <div class="p-4 space-y-3">
+        <button id="aic-download-btn" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 rounded-xl transition">Download File</button>
+        <button id="aic-again-btn" class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-sky-400 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-xl transition">Convert Another File</button>
+      </div>
+    </div>
+
+    <details class="mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+      <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 select-none hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+        Show transcript
+      </summary>
+      <div class="px-4 pb-4">
+        <textarea id="aic-output" rows="8" readonly class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-black dark:text-white font-mono"></textarea>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <button id="aic-download-srt" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-sky-400 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-lg transition text-xs">Download .SRT</button>
+          <button id="aic-download-txt" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-sky-400 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-lg transition text-xs">Download .TXT</button>
+        </div>
+      </div>
+    </details>
+
+    <a href="/tools/burn-subtitles" class="block w-full text-center text-xs text-sky-500 hover:text-sky-600 py-3">
+      Want to edit the text or use custom fonts? → Burn Subtitles tool
+    </a>
+  </div>
+
+  <div id="aic-error" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-200 text-sm"></div>
+</div>
+
+<script>
+  import { downloadBlob } from '../../ai/utils/video-codecs.js';
+
+  const el = (id) => document.getElementById(id);
+  let selectedFile = null;
+  let worker = null;
+  let segments = [];
+  let isProcessing = false;
+  let finalBlob = null;
+  let finalExt = 'mp4';
+  let finalBaseName = '';
+  let previewURL = null;
+  let fakeProgressTimer = null;
+
+  const isLowPower =
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+    (navigator.deviceMemory && navigator.deviceMemory < 4);
+
+  if (isLowPower) el('aic-mobile-warning')?.classList.remove('hidden');
+
+  // ─── Catchy rotating messages for burning ───
+  const BURNING_HOOKS = [
+    'Rendering magic 🎬',
+    'Polishing the final cut ✨',
+    'Adding sparkle to your captions 💫',
+    'Almost there — cooking the final frames 🚀',
+  ];
+  let burningHookIdx = 0;
+  let burningHookTimer = null;
+
+  function startBurningHooks() {
+    burningHookIdx = 0;
+    const updateHook = () => {
+      if (el('aic-status')) el('aic-status').textContent = BURNING_HOOKS[burningHookIdx % BURNING_HOOKS.length];
+      burningHookIdx++;
+    };
+    updateHook();
+    clearInterval(burningHookTimer);
+    burningHookTimer = setInterval(updateHook, 3500);
+  }
+
+  function stopBurningHooks() {
+    if (burningHookTimer) { clearInterval(burningHookTimer); burningHookTimer = null; }
+  }
+
+  // ─── Fake progress creep ───
+  function startFakeProgress(maxPct, label, statusText) {
+    stopFakeProgress();
+    let current = 0;
+    if (el('aic-processing-label')) el('aic-processing-label').textContent = label;
+    if (el('aic-status')) el('aic-status').textContent = statusText;
+    setProgress(0, null, null);
+
+    fakeProgressTimer = setInterval(() => {
+      const remaining = maxPct - current;
+      const step = Math.max(0.3, remaining * 0.04);
+      current = Math.min(maxPct, current + step);
+      setProgress(current, null, null);
+      if (current >= maxPct - 0.5) stopFakeProgress();
+    }, 250);
+  }
+
+  function stopFakeProgress() {
+    if (fakeProgressTimer) { clearInterval(fakeProgressTimer); fakeProgressTimer = null; }
+  }
+
+  // ─── Upload handling ───
+  const dropZone = el('aic-upload-zone');
+  ['dragenter', 'dragover'].forEach(ev => dropZone?.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('border-sky-400'); }));
+  ['dragleave', 'drop'].forEach(ev => dropZone?.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('border-sky-400'); }));
+  dropZone?.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f); });
+  el('aic-browse-btn')?.addEventListener('click', () => el('aic-file-input')?.click());
+  el('aic-file-input')?.addEventListener('change', e => { const f = e.target.files?.[0]; if (f) handleFile(f); });
+
+  function handleFile(file) {
+    selectedFile = file;
+    el('aic-file-name').textContent = file.name;
+    el('aic-file-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    el('aic-selected-card')?.classList.remove('hidden');
+    el('aic-options')?.classList.remove('hidden');
+    el('aic-result')?.classList.add('hidden');
+    el('aic-processing')?.classList.add('hidden');
+    clearError();
+  }
+
+  function showError(msg) {
+    const box = el('aic-error');
+    if (!box) return;
+    box.textContent = msg;
+    box.classList.remove('hidden');
+  }
+  function clearError() {
+    const box = el('aic-error');
+    if (!box) return;
+    box.classList.add('hidden');
+    box.textContent = '';
+  }
+  function setProgress(pct, status, label) {
+    const safe = Math.max(0, Math.min(100, pct));
+    const bar = el('aic-progress-bar');
+    const pctEl = el('aic-progress-pct');
+    if (bar) bar.style.width = `${safe}%`;
+    if (pctEl) pctEl.textContent = `${Math.round(safe)}%`;
+    if (status && el('aic-status')) el('aic-status').textContent = status;
+    if (label && el('aic-processing-label')) el('aic-processing-label').textContent = label;
+  }
+
+  function resetAll() {
+    worker?.terminate(); worker = null;
+    stopFakeProgress();
+    stopBurningHooks();
+    segments = []; selectedFile = null;
+    finalBlob = null; finalBaseName = ''; isProcessing = false;
+    if (previewURL) { try { URL.revokeObjectURL(previewURL); } catch {} previewURL = null; }
+    el('aic-result')?.classList.add('hidden');
+    el('aic-processing')?.classList.add('hidden');
+    el('aic-options')?.classList.add('hidden');
+    el('aic-selected-card')?.classList.add('hidden');
+    el('aic-upload-zone')?.classList.remove('hidden');
+    if (el('aic-file-input')) el('aic-file-input').value = '';
+    el('aic-retry-btn')?.classList.add('hidden');
+    el('aic-preview-wrap')?.classList.add('hidden');
+    const vid = el('aic-preview');
+    if (vid) { try { vid.pause(); } catch {} vid.removeAttribute('src'); vid.load(); }
+    clearError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  el('aic-start-btn')?.addEventListener('click', () => startFlow(true));
+  el('aic-retry-btn')?.addEventListener('click', () => startFlow(false));
+  el('aic-again-btn')?.addEventListener('click', resetAll);
+
+  // ═════════════════════════════════════════════════════════════
+  // ★ NEW: Audio chunking helpers for large files
+  // ═════════════════════════════════════════════════════════════
+
+  // Decode audio and resample to 16 kHz mono — keeps chunks tiny.
+  async function extractMonoAudio(file, targetSampleRate = 16000) {
+    const arrayBuffer = await file.arrayBuffer();
+    const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await decodeCtx.decodeAudioData(arrayBuffer);
+    try { await decodeCtx.close(); } catch {}
+
+    // Use OfflineAudioContext to resample to 16 kHz mono
+    const duration = decoded.duration;
+    const targetLength = Math.ceil(duration * targetSampleRate);
+    const offlineCtx = new OfflineAudioContext(1, targetLength, targetSampleRate);
+
+    const source = offlineCtx.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offlineCtx.destination);
+    source.start(0);
+
+    const resampled = await offlineCtx.startRendering();
+    return resampled;
+  }
+
+  // Split an AudioBuffer into N-second chunks
+  function chunkAudioBuffer(audioBuffer, chunkSeconds = 25) {
+    const sampleRate = audioBuffer.sampleRate;
+    const chunkSamples = chunkSeconds * sampleRate;
+    const total = audioBuffer.length;
+    const data = audioBuffer.getChannelData(0);
+    const chunks = [];
+
+    for (let start = 0; start < total; start += chunkSamples) {
+      const end = Math.min(start + chunkSamples, total);
+      chunks.push({
+        samples: data.slice(start, end),
+        startTime: start / sampleRate,
+        endTime: end / sampleRate,
+      });
+    }
+    return chunks;
+  }
+
+  // Encode Float32 samples as 16-bit PCM WAV
+  function encodeWAV(samples, sampleRate) {
+    const numChannels = 1;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = samples.length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    function writeString(offset, str) {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    }
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  // ─────────────────────────────────────────────
+  // MAIN FLOW: try local → fall back to chunked server
+  // ─────────────────────────────────────────────
+  async function startFlow(allowServerFallback) {
+    if (isProcessing || !selectedFile) return;
+    isProcessing = true;
+
+    el('aic-upload-zone')?.classList.add('hidden');
+    el('aic-selected-card')?.classList.add('hidden');
+    el('aic-options')?.classList.add('hidden');
+    el('aic-result')?.classList.add('hidden');
+    el('aic-processing')?.classList.remove('hidden');
+    el('aic-retry-btn')?.classList.add('hidden');
+    clearError();
+    setProgress(0, 'Getting ready…', 'Starting…');
+
+    try {
+      // ─── Phase 1: Try local first ───
+      let localSucceeded = false;
+      try {
+        await transcribeLocal();
+        localSucceeded = true;
+      } catch (err) {
+        console.warn('[captions] local transcription failed:', err);
+
+        if (!allowServerFallback) throw err;
+
+        // Fall back to chunked server — works for ANY file size
+        stopFakeProgress();
+        worker?.terminate(); worker = null;
+        worker = null;
+
+        setProgress(0, 'Switching to server mode…', 'Uploading chunks');
+        await transcribeServerChunked();
+      }
+
+      stopFakeProgress();
+
+      if (!segments.length) throw new Error('No speech detected. Audio may be silent.');
+
+      // ─── Phase 2: Auto-burn video ───
+      if (selectedFile.type.startsWith('video/')) {
+        setProgress(0, 'Preparing the render…', 'Burning');
+        await burnVideo();
+        showResult(finalBlob);
+      } else {
+        setProgress(100, 'Done!');
+        showResult(null);
+      }
+    } catch (err) {
+      console.error('[captions] flow error:', err);
+      stopFakeProgress();
+      stopBurningHooks();
+      showError(err?.message || String(err));
+      el('aic-processing')?.classList.add('hidden');
+      el('aic-options')?.classList.remove('hidden');
+      el('aic-retry-btn')?.classList.remove('hidden');
+    } finally {
+      isProcessing = false;
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // TRANSCRIBE — Local (Whisper in Web Worker)
+  // ─────────────────────────────────────────────
+  async function transcribeLocal() {
+    if (el('aic-processing-label')) el('aic-processing-label').textContent = 'Transcribing (local)';
+    setProgress(0, 'Decoding audio…');
+    startFakeProgress(15, 'Transcribing (local)', 'Decoding audio…');
+
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const audioData = audioBuffer.getChannelData(0);
+
+    stopFakeProgress();
+    setProgress(15, 'Loading Whisper model…');
+
+    worker = new Worker(new URL('../../ai/workers/whisper.worker.js', import.meta.url), { type: 'module' });
+
+    await new Promise((resolve, reject) => {
+      let initResolved = false;
+
+      // Shorter timeout on mobile — fall back to server faster
+      const timeoutMs = isLowPower ? 2 * 60 * 1000 : 5 * 60 * 1000;
+
+      const timeoutId = setTimeout(() => {
+        if (!initResolved) reject(new Error('Local transcription timed out. Switching to server…'));
+      }, timeoutMs);
+
+      worker.onmessage = (event) => {
+        const { type, segments: segs, message, info } = event.data;
+
+        if (type === 'progress' && info) {
+          if (typeof info.progress === 'number') {
+            const p = Math.min(100, info.progress);
+            if (p < 100) setProgress(15 + p * 0.5, `Downloading model: ${Math.round(p)}%`);
+            else setProgress(65, 'Model ready. Initializing…');
+          } else if (info.status === 'heartbeat') setProgress(65, info.message || 'Working…');
+          else if (info.status === 'init') setProgress(20, info.message || 'Initializing…');
+          else if (info.status === 'transcribing') setProgress(72, info.message || 'Transcribing…');
+        }
+
+        if (type === 'ready') {
+          initResolved = true;
+          clearTimeout(timeoutId);
+          setProgress(72, 'Transcribing audio…');
+          worker.postMessage({ type: 'transcribe', audio: audioData });
+          return;
+        }
+        if (type === 'error') {
+          clearTimeout(timeoutId);
+          return reject(new Error(message));
+        }
+        if (type === 'result') {
+          clearTimeout(timeoutId);
+          segments = segs || [];
+          resolve();
+        }
+      };
+
+      worker.postMessage({ type: 'init', model: 'Xenova/whisper-tiny.en', device: 'wasm' });
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // ★ TRANSCRIBE — Server (chunked, no size limit)
+  // Splits audio into small chunks (25s each ≈ 800 KB WAV)
+  // Sends each chunk to /api/transcribe one at a time.
+  // ─────────────────────────────────────────────
+  async function transcribeServerChunked() {
+    if (el('aic-processing-label')) el('aic-processing-label').textContent = 'Transcribing (server)';
+
+    // ── Step 1: Decode + resample to 16 kHz mono ──
+    setProgress(2, 'Extracting audio from video…', 'Transcribing (server)');
+    const audioBuffer = await extractMonoAudio(selectedFile, 16000);
+
+    // ── Step 2: Split into 25-second chunks ──
+    setProgress(5, 'Splitting audio into chunks…');
+    const chunks = chunkAudioBuffer(audioBuffer, 25);
+    const totalChunks = chunks.length;
+    const totalDuration = audioBuffer.duration;
+
+    console.log(`[captions] chunked upload: ${totalChunks} chunks, ${totalDuration.toFixed(1)}s total`);
+
+    // ── Step 3: Send each chunk sequentially ──
+    const allSegments = [];
+    const progressStart = 8;
+    const progressEnd = 95;
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = chunks[i];
+      const chunkNum = i + 1;
+
+      const pct = progressStart + ((i / totalChunks) * (progressEnd - progressStart));
+      const elapsed = chunk.startTime.toFixed(0);
+      const total = totalDuration.toFixed(0);
+      setProgress(pct, `Transcribing ${elapsed}s / ${total}s — chunk ${chunkNum} of ${totalChunks}…`);
+
+      const wavBlob = encodeWAV(chunk.samples, 16000);
+
+      const fd = new FormData();
+      fd.append('audio', wavBlob, `chunk-${chunkNum}.wav`);
+
+      let res;
+      try {
+        res = await fetch('/api/transcribe', { method: 'POST', body: fd });
+      } catch (networkErr) {
+        throw new Error(`Network error on chunk ${chunkNum}: ${networkErr.message}`);
+      }
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Chunk ${chunkNum} failed (${res.status}): ${errText.slice(0, 200)}`);
+      }
+
+      const data = await res.json();
+      if (data.error) throw new Error(`Chunk ${chunkNum}: ${data.error}`);
+
+      // Adjust timestamps to global timeline
+      const chunkSegments = (data.segments || []).map(seg => ({
+        start: seg.start + chunk.startTime,
+        end: seg.end + chunk.startTime,
+        text: seg.text,
+      }));
+
+      allSegments.push(...chunkSegments);
+    }
+
+    // ── Step 4: Merge & deduplicate overlaps ──
+    setProgress(98, 'Merging results…');
+    segments = mergeSegments(allSegments);
+    setProgress(100, 'Captions ready!');
+
+    console.log(`[captions] chunked transcription complete: ${segments.length} segments`);
+  }
+
+  // Merge + dedup overlapping segments from adjacent chunks
+  function mergeSegments(segs) {
+    if (segs.length < 2) return segs;
+
+    // Sort by start time
+    const sorted = [...segs].sort((a, b) => a.start - b.start);
+    const merged = [sorted[0]];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = merged[merged.length - 1];
+      const curr = sorted[i];
+
+      // If current starts before prev ends (overlap) and text is similar → merge
+      if (curr.start < prev.end && textSimilar(prev.text, curr.text)) {
+        // Keep longer text
+        if (curr.text.length > prev.text.length) {
+          prev.text = curr.text;
+        }
+        prev.end = Math.max(prev.end, curr.end);
+      } else {
+        merged.push(curr);
+      }
+    }
+    return merged;
+  }
+
+  function textSimilar(a, b) {
+    const norm = s => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const na = norm(a);
+    const nb = norm(b);
+    if (!na || !nb) return false;
+    if (na === nb) return true;
+    // Check if last few words of a == first few words of b
+    const wordsA = na.split(/\s+/);
+    const wordsB = nb.split(/\s+/);
+    const checkLen = Math.min(3, wordsA.length, wordsB.length);
+    const tailA = wordsA.slice(-checkLen).join(' ');
+    const headB = wordsB.slice(0, checkLen).join(' ');
+    return tailA === headB;
+  }
+
+  // ─────────────────────────────────────────────
+  // BURN VIDEO
+  // ─────────────────────────────────────────────
+  async function burnVideo() {
+    let audioCtx = null;
+    let video = null;
+
+    try {
+      video = document.createElement('video');
+      video.src = URL.createObjectURL(selectedFile);
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.muted = true;
+      video.volume = 0;
+
+      await new Promise((res, rej) => {
+        video.onloadedmetadata = res;
+        video.onerror = () => rej(new Error('Could not load video'));
+      });
+
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioCtxClass();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      let audioBuffer = null;
+      try {
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      } catch (e) {
+        console.warn('[captions] audio decode failed:', e);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      const videoStream = canvas.captureStream(30);
+      let audioTrack = null;
+      let audioSource = null;
+
+      if (audioBuffer) {
+        audioSource = audioCtx.createBufferSource();
+        audioSource.buffer = audioBuffer;
+        const dest = audioCtx.createMediaStreamDestination();
+        audioSource.connect(dest);
+        const tracks = dest.stream.getAudioTracks();
+        if (tracks.length) audioTrack = tracks[0];
+      }
+
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...(audioTrack ? [audioTrack] : []),
+      ]);
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+      ];
+      let mimeType = '';
+      for (const m of mimeCandidates) {
+        if (MediaRecorder.isTypeSupported(m)) { mimeType = m; break; }
+      }
+      console.log('[captions] using MIME:', mimeType || '(default)');
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: mimeType || undefined,
+        videoBitsPerSecond: 8_000_000,
+        audioBitsPerSecond: 128_000,
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      const donePromise = new Promise((resolve) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType || 'video/webm' }));
+      });
+
+      recorder.start(1000);
+      await video.play();
+      if (audioSource) audioSource.start(0);
+
+      startBurningHooks();
+
+      const drawFrame = () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const t = video.currentTime;
+        const active = segments.find(s => t >= s.start && t <= s.end);
+        if (active) drawDefaultCaption(ctx, canvas, active.text);
+
+        const ratio = video.duration > 0 ? (video.currentTime / video.duration) : 0;
+        const pct = 25 + Math.min(74, ratio * 74);
+        const bar = el('aic-progress-bar');
+        const pctEl = el('aic-progress-pct');
+        if (bar) bar.style.width = `${pct}%`;
+        if (pctEl) pctEl.textContent = `${Math.round(pct)}%`;
+
+        if (!video.paused && !video.ended) requestAnimationFrame(drawFrame);
+      };
+      requestAnimationFrame(drawFrame);
+
+      await new Promise((resolve) => { video.onended = resolve; });
+      stopBurningHooks();
+      setProgress(99, 'Finalizing…', 'Wrapping up');
+      await new Promise(r => setTimeout(r, 500));
+      if (recorder.state !== 'inactive') recorder.stop();
+
+      let blob = await donePromise;
+
+      // ★ FIX: Patch WebM duration for Android Gallery compatibility
+      const isWebm = (mimeType || '').includes('webm') || (blob.type || '').includes('webm');
+      if (isWebm && blob.size > 0) {
+        try {
+          const fixModule = await import('fix-webm-duration');
+          const fixWebmDuration = fixModule.default || fixModule;
+          const durationMs = Math.round(video.duration * 1000);
+          blob = await fixWebmDuration(blob, durationMs, { logger: false });
+          console.log('[captions] ✓ WebM duration patched:', durationMs + 'ms');
+        } catch (e) {
+          console.warn('[captions] Could not patch WebM duration:', e);
+        }
+      }
+
+      finalBlob = blob;
+      finalBaseName = selectedFile.name.replace(/\.[^.]+$/, '');
+      finalExt = (mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+      setProgress(100, 'Done!');
+    } finally {
+      stopBurningHooks();
+      if (video) { try { video.pause(); } catch {} URL.revokeObjectURL(video.src); }
+      if (audioCtx) { try { await audioCtx.close(); } catch {} }
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // SHOW RESULT
+  // ─────────────────────────────────────────────
+  function showResult(burnedBlobArg) {
+    setProgress(100, 'Done!');
+    el('aic-processing')?.classList.add('hidden');
+    el('aic-result')?.classList.remove('hidden');
+
+    const text = segments.map(s => `[${formatTime(s.start)} --> ${formatTime(s.end)}] ${s.text}`).join('\n');
+    const output = el('aic-output');
+    if (output) output.value = text;
+
+    const nameEl = el('aic-result-name');
+    const sizeEl = el('aic-result-size');
+    const previewWrap = el('aic-preview-wrap');
+    const previewVid = el('aic-preview');
+
+    if (!nameEl || !sizeEl) {
+      console.warn('[captions] result elements missing from DOM');
+      return;
+    }
+
+    if (burnedBlobArg && previewVid && previewWrap) {
+      nameEl.textContent = `${finalBaseName}-captioned.${finalExt}`;
+      sizeEl.textContent = `${(burnedBlobArg.size / 1024 / 1024).toFixed(2)} MB • video with captions`;
+
+      if (previewURL) { try { URL.revokeObjectURL(previewURL); } catch {} }
+      previewURL = URL.createObjectURL(burnedBlobArg);
+
+      previewVid.src = previewURL;
+      previewVid.load();
+      previewWrap.classList.remove('hidden');
+    } else {
+      const fallbackName = finalBaseName || (selectedFile ? selectedFile.name.replace(/\.[^.]+$/, '') : 'captions');
+      nameEl.textContent = `${fallbackName}.srt`;
+      sizeEl.textContent = `${segments.length} segments • transcript ready`;
+      if (previewWrap) previewWrap.classList.add('hidden');
+    }
+
+    el('aic-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ─────────────────────────────────────────────
+  // CAPTION DRAWING
+  // ─────────────────────────────────────────────
+  function drawDefaultCaption(ctx, canvas, text) {
+    const fontSize = Math.round(canvas.width * 0.045);
+    ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const maxWidth = canvas.width * 0.8;
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+
+    const lineHeight = fontSize * 1.25;
+    const blockHeight = lines.length * lineHeight;
+    const padding = canvas.height * 0.06;
+    const centerY = canvas.height - padding - blockHeight / 2;
+    const startY = centerY - blockHeight / 2 + lineHeight / 2;
+
+    let maxLineW = 0;
+    for (const ln of lines) maxLineW = Math.max(maxLineW, ctx.measureText(ln).width);
+    const barW = maxLineW + fontSize * 0.8;
+    const barX = (canvas.width - barW) / 2;
+    const barTop = startY - lineHeight / 2 - fontSize * 0.1;
+    const barH = blockHeight + fontSize * 0.2;
+    const radius = Math.min(fontSize * 0.3, 12);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    roundRect(ctx, barX, barTop, barW, barH, radius);
+    ctx.fill();
+
+    lines.forEach((ln, i) => {
+      const y = startY + i * lineHeight;
+      ctx.fillStyle = '#fff';
+      ctx.fillText(ln, canvas.width / 2, y);
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    if (r <= 0) { ctx.beginPath(); ctx.rect(x, y, w, h); return; }
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // ─────────────────────────────────────────────
+  // DOWNLOADS
+  // ─────────────────────────────────────────────
+  function formatTime(seconds) {
+    const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
+  }
+  function pad(n, len = 2) { return String(n).padStart(len, '0'); }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  el('aic-download-btn')?.addEventListener('click', () => {
+    if (finalBlob) {
+      triggerDownload(finalBlob, `${finalBaseName}-captioned.${finalExt}`);
+      return;
+    }
+    if (segments.length) {
+      const srt = segments.map((s, i) =>
+        `${i + 1}\n${formatTime(s.start)} --> ${formatTime(s.end)}\n${s.text}\n`
+      ).join('\n');
+      triggerDownload(new Blob([srt], { type: 'text/plain' }), 'captions.srt');
+    }
+  });
+
+  el('aic-download-srt')?.addEventListener('click', () => {
+    if (!segments.length) return;
+    const srt = segments.map((s, i) =>
+      `${i + 1}\n${formatTime(s.start)} --> ${formatTime(s.end)}\n${s.text}\n`
+    ).join('\n');
+    triggerDownload(new Blob([srt], { type: 'text/plain' }), 'captions.srt');
+  });
+
+  el('aic-download-txt')?.addEventListener('click', () => {
+    if (!segments.length) return;
+    const txt = segments.map(s => s.text).join('\n');
+    triggerDownload(new Blob([txt], { type: 'text/plain' }), 'transcript.txt');
+  });
+</script>

@@ -1,0 +1,1324 @@
+---
+interface Props { toolConfig?: any; }
+const { toolConfig } = Astro.props;
+---
+
+<div class="ai-tool" data-tool="burn-subtitles">
+  <div id="bs-warning" class="hidden mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-900 dark:text-amber-200 text-sm">
+    <strong>Heads up:</strong> Rendering takes as long as your video's duration. For best results, use clips under 2 minutes on mobile.
+  </div>
+
+  <div id="bs-video-zone" class="border-2 border-dashed border-sky-200 dark:border-sky-900/50 bg-sky-50/40 dark:bg-sky-950/10 rounded-2xl p-8 sm:p-12 text-center transition">
+    <input type="file" id="bs-video-input" accept="video/*" class="hidden" />
+    <p class="text-base text-gray-700 dark:text-gray-300 mb-2 font-medium">Upload a video to add subtitles</p>
+    <p class="text-xs text-gray-400 mb-4">MP4, WebM, MOV</p>
+    <button id="bs-browse-video" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg transition">Choose Video</button>
+  </div>
+
+  <div id="bs-video-card" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-black dark:text-white">Video selected</span>
+      <span class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full">1 file</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span id="bs-video-name" class="text-sm text-gray-700 dark:text-gray-300 truncate mr-4"></span>
+      <span id="bs-video-size" class="text-sm text-gray-500 shrink-0"></span>
+    </div>
+  </div>
+
+  <div id="bs-subs-step" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
+    <h2 class="font-semibold text-black dark:text-white">Add Subtitles to Video</h2>
+
+    <div class="grid grid-cols-3 gap-2">
+      <button data-mode="srt" class="bs-subs-tab px-3 py-2 rounded-lg text-xs font-medium bg-sky-500 text-white">Upload .SRT</button>
+      <button data-mode="paste" class="bs-subs-tab px-3 py-2 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Paste Text</button>
+      <button data-mode="ai" class="bs-subs-tab px-3 py-2 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Auto Generate</button>
+    </div>
+
+    <div id="bs-mode-srt">
+      <input type="file" id="bs-srt-input" accept=".srt,.txt,.vtt" class="hidden" />
+      <button id="bs-browse-srt" class="w-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg py-4 text-sm text-gray-600 dark:text-gray-400 hover:border-sky-400 transition">Upload SRT / VTT / TXT file</button>
+    </div>
+
+    <div id="bs-mode-paste" class="hidden">
+      <textarea id="bs-paste-input" rows="6" placeholder="Paste subtitles…
+
+SRT format:
+1
+00:00:01,000 --> 00:00:03,000
+Hello world" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-black dark:text-white"></textarea>
+    </div>
+
+    <div id="bs-mode-ai" class="hidden space-y-3">
+      <p class="text-xs text-gray-500 dark:text-gray-400">AI will automatically generate subtitles from your video's audio. No size limit — long videos are split into chunks automatically.</p>
+      <button id="bs-ai-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">Generate Subtitles with AI</button>
+
+      <!-- AI progress UI (hidden by default) -->
+      <div id="bs-ai-progress" class="hidden bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></div>
+            <span class="text-xs font-medium text-purple-900 dark:text-purple-100" id="bs-ai-progress-label">Transcribing</span>
+          </div>
+          <span id="bs-ai-progress-pct" class="text-xs font-semibold text-purple-600 dark:text-purple-300">0%</span>
+        </div>
+        <div class="w-full h-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-full overflow-hidden">
+          <div id="bs-ai-progress-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p id="bs-ai-status" class="mt-2 text-xs text-purple-700 dark:text-purple-300"></p>
+      </div>
+    </div>
+
+    <div id="bs-parsed" class="hidden">
+      <p class="text-xs text-green-600 dark:text-green-400 mb-2" id="bs-parsed-info"></p>
+    </div>
+  </div>
+
+  <div id="bs-style-step" class="hidden mt-4 space-y-4">
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-black dark:text-white">Subtitle Editor — Live Preview</h2>
+        <span class="text-xs text-gray-500">Touch caption to drag</span>
+      </div>
+
+      <div class="p-3 bg-gray-100 dark:bg-black">
+        <div id="bs-preview-wrap" class="mx-auto" style="max-width: 100%;">
+          <div id="bs-preview-container" class="relative rounded-xl overflow-hidden bg-black mx-auto select-none" style="max-width: 100%;">
+            <video id="bs-preview-video" playsinline muted class="w-full block" style="pointer-events: none;"></video>
+            <canvas id="bs-overlay-canvas" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
+
+            <button id="bs-mute-btn" class="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center transition hover:bg-black/80 z-20" title="Toggle sound">
+              <svg id="bs-mute-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+              <svg id="bs-unmute-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+            </button>
+
+            <div id="bs-drag-hint" class="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2.5 py-1 rounded-full font-medium pointer-events-none transition-opacity duration-500">
+              ✋ Touch and drag the caption
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 py-3 flex items-center gap-3 border-t border-gray-200 dark:border-gray-800">
+        <button id="bs-play-btn" class="w-10 h-10 rounded-full bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center shrink-0 transition">
+          <svg id="bs-play-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="bs-pause-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+        </button>
+        <input id="bs-seek" type="range" min="0" max="1000" value="0" step="1" class="flex-1 accent-sky-500" />
+        <span id="bs-time-display" class="text-xs text-gray-500 font-mono tabular-nums shrink-0">0:00 / 0:00</span>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
+      <button id="bs-timeline-toggle" type="button" class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition text-left">
+        <div class="flex items-center gap-3">
+          <h3 class="text-sm font-semibold text-black dark:text-white">Subtitle Timeline</h3>
+          <span id="bs-timeline-count" class="text-[10px] font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">0 lines</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] text-gray-400">Tap to expand</span>
+          <svg id="bs-timeline-chevron" class="w-4 h-4 text-gray-500 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </button>
+
+      <div id="bs-timeline-body" class="hidden">
+        <div class="border-t border-gray-200 dark:border-gray-800"></div>
+        <div id="bs-transcript-list" class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800"></div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 space-y-4">
+      <h3 class="font-semibold text-black dark:text-white">Customize Subtitle Style</h3>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Font Family</label>
+          <select id="bs-font" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white">
+            <option value="system-ui, -apple-system, sans-serif">System Default</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="Impact, sans-serif">Impact</option>
+            <option value="'Courier New', monospace">Courier</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Font Size</label>
+          <select id="bs-size" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white">
+            <option value="0.035">Small</option>
+            <option value="0.055" selected>Medium</option>
+            <option value="0.075">Large</option>
+            <option value="0.095">Extra Large</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Text Color</label>
+          <input type="color" id="bs-color" value="#ffffff" class="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Background</label>
+          <select id="bs-bg" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white">
+            <option value="outline">Text Outline</option>
+            <option value="shadow">Drop Shadow</option>
+            <option value="dark" selected>Semi-Dark Bar (Rounded)</option>
+            <option value="light">Semi-Light Bar (Rounded)</option>
+            <option value="none">No Background</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Position</label>
+          <select id="bs-position" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white">
+            <option value="bottom" selected>Bottom</option>
+            <option value="middle">Middle</option>
+            <option value="top">Top</option>
+          </select>
+        </div>
+
+        <div class="col-span-2">
+          <button id="bs-reset-pos" class="w-full text-xs text-sky-500 hover:text-sky-600 py-2">Reset caption position to default</button>
+        </div>
+      </div>
+
+      <button id="bs-render-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-xl transition">Download Video with Subtitles</button>
+      <p class="text-center text-xs text-gray-500">Renders as long as your video duration</p>
+    </div>
+  </div>
+
+  <div id="bs-rendering" class="hidden mt-4 bg-white dark:bg-gray-900 border-2 border-sky-300 dark:border-sky-700 rounded-xl p-4 shadow-lg">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-sky-500 animate-pulse"></div>
+        <span class="text-sm font-semibold text-black dark:text-white" id="bs-render-label">Rendering subtitles into video</span>
+      </div>
+      <span id="bs-render-pct" class="text-base font-bold text-sky-500">0%</span>
+    </div>
+    <div class="w-full h-3 bg-sky-100 dark:bg-sky-900/30 rounded-full overflow-hidden">
+      <div id="bs-render-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="bs-render-status" class="mt-3 text-sm text-gray-600 dark:text-gray-400 font-medium">Starting render…</p>
+    <p class="mt-1 text-xs text-gray-400">Please keep this page open. Rendering takes as long as your video's duration.</p>
+  </div>
+
+  <div id="bs-result" class="hidden mt-4">
+    <div class="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-2xl overflow-hidden">
+      <div class="p-4 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-base text-green-900 dark:text-green-100">Your video with subtitles is ready</p>
+          <p id="bs-result-name" class="text-sm text-green-700 dark:text-green-300 mt-0.5 truncate"></p>
+          <p id="bs-result-size" class="text-xs text-green-600 dark:text-green-400 mt-0.5"></p>
+        </div>
+      </div>
+
+      <div class="px-4 pb-3">
+        <div class="rounded-xl overflow-hidden bg-black">
+          <video id="bs-result-video" controls playsinline class="w-full block" style="max-height: 60vh; object-fit: contain;"></video>
+        </div>
+      </div>
+
+      <div class="border-t border-green-200 dark:border-green-900/50"></div>
+
+      <div class="p-4 space-y-3">
+        <button id="bs-download" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 rounded-xl transition">⬇ Download Video with Subtitles</button>
+        <button id="bs-burn-more" class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-sky-400 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-xl transition">🔄 Add Subtitles to Another Video</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bs-error" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-200 text-sm"></div>
+
+  <div id="bs-edit-modal" style="display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.75); align-items:center; justify-content:center; padding:1rem;">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        <h3 class="font-semibold text-black dark:text-white text-base">Edit Subtitle</h3>
+        <button id="bs-edit-close" class="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition">
+          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Time range</label>
+          <div id="bs-edit-timerange" class="text-sm text-gray-700 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Subtitle text</label>
+          <textarea id="bs-edit-textarea" rows="4" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        </div>
+      </div>
+
+      <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-3 gap-2">
+        <button id="bs-edit-delete" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-lg transition text-sm">Delete</button>
+        <button id="bs-edit-cancel" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-2.5 rounded-lg transition text-sm">Cancel</button>
+        <button id="bs-edit-save" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2.5 rounded-lg transition text-sm">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { downloadBlob } from '../../ai/utils/video-codecs.js';
+
+  const el = (id) => document.getElementById(id);
+  let videoFile = null;
+  let segments = [];
+  let outputBlob = null;
+  let outputExt = 'mp4';
+  let renderInProgress = false;
+  let previewVideo = null;
+  let overlayCanvas = null;
+  let overlayCtx = null;
+  let rafLoopId = null;
+  let customYPos = null;
+  let isDragging = false;
+  let dragStartY = 0;
+  let dragStartCustomY = 0;
+  let editingIdx = -1;
+  let timelineExpanded = false;
+  let aiTranscribing = false;
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+  if (isMobile) el('bs-warning')?.classList.remove('hidden');
+
+  // ═══════════════════════════════════════════════════════
+  // TIMELINE ACCORDION TOGGLE
+  // ═══════════════════════════════════════════════════════
+  el('bs-timeline-toggle')?.addEventListener('click', () => {
+    timelineExpanded = !timelineExpanded;
+    const body = el('bs-timeline-body');
+    const chevron = el('bs-timeline-chevron');
+    const hint = el('bs-timeline-toggle')?.querySelector('span.text-\\[10px\\]');
+    if (timelineExpanded) {
+      body?.classList.remove('hidden');
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+      if (hint) hint.textContent = 'Tap to collapse';
+    } else {
+      body?.classList.add('hidden');
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+      if (hint) hint.textContent = 'Tap to expand';
+    }
+  });
+
+  function updateTimelineCount() {
+    const countEl = el('bs-timeline-count');
+    if (countEl) {
+      countEl.textContent = `${segments.length} line${segments.length === 1 ? '' : 's'}`;
+    }
+  }
+
+  (function loadIncomingSegments() {
+    try {
+      const incoming = localStorage.getItem('dayront-captions-to-burn');
+      if (!incoming) return;
+      const data = JSON.parse(incoming);
+      if (!data?.segments?.length) return;
+      segments = data.segments;
+      localStorage.removeItem('dayront-captions-to-burn');
+      setTimeout(() => {
+        el('bs-parsed')?.classList.remove('hidden');
+        if (el('bs-parsed-info')) el('bs-parsed-info').textContent = `✅ ${segments.length} subtitles loaded`;
+      }, 100);
+    } catch (e) {}
+  })();
+
+  el('bs-browse-video')?.addEventListener('click', () => el('bs-video-input')?.click());
+  el('bs-video-input')?.addEventListener('change', (e) => {
+    const f = e.target.files?.[0];
+    if (f) handleVideo(f);
+  });
+
+  const videoZone = el('bs-video-zone');
+  if (videoZone) {
+    ['dragenter', 'dragover'].forEach(ev => videoZone.addEventListener(ev, (e) => { e.preventDefault(); videoZone.classList.add('border-sky-400'); }));
+    ['dragleave', 'drop'].forEach(ev => videoZone.addEventListener(ev, (e) => { e.preventDefault(); videoZone.classList.remove('border-sky-400'); }));
+    videoZone.addEventListener('drop', (e) => { const f = e.dataTransfer?.files?.[0]; if (f && f.type.startsWith('video/')) handleVideo(f); });
+  }
+
+  function handleVideo(file) {
+    videoFile = file;
+    el('bs-video-name').textContent = file.name;
+    el('bs-video-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    el('bs-video-card')?.classList.remove('hidden');
+    el('bs-subs-step')?.classList.remove('hidden');
+    el('bs-video-zone')?.classList.add('hidden');
+    if (segments.length > 0) goToStyleStep();
+  }
+
+  document.querySelectorAll('.bs-subs-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchSubsMode(tab.dataset.mode));
+  });
+
+  function switchSubsMode(mode) {
+    document.querySelectorAll('.bs-subs-tab').forEach(t => {
+      const active = t.dataset.mode === mode;
+      t.classList.toggle('bg-sky-500', active);
+      t.classList.toggle('text-white', active);
+      t.classList.toggle('bg-gray-100', !active);
+      t.classList.toggle('dark:bg-gray-800', !active);
+      t.classList.toggle('text-gray-700', !active);
+      t.classList.toggle('dark:text-gray-300', !active);
+    });
+    ['srt', 'paste', 'ai'].forEach(m => el(`bs-mode-${m}`)?.classList.toggle('hidden', m !== mode));
+  }
+
+  el('bs-browse-srt')?.addEventListener('click', () => el('bs-srt-input')?.click());
+  el('bs-srt-input')?.addEventListener('change', async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const text = await f.text();
+    parseAndSetSubs(text);
+  });
+
+  let pasteTimer = null;
+  el('bs-paste-input')?.addEventListener('input', (e) => {
+    clearTimeout(pasteTimer);
+    const val = e.target.value;
+    pasteTimer = setTimeout(() => { if (val.trim().length > 10) parseAndSetSubs(val); }, 400);
+  });
+
+  // ═════════════════════════════════════════════════════════════
+  // ★ NEW: Chunked AI transcription (no file size limit)
+  // ═════════════════════════════════════════════════════════════
+  el('bs-ai-btn')?.addEventListener('click', async () => {
+    if (!videoFile || aiTranscribing) return;
+    aiTranscribing = true;
+
+    const aiBtn = el('bs-ai-btn');
+    const progressBox = el('bs-ai-progress');
+    if (aiBtn) aiBtn.disabled = true;
+    if (progressBox) progressBox.classList.remove('hidden');
+
+    setAIProgress(0, 'Extracting audio…');
+
+    try {
+      // Step 1: Extract 16 kHz mono audio
+      const audioBuffer = await extractMonoAudio(videoFile, 16000);
+      setAIProgress(3, 'Splitting audio into chunks…');
+
+      // Step 2: Split into 25s chunks
+      const chunks = chunkAudioBuffer(audioBuffer, 25);
+      const totalChunks = chunks.length;
+      const totalDuration = audioBuffer.duration;
+
+      console.log(`[burn-ai] chunked transcription: ${totalChunks} chunks, ${totalDuration.toFixed(1)}s`);
+
+      // Step 3: Send each chunk sequentially
+      const allSegments = [];
+      const progressStart = 5;
+      const progressEnd = 98;
+
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = chunks[i];
+        const chunkNum = i + 1;
+
+        const pct = progressStart + ((i / totalChunks) * (progressEnd - progressStart));
+        const elapsed = chunk.startTime.toFixed(0);
+        const total = totalDuration.toFixed(0);
+        setAIProgress(pct, `Transcribing ${elapsed}s / ${total}s — chunk ${chunkNum} of ${totalChunks}…`);
+
+        // Encode chunk to WAV
+        const wavBlob = encodeWAV(chunk.samples, 16000);
+
+        const fd = new FormData();
+        fd.append('audio', wavBlob, `chunk-${chunkNum}.wav`);
+
+        let res;
+        try {
+          res = await fetch('/api/transcribe', { method: 'POST', body: fd });
+        } catch (networkErr) {
+          throw new Error(`Network error on chunk ${chunkNum}: ${networkErr.message}`);
+        }
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Chunk ${chunkNum} failed (${res.status}): ${errText.slice(0, 200)}`);
+        }
+
+        const data = await res.json();
+        if (data.error) throw new Error(`Chunk ${chunkNum}: ${data.error}`);
+
+        // Offset timestamps to global timeline
+        const chunkSegments = (data.segments || []).map(seg => ({
+          start: seg.start + chunk.startTime,
+          end: seg.end + chunk.startTime,
+          text: seg.text,
+        }));
+
+        allSegments.push(...chunkSegments);
+      }
+
+      // Step 4: Merge + dedup chunk boundaries
+      setAIProgress(99, 'Merging results…');
+      segments = mergeSegments(allSegments);
+      setAIProgress(100, `✅ ${segments.length} subtitles generated`);
+
+      console.log(`[burn-ai] complete: ${segments.length} segments`);
+
+      // Show parsed confirmation
+      el('bs-parsed')?.classList.remove('hidden');
+      if (el('bs-parsed-info')) el('bs-parsed-info').textContent = `✅ ${segments.length} subtitles generated`;
+
+      // Proceed to editor
+      setTimeout(goToStyleStep, 400);
+    } catch (err) {
+      console.error('[burn-ai] error:', err);
+      setAIProgress(0, `❌ ${err.message}`);
+      if (aiBtn) aiBtn.disabled = false;
+      aiTranscribing = false;
+    }
+  });
+
+  function setAIProgress(pct, status) {
+    const safe = Math.max(0, Math.min(100, pct));
+    const bar = el('bs-ai-progress-bar');
+    const pctEl = el('bs-ai-progress-pct');
+    if (bar) bar.style.width = `${safe}%`;
+    if (pctEl) pctEl.textContent = `${Math.round(safe)}%`;
+    if (status && el('bs-ai-status')) el('bs-ai-status').textContent = status;
+  }
+
+  // ─── Audio chunking helpers ───
+  async function extractMonoAudio(file, targetSampleRate = 16000) {
+    const arrayBuffer = await file.arrayBuffer();
+    const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await decodeCtx.decodeAudioData(arrayBuffer);
+    try { await decodeCtx.close(); } catch {}
+
+    const duration = decoded.duration;
+    const targetLength = Math.ceil(duration * targetSampleRate);
+    const offlineCtx = new OfflineAudioContext(1, targetLength, targetSampleRate);
+
+    const source = offlineCtx.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offlineCtx.destination);
+    source.start(0);
+
+    return await offlineCtx.startRendering();
+  }
+
+  function chunkAudioBuffer(audioBuffer, chunkSeconds = 25) {
+    const sampleRate = audioBuffer.sampleRate;
+    const chunkSamples = chunkSeconds * sampleRate;
+    const total = audioBuffer.length;
+    const data = audioBuffer.getChannelData(0);
+    const chunks = [];
+
+    for (let start = 0; start < total; start += chunkSamples) {
+      const end = Math.min(start + chunkSamples, total);
+      chunks.push({
+        samples: data.slice(start, end),
+        startTime: start / sampleRate,
+        endTime: end / sampleRate,
+      });
+    }
+    return chunks;
+  }
+
+  function encodeWAV(samples, sampleRate) {
+    const numChannels = 1;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = samples.length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    function writeString(offset, str) {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    }
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  function mergeSegments(segs) {
+    if (segs.length < 2) return segs;
+    const sorted = [...segs].sort((a, b) => a.start - b.start);
+    const merged = [sorted[0]];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = merged[merged.length - 1];
+      const curr = sorted[i];
+
+      if (curr.start < prev.end && textSimilar(prev.text, curr.text)) {
+        if (curr.text.length > prev.text.length) prev.text = curr.text;
+        prev.end = Math.max(prev.end, curr.end);
+      } else {
+        merged.push(curr);
+      }
+    }
+    return merged;
+  }
+
+  function textSimilar(a, b) {
+    const norm = s => s.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const na = norm(a);
+    const nb = norm(b);
+    if (!na || !nb) return false;
+    if (na === nb) return true;
+    const wordsA = na.split(/\s+/);
+    const wordsB = nb.split(/\s+/);
+    const checkLen = Math.min(3, wordsA.length, wordsB.length);
+    const tailA = wordsA.slice(-checkLen).join(' ');
+    const headB = wordsB.slice(0, checkLen).join(' ');
+    return tailA === headB;
+  }
+
+  // ─── Other subtitle modes ───
+  function parseAndSetSubs(text) {
+    const parsed = parseSRT(text);
+    if (parsed.length === 0) {
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      let t = 0;
+      segments = lines.map(line => { const s = { start: t, end: t + 3, text: line }; t += 3; return s; });
+    } else {
+      segments = parsed;
+    }
+    if (segments.length === 0) {
+      el('bs-parsed')?.classList.remove('hidden');
+      if (el('bs-parsed-info')) el('bs-parsed-info').textContent = '⚠️ No subtitles detected.';
+      return;
+    }
+    el('bs-parsed')?.classList.remove('hidden');
+    if (el('bs-parsed-info')) el('bs-parsed-info').textContent = `✅ ${segments.length} subtitle${segments.length === 1 ? '' : 's'} loaded`;
+    goToStyleStep();
+  }
+
+  function parseSRT(text) {
+    const out = [];
+    const timeRegex = /(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})/;
+
+    const inlineRegex = /\[?(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})\]?\s*([^\n\[]+)/g;
+    let m;
+    while ((m = inlineRegex.exec(text)) !== null) {
+      const start = +m[1] * 3600 + +m[2] * 60 + +m[3] + +m[4].padEnd(3, '0') / 1000;
+      const end = +m[5] * 3600 + +m[6] * 60 + +m[7] + +m[8].padEnd(3, '0') / 1000;
+      const txt = m[9].trim();
+      if (txt) out.push({ start, end, text: txt });
+    }
+    if (out.length > 0) return out;
+
+    const blocks = text.trim().split(/\r?\n\r?\n+/);
+    for (const block of blocks) {
+      const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) continue;
+      const timeLineIdx = lines.findIndex(l => l.includes('-->'));
+      if (timeLineIdx === -1) continue;
+      const mm = lines[timeLineIdx].match(timeRegex);
+      if (!mm) continue;
+      const start = +mm[1] * 3600 + +mm[2] * 60 + +mm[3] + +mm[4].padEnd(3, '0') / 1000;
+      const end = +mm[5] * 3600 + +mm[6] * 60 + +mm[7] + +mm[8].padEnd(3, '0') / 1000;
+      const txtLines = lines.slice(timeLineIdx + 1).filter(l => !/^\d+$/.test(l));
+      const txt = txtLines.join(' ').trim();
+      if (txt) out.push({ start, end, text: txt });
+    }
+    return out;
+  }
+
+  function goToStyleStep() {
+    el('bs-subs-step')?.classList.add('hidden');
+    el('bs-video-card')?.classList.add('hidden');
+    el('bs-style-step')?.classList.remove('hidden');
+    buildTranscriptList();
+    setTimeout(initPreview, 150);
+    setTimeout(() => el('bs-style-step')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+  }
+
+  function buildTranscriptList() {
+    const list = el('bs-transcript-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    updateTimelineCount();
+
+    if (segments.length === 0) {
+      list.innerHTML = '<div class="px-4 py-6 text-center text-xs text-gray-500">No subtitles yet</div>';
+      return;
+    }
+
+    segments.forEach((seg, idx) => {
+      const row = document.createElement('div');
+      row.dataset.segIdx = String(idx);
+      row.className = 'flex items-center gap-2 px-3 py-2.5 border-l-4 border-transparent transition cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800';
+
+      const timeEl = document.createElement('span');
+      timeEl.className = 'font-mono text-gray-400 shrink-0 text-[10px] leading-5 pointer-events-none';
+      timeEl.textContent = fmtShort(seg.start);
+
+      const textEl = document.createElement('span');
+      textEl.className = 'flex-1 text-left leading-5 text-xs text-gray-700 dark:text-gray-300 break-words pointer-events-none';
+      textEl.textContent = seg.text;
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'shrink-0 w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 flex items-center justify-center transition';
+      editBtn.title = 'Edit text';
+      editBtn.innerHTML = '<svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        openEditModal(idx);
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'shrink-0 w-9 h-9 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center justify-center transition';
+      delBtn.title = 'Delete line';
+      delBtn.innerHTML = '<svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        deleteSegment(idx);
+      });
+
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        if (previewVideo) {
+          previewVideo.currentTime = seg.start + 0.01;
+          previewVideo.pause();
+          row.classList.add('bg-sky-100', 'dark:bg-sky-900/40');
+          setTimeout(() => {
+            row.classList.remove('bg-sky-100', 'dark:bg-sky-900/40');
+          }, 200);
+        }
+      });
+
+      row.appendChild(timeEl);
+      row.appendChild(textEl);
+      row.appendChild(editBtn);
+      row.appendChild(delBtn);
+      list.appendChild(row);
+    });
+  }
+
+  function openEditModal(idx) {
+    if (idx < 0 || idx >= segments.length) return;
+    editingIdx = idx;
+    const seg = segments[idx];
+
+    el('bs-edit-timerange').textContent = `${fmtFull(seg.start)} → ${fmtFull(seg.end)}`;
+    el('bs-edit-textarea').value = seg.text;
+
+    const modal = el('bs-edit-modal');
+    modal.style.display = 'flex';
+
+    setTimeout(() => {
+      const ta = el('bs-edit-textarea');
+      ta.focus();
+      try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch {}
+    }, 150);
+  }
+
+  function closeEditModal() {
+    el('bs-edit-modal').style.display = 'none';
+    editingIdx = -1;
+  }
+
+  el('bs-edit-save')?.addEventListener('click', () => {
+    if (editingIdx < 0) return;
+    const newText = el('bs-edit-textarea').value.trim();
+    if (newText.length > 0) {
+      segments[editingIdx].text = newText;
+      buildTranscriptList();
+      drawPreviewFrame();
+    }
+    closeEditModal();
+  });
+
+  el('bs-edit-cancel')?.addEventListener('click', closeEditModal);
+  el('bs-edit-close')?.addEventListener('click', closeEditModal);
+
+  el('bs-edit-delete')?.addEventListener('click', () => {
+    if (editingIdx < 0) return;
+    const confirmed = window.confirm('Delete this subtitle line?');
+    if (confirmed) {
+      deleteSegment(editingIdx);
+      closeEditModal();
+    }
+  });
+
+  el('bs-edit-modal')?.addEventListener('click', (e) => {
+    if (e.target === el('bs-edit-modal')) closeEditModal();
+  });
+
+  function deleteSegment(idx) {
+    if (idx < 0 || idx >= segments.length) return;
+    segments.splice(idx, 1);
+    buildTranscriptList();
+    drawPreviewFrame();
+  }
+
+  function updateTranscriptHighlight() {
+    if (!previewVideo) return;
+    if (!timelineExpanded) return;
+    const t = previewVideo.currentTime || 0;
+    document.querySelectorAll('[data-seg-idx]').forEach(row => {
+      const idx = Number(row.dataset.segIdx);
+      const seg = segments[idx];
+      const isActive = seg && t >= seg.start && t <= seg.end;
+      row.classList.toggle('border-sky-500', isActive);
+      row.classList.toggle('bg-sky-50', isActive);
+      row.classList.toggle('dark:bg-sky-900/20', isActive);
+    });
+  }
+
+  function fmtShort(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function fmtFull(sec) {
+    const s = Math.max(0, sec);
+    const m = Math.floor(s / 60);
+    const ss = (s % 60).toFixed(2).padStart(5, '0');
+    return `${String(m).padStart(2, '0')}:${ss}`;
+  }
+
+  function computeCaptionLayout(canvas, text, style, ctx) {
+    if (!canvas || !text) return null;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const base = Math.min(canvas.width, canvas.height);
+    const fontSize = Math.round(base * style.sizeRatio);
+    ctx.font = `bold ${fontSize}px ${style.font}`;
+
+    const maxWidth = canvas.width * 0.85;
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+
+    const lineHeight = fontSize * 1.3;
+    const blockHeight = lines.length * lineHeight;
+    const padding = canvas.height * 0.05;
+
+    let centerY;
+    if (style.customY !== null && style.customY !== undefined) {
+      centerY = canvas.height * style.customY;
+    } else if (style.position === 'top') {
+      centerY = padding + blockHeight / 2;
+    } else if (style.position === 'middle') {
+      centerY = canvas.height / 2;
+    } else {
+      centerY = canvas.height - padding - blockHeight / 2;
+    }
+    const startY = centerY - blockHeight / 2 + lineHeight / 2;
+
+    let maxLineW = 0;
+    for (const ln of lines) maxLineW = Math.max(maxLineW, ctx.measureText(ln).width);
+
+    const padX = fontSize * 0.7;
+    const padY = fontSize * 0.35;
+    const barW = maxLineW + padX * 2;
+    const barH = blockHeight + padY * 2;
+    const barX = (canvas.width - barW) / 2;
+    const barTop = startY - lineHeight / 2 - padY;
+
+    return { fontSize, lineHeight, blockHeight, lines, startY, barX, barTop, barW, barH };
+  }
+
+  function getActiveCaptionAt(timeSec) {
+    return segments.find(s => timeSec >= s.start && timeSec <= s.end) || null;
+  }
+
+  function initPreview() {
+    if (!videoFile) return;
+    previewVideo = el('bs-preview-video');
+    overlayCanvas = el('bs-overlay-canvas');
+    if (!previewVideo || !overlayCanvas) return;
+
+    if (previewVideo.src && previewVideo.src.startsWith('blob:')) {
+      try { URL.revokeObjectURL(previewVideo.src); } catch {}
+    }
+    previewVideo.src = URL.createObjectURL(videoFile);
+
+    previewVideo.onloadedmetadata = () => {
+      overlayCanvas.width = previewVideo.videoWidth || 640;
+      overlayCanvas.height = previewVideo.videoHeight || 360;
+      overlayCtx = overlayCanvas.getContext('2d');
+
+      const container = el('bs-preview-container');
+      if (container) container.style.aspectRatio = `${overlayCanvas.width} / ${overlayCanvas.height}`;
+
+      drawPreviewFrame();
+      updateTimeDisplay();
+    };
+
+    const seek = el('bs-seek');
+    if (seek && !seek.dataset.bound) {
+      seek.dataset.bound = '1';
+      seek.addEventListener('input', () => {
+        if (!previewVideo.duration) return;
+        previewVideo.currentTime = (Number(seek.value) / 1000) * previewVideo.duration;
+      });
+    }
+
+    const playBtn = el('bs-play-btn');
+    if (playBtn && !playBtn.dataset.bound) {
+      playBtn.dataset.bound = '1';
+      playBtn.addEventListener('click', () => {
+        if (previewVideo.paused) previewVideo.play();
+        else previewVideo.pause();
+      });
+    }
+
+    const muteBtn = el('bs-mute-btn');
+    if (muteBtn && !muteBtn.dataset.bound) {
+      muteBtn.dataset.bound = '1';
+      muteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        previewVideo.muted = !previewVideo.muted;
+        el('bs-mute-icon')?.classList.toggle('hidden', previewVideo.muted);
+        el('bs-unmute-icon')?.classList.toggle('hidden', !previewVideo.muted);
+      });
+    }
+
+    if (previewVideo && !previewVideo.dataset.bound) {
+      previewVideo.dataset.bound = '1';
+      previewVideo.addEventListener('play', () => {
+        el('bs-play-icon')?.classList.add('hidden');
+        el('bs-pause-icon')?.classList.remove('hidden');
+        startRafLoop();
+      });
+      previewVideo.addEventListener('pause', () => {
+        el('bs-play-icon')?.classList.remove('hidden');
+        el('bs-pause-icon')?.classList.add('hidden');
+        drawPreviewFrame();
+      });
+      previewVideo.addEventListener('ended', () => {
+        el('bs-play-icon')?.classList.remove('hidden');
+        el('bs-pause-icon')?.classList.add('hidden');
+      });
+      previewVideo.addEventListener('seeking', drawPreviewFrame);
+      previewVideo.addEventListener('seeked', drawPreviewFrame);
+      previewVideo.addEventListener('timeupdate', () => {
+        updateTimeDisplay();
+        updateTranscriptHighlight();
+      });
+      previewVideo.addEventListener('loadedmetadata', updateTimeDisplay);
+    }
+
+    const container = el('bs-preview-container');
+    if (container && !container.dataset.dragBound) {
+      container.dataset.dragBound = '1';
+      container.style.cursor = 'grab';
+      container.style.touchAction = 'none';
+
+      const getCanvasCoords = (clientX, clientY) => {
+        const rect = container.getBoundingClientRect();
+        return {
+          x: ((clientX - rect.left) / rect.width) * overlayCanvas.width,
+          y: ((clientY - rect.top) / rect.height) * overlayCanvas.height,
+          rect,
+        };
+      };
+
+      const isPointOnCaption = (clientX, clientY) => {
+        if (!overlayCtx || !previewVideo) return false;
+        const t = previewVideo.currentTime || 0;
+        const active = getActiveCaptionAt(t);
+        if (!active) return false;
+        const layout = computeCaptionLayout(overlayCanvas, active.text, getStyleOptions(), overlayCtx);
+        if (!layout) return false;
+        const p = getCanvasCoords(clientX, clientY);
+        const pad = 24;
+        return (
+          p.x >= layout.barX - pad &&
+          p.x <= layout.barX + layout.barW + pad &&
+          p.y >= layout.barTop - pad &&
+          p.y <= layout.barTop + layout.barH + pad
+        );
+      };
+
+      container.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return;
+        if (!isPointOnCaption(e.clientX, e.clientY)) return;
+
+        isDragging = true;
+        dragStartY = e.clientY;
+        dragStartCustomY = customYPos !== null ? customYPos : getDefaultYFrac();
+
+        try { container.setPointerCapture(e.pointerId); } catch {}
+
+        const hint = el('bs-drag-hint');
+        if (hint) hint.style.opacity = '0';
+
+        if (navigator.vibrate) try { navigator.vibrate(15); } catch {}
+        e.preventDefault();
+      });
+
+      container.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        const rect = container.getBoundingClientRect();
+        const dy = e.clientY - dragStartY;
+        const deltaYFrac = dy / rect.height;
+        customYPos = Math.max(0.05, Math.min(0.95, dragStartCustomY + deltaYFrac));
+        drawPreviewFrame();
+      });
+
+      const endDrag = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        try { container.releasePointerCapture(e.pointerId); } catch {}
+        drawPreviewFrame();
+      };
+
+      container.addEventListener('pointerup', endDrag);
+      container.addEventListener('pointercancel', endDrag);
+    }
+
+    ['bs-font', 'bs-size', 'bs-color', 'bs-bg', 'bs-position'].forEach(id => {
+      const input = el(id);
+      if (input && !input.dataset.bound) {
+        input.dataset.bound = '1';
+        const handler = () => {
+          if (id === 'bs-position') customYPos = null;
+          drawPreviewFrame();
+        };
+        input.addEventListener('input', handler);
+        input.addEventListener('change', handler);
+      }
+    });
+
+    const resetBtn = el('bs-reset-pos');
+    if (resetBtn && !resetBtn.dataset.bound) {
+      resetBtn.dataset.bound = '1';
+      resetBtn.addEventListener('click', () => {
+        customYPos = null;
+        drawPreviewFrame();
+      });
+    }
+
+    setTimeout(() => {
+      const hint = el('bs-drag-hint');
+      if (hint) hint.style.opacity = '0';
+    }, 6000);
+  }
+
+  function getDefaultYFrac() {
+    const pos = el('bs-position')?.value || 'bottom';
+    if (pos === 'top') return 0.12;
+    if (pos === 'middle') return 0.5;
+    return 0.88;
+  }
+
+  function startRafLoop() {
+    if (rafLoopId) return;
+    const tick = () => {
+      if (!previewVideo || previewVideo.paused) { rafLoopId = null; return; }
+      drawPreviewFrame();
+      updateTimeDisplay();
+      rafLoopId = requestAnimationFrame(tick);
+    };
+    rafLoopId = requestAnimationFrame(tick);
+  }
+
+  function updateTimeDisplay() {
+    if (!previewVideo) return;
+    const cur = previewVideo.currentTime || 0;
+    const dur = previewVideo.duration || 0;
+    if (el('bs-time-display')) el('bs-time-display').textContent = `${fmtClock(cur)} / ${fmtClock(dur)}`;
+    const seek = el('bs-seek');
+    if (seek && dur > 0) seek.value = String(Math.round((cur / dur) * 1000));
+  }
+
+  function fmtClock(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function drawPreviewFrame() {
+    if (!previewVideo || !overlayCanvas || !overlayCtx) return;
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    const t = previewVideo.currentTime || 0;
+    const active = getActiveCaptionAt(t);
+    if (!active) return;
+    drawStyledCaption(overlayCtx, overlayCanvas, active.text, getStyleOptions(), isDragging);
+  }
+
+  function getStyleOptions() {
+    return {
+      font: el('bs-font')?.value || 'system-ui, sans-serif',
+      sizeRatio: Number(el('bs-size')?.value || 0.055),
+      color: el('bs-color')?.value || '#ffffff',
+      bg: el('bs-bg')?.value || 'dark',
+      position: el('bs-position')?.value || 'bottom',
+      customY: customYPos,
+    };
+  }
+
+  el('bs-render-btn')?.addEventListener('click', async () => {
+    if (renderInProgress || !videoFile || segments.length === 0) return;
+    renderInProgress = true;
+    try { previewVideo?.pause(); } catch {}
+
+    el('bs-style-step')?.classList.add('hidden');
+    el('bs-result')?.classList.add('hidden');
+    el('bs-rendering')?.classList.remove('hidden');
+    el('bs-error')?.classList.add('hidden');
+
+    requestAnimationFrame(() => {
+      el('bs-rendering')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    try {
+      const result = await burnSubtitles(videoFile, segments, getStyleOptions());
+      outputBlob = result.blob;
+      outputExt = result.ext;
+
+      el('bs-rendering')?.classList.add('hidden');
+      el('bs-result')?.classList.remove('hidden');
+
+      const base = videoFile.name.replace(/\.[^.]+$/, '');
+      if (el('bs-result-name')) el('bs-result-name').textContent = `${base}-subtitled.${outputExt}`;
+      if (el('bs-result-size')) el('bs-result-size').textContent = `${(outputBlob.size / 1024 / 1024).toFixed(2)} MB • ready to download`;
+
+      const resultVideo = el('bs-result-video');
+      if (resultVideo) {
+        resultVideo.src = URL.createObjectURL(outputBlob);
+        resultVideo.load();
+      }
+
+      el('bs-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      el('bs-rendering')?.classList.add('hidden');
+      el('bs-style-step')?.classList.remove('hidden');
+      if (el('bs-error')) {
+        el('bs-error').textContent = `Render failed: ${err?.message || String(err)}`;
+        el('bs-error').classList.remove('hidden');
+      }
+    } finally {
+      renderInProgress = false;
+    }
+  });
+
+  function pickBestMime() {
+    const c = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    for (const x of c) if (MediaRecorder.isTypeSupported(x)) return x;
+    return '';
+  }
+
+  async function burnSubtitles(file, subs, style) {
+    const video = document.createElement('video');
+    video.src = URL.createObjectURL(file);
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.muted = true;
+    video.volume = 0;
+
+    await new Promise((res, rej) => {
+      video.onloadedmetadata = res;
+      video.onerror = () => rej(new Error('Could not load video'));
+    });
+
+    const arrayBuffer = await file.arrayBuffer();
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtxClass();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    let audioBuffer = null;
+    try { audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0)); } catch (e) {}
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+
+    const videoStream = canvas.captureStream(30);
+    let audioTrack = null;
+    let audioSource = null;
+
+    if (audioBuffer) {
+      audioSource = audioCtx.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      const dest = audioCtx.createMediaStreamDestination();
+      audioSource.connect(dest);
+      const tracks = dest.stream.getAudioTracks();
+      if (tracks.length) audioTrack = tracks[0];
+    }
+
+    const combinedStream = new MediaStream([...videoStream.getVideoTracks(), ...(audioTrack ? [audioTrack] : [])]);
+    const mime = pickBestMime();
+    const ext = (mime || '').includes('mp4') ? 'mp4' : 'webm';
+
+    console.log('[burn] using MIME:', mime || '(default)');
+
+    const recorder = new MediaRecorder(combinedStream, {
+      mimeType: mime || undefined,
+      videoBitsPerSecond: 8_000_000,
+      audioBitsPerSecond: 128_000,
+    });
+
+    const chunks = [];
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    const donePromise = new Promise((resolve) => {
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mime || 'video/webm' }));
+    });
+
+    recorder.start(1000);
+    await video.play();
+    if (audioSource) audioSource.start(0, video.currentTime);
+
+    const hooks = ['Rendering subtitles… 🎬', 'Styling your captions… ✨', 'Almost there… 🚀'];
+    let hookIdx = 0;
+    const hookTimer = setInterval(() => {
+      if (el('bs-render-status')) el('bs-render-status').textContent = hooks[hookIdx % hooks.length];
+      hookIdx++;
+    }, 3000);
+
+    const drawFrame = () => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const t = video.currentTime;
+      const active = subs.find(s => t >= s.start && t <= s.end);
+      if (active) drawStyledCaption(ctx, canvas, active.text, style, false);
+
+      const pct = (video.currentTime / video.duration) * 100;
+      if (el('bs-render-bar')) el('bs-render-bar').style.width = `${pct}%`;
+      if (el('bs-render-pct')) el('bs-render-pct').textContent = `${Math.round(pct)}%`;
+
+      if (!video.paused && !video.ended) requestAnimationFrame(drawFrame);
+    };
+    requestAnimationFrame(drawFrame);
+
+    await new Promise(resolve => { video.onended = resolve; });
+    clearInterval(hookTimer);
+    await new Promise(r => setTimeout(r, 500));
+    if (recorder.state !== 'inactive') recorder.stop();
+
+    let blob = await donePromise;
+
+    // ★ Patch WebM duration for Android Gallery
+    if (ext === 'webm' && blob.size > 0) {
+      try {
+        const fixModule = await import('fix-webm-duration');
+        const fixWebmDuration = fixModule.default || fixModule;
+        const durationMs = Math.round(video.duration * 1000);
+        blob = await fixWebmDuration(blob, durationMs, { logger: false });
+        console.log('[burn] ✓ WebM duration patched:', durationMs + 'ms');
+      } catch (e) {
+        console.warn('[burn] Could not patch WebM duration:', e);
+      }
+    }
+
+    try { video.pause(); } catch {}
+    try { await audioCtx.close(); } catch {}
+    return { blob, ext };
+  }
+
+  function drawStyledCaption(ctx, canvas, text, style, showDragHighlight) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const layout = computeCaptionLayout(canvas, text, style, ctx);
+    if (!layout) return;
+    const { fontSize, lineHeight, lines, startY, barX, barTop, barW, barH } = layout;
+
+    if (style.bg === 'dark' || style.bg === 'light') {
+      const bgColor = style.bg === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
+      const radius = Math.min(barH / 2, fontSize * 0.6);
+      ctx.fillStyle = bgColor;
+      roundRect(ctx, barX, barTop, barW, barH, radius);
+      ctx.fill();
+    }
+
+    lines.forEach((ln, i) => {
+      const y = startY + i * lineHeight;
+      const x = canvas.width / 2;
+
+      if (style.bg === 'outline') {
+        ctx.lineWidth = Math.max(3, fontSize / 6);
+        ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+        ctx.strokeText(ln, x, y);
+      } else if (style.bg === 'shadow') {
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur = fontSize * 0.15;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+      }
+
+      ctx.fillStyle = style.color;
+      ctx.fillText(ln, x, y);
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    });
+
+    if (showDragHighlight) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(14, 165, 233, 0.95)';
+      ctx.lineWidth = Math.max(2, fontSize * 0.08);
+      ctx.setLineDash([8, 6]);
+      const pad = fontSize * 0.15;
+      roundRect(ctx, barX - pad, barTop - pad, barW + pad * 2, barH + pad * 2, Math.min((barH + pad * 2) / 2, fontSize * 0.7));
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    if (r <= 0) { ctx.beginPath(); ctx.rect(x, y, w, h); return; }
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  el('bs-download')?.addEventListener('click', () => {
+    if (!outputBlob || !videoFile) return;
+    const base = videoFile.name.replace(/\.[^.]+$/, '');
+    downloadBlob(outputBlob, `${base}-subtitled.${outputExt}`);
+  });
+
+  el('bs-burn-more')?.addEventListener('click', () => {
+    window.location.reload();
+  });
+</script>

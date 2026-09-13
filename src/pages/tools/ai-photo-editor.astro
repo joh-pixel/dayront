@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "ai-photo-editor",
+  name: "AI Photo Editor",
+  metaTitle: "AI Photo Editor – Free Online Image Editor | Dayront",
+  metaDescription: "Edit photos in your browser with brightness, contrast, saturation, blur, and grayscale. No uploads, 100% private.",
+  icon: "🎨",
+  howTo: [
+    { title: "Upload your photo", text: "Select any JPG, PNG, or WebP image." },
+    { title: "Adjust the settings", text: "Fine-tune brightness, contrast, saturation, blur, and more." },
+    { title: "Download the edit", text: "Export a lossless PNG of your edited photo." }
+  ],
+  faq: [
+    { question: "Is it really free?", answer: "Yes, completely free with no watermarks or file limits." },
+    { question: "Do my photos leave my device?", answer: "No. All editing happens locally in your browser using the Canvas API." },
+    { question: "Are the edits non-destructive?", answer: "Yes — you can reset any adjustment at any time before downloading." },
+    { question: "What format is the output?", answer: "Lossless PNG at the original image resolution." }
+  ],
+  relatedTools: [
+    { href: "/tools/ai-background-remover", icon: "🪄", name: "AI Background Remover" },
+    { href: "/tools/ai-video-upscaler", icon: "✨", name: "AI Video Upscaler" },
+    { href: "/tools/resize-video", icon: "↔️", name: "Resize Video" }
+  ],
+  type: "ai-photo-editor",
+  from: undefined,
+  to: undefined,
+  outputFormat: "png",
+  settings: [],
+  tutorial: `
+    <h2>Using Our AI Photo Editor</h2>
+    <p>Our AI Photo Editor brings fast, professional-grade photo adjustments to your browser. Tweak brightness, contrast, saturation, blur, and grayscale using intuitive sliders — then download a lossless PNG when you're happy with the result. All processing is done locally using the Canvas API.</p>
+    <h3>Features</h3>
+    <ul>
+      <li>Adjustable brightness, contrast, saturation, blur, and grayscale</li>
+      <li>Live preview as you slide</li>
+      <li>One-click reset for every adjustment</li>
+      <li>Lossless PNG export at original resolution</li>
+    </ul>
+    <h3>Why Choose Dayront?</h3>
+    <ul>
+      <li>No uploads – your photos stay on your device.</li>
+      <li>Instant feedback, no waiting.</li>
+      <li>Free, unlimited, no watermarks.</li>
+    </ul>
+  `,
+  relatedBlogs: []
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

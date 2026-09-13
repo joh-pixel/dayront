@@ -14,14 +14,12 @@ export interface Props {
   description: string;
   ogImage?: string;
   canonicalURL?: string;
-  lang?: string; // Allow pages to pass lang manually
+  lang?: string;
 }
 
-// Get lang from the URL path OR the passed prop
 const { title, description, ogImage, canonicalURL, lang: propLang } = Astro.props;
-const lang = propLang || Astro.params.locale || 'en'; 
+const lang = propLang || Astro.params.locale || 'en';
 
-// Search data (Updated to include /en/ path)
 let blogItems: any[] = [];
 try {
   const blogPosts = await getCollection('blog', (entry) => entry.id.startsWith(`${lang}/`));
@@ -60,6 +58,22 @@ const allSearchItems = [...toolItems, ...blogItems];
       canonicalURL={canonicalURL}
     />
 
+    <!-- ★ IMPORT MAP — resolves bare module specifiers for CDN-loaded libs ★ -->
+    <!-- Required for @imgly/background-removal loaded from CDN (it imports
+         'onnxruntime-web' internally, which needs to be mapped to a URL).
+         NOTE: v1.21.0 uses .mjs files directly in dist/ (not dist/esm/*.js) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.min.mjs",
+        "onnxruntime-web/wasm": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.wasm.min.mjs",
+        "onnxruntime-web/webgpu": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.webgpu.min.mjs",
+        "onnxruntime-web/webgl": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.webgl.min.mjs"
+      }
+    }
+    </script>
+    <!-- ★ END IMPORT MAP ★ -->
+
     <!-- Theme – device preference only -->
     <script is:inline>
       (() => {
@@ -93,16 +107,13 @@ const allSearchItems = [...toolItems, ...blogItems];
     <!-- Synchronise language dropdown and <html lang> from URL path -->
     <script is:inline>
       (() => {
-        // Get lang from path (e.g., /es -> es, /blog/en -> en)
         const pathSegments = window.location.pathname.split('/').filter(Boolean);
         const supportedLocales = ['en', 'es', 'pt', 'de', 'fr', 'ja'];
         let lang = 'en';
-        
-        // If the first segment is a supported locale, use it
+
         if (supportedLocales.includes(pathSegments[0])) {
           lang = pathSegments[0];
         } else {
-          // Fallback: check localStorage
           lang = localStorage.getItem('dayront-lang') || 'en';
         }
 
@@ -114,14 +125,12 @@ const allSearchItems = [...toolItems, ...blogItems];
       })();
     </script>
 
-    <!-- CRITICAL: Slot for pages like Categories/Tags to inject noindex -->
     <slot name="head" />
   </head>
 
   <body
     class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200"
   >
-    <!-- Header with current language -->
     <Header lang={lang} />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -210,8 +219,9 @@ const allSearchItems = [...toolItems, ...blogItems];
         });
       })();
     </script>
-   <SpeedInsights />
-   <Analytics />
+
+    <SpeedInsights />
+    <Analytics />
   </body>
 </html>
 

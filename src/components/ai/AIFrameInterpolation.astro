@@ -1,0 +1,385 @@
+---
+interface Props { toolConfig?: any; }
+const { toolConfig } = Astro.props;
+---
+
+<div class="ai-tool" data-tool="ai-interpolate">
+  <div id="aif-upload-zone" class="border-2 border-dashed border-sky-200 dark:border-sky-900/50 bg-sky-50/40 dark:bg-sky-950/10 rounded-2xl p-8 sm:p-12 text-center transition">
+    <input type="file" id="aif-file-input" accept="video/*" class="hidden" />
+    <div class="text-5xl mb-4">🎞️</div>
+    <p class="text-base text-gray-700 dark:text-gray-300 mb-2 font-medium">Drag & drop your video</p>
+    <p class="text-xs text-gray-400 mb-4">MP4, WebM, MOV — audio preserved</p>
+    <button id="aif-browse-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg transition">Browse Files</button>
+  </div>
+
+  <div id="aif-selected-card" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-black dark:text-white">Selected file</span>
+      <span class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full">1 file</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span id="aif-file-name" class="text-sm text-gray-700 dark:text-gray-300 truncate mr-4"></span>
+      <span id="aif-file-size" class="text-sm text-gray-500 shrink-0"></span>
+    </div>
+  </div>
+
+  <div id="aif-options" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
+    <button id="aif-start-btn" class="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition">Start Frame Interpolation</button>
+    <p class="text-[10px] text-gray-400 text-center">🧠 Powered by RIFE — runs on WebGPU (desktop only)</p>
+  </div>
+
+  <div id="aif-processing" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
+        <span class="text-sm font-medium text-black dark:text-white" id="aif-processing-label">Processing</span>
+      </div>
+      <span id="aif-progress-pct" class="text-sm font-semibold text-sky-500">0%</span>
+    </div>
+    <div class="w-full h-2 bg-sky-100 dark:bg-sky-900/30 rounded-full overflow-hidden">
+      <div id="aif-progress-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="aif-status" class="mt-2 text-xs text-gray-500"></p>
+  </div>
+
+  <div id="aif-result" class="hidden mt-4">
+    <div class="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-2xl overflow-hidden">
+      <div class="p-4 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-base text-green-900 dark:text-green-100">Your file is ready</p>
+          <p id="aif-result-name" class="text-sm text-green-700 dark:text-green-300 mt-0.5 truncate"></p>
+          <p id="aif-result-size" class="text-xs text-green-600 dark:text-green-400 mt-0.5"></p>
+        </div>
+      </div>
+
+      <div class="px-4 pb-3">
+        <div class="rounded-xl overflow-hidden bg-black">
+          <video id="aif-preview" controls playsinline class="w-full block" style="max-height: 60vh; object-fit: contain;"></video>
+        </div>
+      </div>
+
+      <div class="border-t border-green-200 dark:border-green-900/50"></div>
+
+      <div class="p-4 grid grid-cols-2 gap-3">
+        <button id="aif-download-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 rounded-xl transition">Download File</button>
+        <button id="aif-again-btn" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-xl transition">Convert Another File</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aif-error" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-200 text-sm"></div>
+</div>
+
+<script>
+  // ═════════════════════════════════════════════════════════════
+  // ★ MOBILE GATE — runs FIRST, before any heavy code loads
+  // This script never touches video, workers, or ONNX on mobile.
+  // ═════════════════════════════════════════════════════════════
+  const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+
+  const HAS_WEBGPU = typeof navigator !== 'undefined' && 'gpu' in navigator;
+
+  if (IS_MOBILE || !HAS_WEBGPU) {
+    // Replace the entire tool UI with a friendly desktop-required notice
+    const toolRoot = document.querySelector('.ai-tool[data-tool="ai-interpolate"]');
+    if (toolRoot) {
+      const reason = IS_MOBILE
+        ? 'AI Frame Interpolation runs a neural network that needs 400+ MB of RAM and WebGPU. Mobile browsers cannot handle this workload and will crash or freeze.'
+        : 'This tool requires WebGPU, which your current browser does not support. Try Chrome or Edge 113+ on desktop.';
+
+      toolRoot.innerHTML = `
+        <div class="p-6 sm:p-8 bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-800 rounded-2xl text-center">
+          <div class="text-5xl mb-4">🖥️</div>
+          <h3 class="text-lg font-bold text-amber-900 dark:text-amber-100 mb-3">Desktop required</h3>
+          <p class="text-sm text-amber-800 dark:text-amber-200 leading-relaxed mb-4">
+            ${reason}
+          </p>
+          <p class="text-xs text-amber-700 dark:text-amber-300">
+            Open <span class="font-mono font-semibold">dayront.com/tools/ai-frame-interpolation</span> on a laptop or desktop for the full experience.
+          </p>
+        </div>
+      `;
+    }
+
+    // ★ HARD STOP — this prevents ANY of the following code from running:
+    // - No video is loaded
+    // - No Web Worker is spawned
+    // - No ONNX Runtime is downloaded
+    // - No RIFE model is fetched
+    // This is what makes mobile crashes impossible.
+    throw new Error('[aif] Desktop-only — exiting early on mobile');
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // DESKTOP-ONLY CODE BELOW
+  // Only runs on desktop browsers with WebGPU support.
+  // ═════════════════════════════════════════════════════════════
+
+  const el = (id) => document.getElementById(id);
+  let selectedFile = null;
+  let worker = null;
+  let outputBlob = null;
+  let outputExt = 'webm';
+
+  console.log('[interp] desktop mode — WebGPU supported');
+
+  // ─── Upload handling ───
+  const dropZone = el('aif-upload-zone');
+  ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('border-sky-400'); }));
+  ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('border-sky-400'); }));
+  dropZone.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f); });
+  el('aif-browse-btn').addEventListener('click', () => el('aif-file-input').click());
+  el('aif-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) handleFile(f); });
+
+  function handleFile(file) {
+    selectedFile = file;
+    el('aif-file-name').textContent = file.name;
+    el('aif-file-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    el('aif-selected-card').classList.remove('hidden');
+    el('aif-options').classList.remove('hidden');
+    el('aif-result').classList.add('hidden');
+    el('aif-processing').classList.add('hidden');
+    clearError();
+  }
+
+  function showError(msg) {
+    el('aif-error').textContent = msg;
+    el('aif-error').classList.remove('hidden');
+  }
+  function clearError() {
+    el('aif-error').classList.add('hidden');
+    el('aif-error').textContent = '';
+  }
+  function setProgress(pct, status, label) {
+    const safe = Math.max(0, Math.min(100, pct));
+    el('aif-progress-bar').style.width = `${safe}%`;
+    el('aif-progress-pct').textContent = `${Math.round(safe)}%`;
+    if (status) el('aif-status').textContent = status;
+    if (label) el('aif-processing-label').textContent = label;
+  }
+
+  // ─── Main flow ───
+  el('aif-start-btn').addEventListener('click', async () => {
+    if (!selectedFile) return;
+    const startBtn = el('aif-start-btn');
+
+    try {
+      clearError();
+      startBtn.disabled = true;
+      el('aif-options').classList.add('hidden');
+      el('aif-result').classList.add('hidden');
+      el('aif-processing').classList.remove('hidden');
+      setProgress(0, 'Loading video…', 'Preparing');
+
+      const { loadVideoElement, extractFrames, downloadBlob } = await import('../../ai/utils/video-codecs.js');
+
+      const video = await loadVideoElement(selectedFile);
+      const inputFps = 12;
+      const outputFps = inputFps * 2;
+      const totalFrames = Math.ceil(video.duration * inputFps);
+
+      console.log(`[interp] video: ${video.videoWidth}×${video.videoHeight}, ${video.duration.toFixed(1)}s, ${totalFrames} frames`);
+
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = video.videoWidth;
+      outCanvas.height = video.videoHeight;
+      const outCtx = outCanvas.getContext('2d');
+
+      // ─── Preserve audio ───
+      let audioTrack = null;
+      let audioSource = null;
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new AudioCtxClass();
+
+      try {
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        audioSource = audioCtx.createBufferSource();
+        audioSource.buffer = audioBuffer;
+        const dest = audioCtx.createMediaStreamDestination();
+        audioSource.connect(dest);
+        const tracks = dest.stream.getAudioTracks();
+        if (tracks.length) audioTrack = tracks[0];
+        console.log(`[interp] audio: ${audioBuffer.duration.toFixed(2)}s`);
+      } catch (audioErr) {
+        console.warn('[interp] audio decode failed:', audioErr);
+      }
+
+      // ─── Load RIFE worker ───
+      setProgress(3, 'Loading RIFE model…', 'Loading AI model');
+      worker = new Worker(new URL('../../ai/workers/rife.worker.js', import.meta.url), { type: 'module' });
+
+      let resolveInit, rejectInit;
+      const initPromise = new Promise((res, rej) => { resolveInit = res; rejectInit = rej; });
+
+      const initTimeout = setTimeout(() => {
+        rejectInit(new Error('RIFE model load timed out after 90 seconds.'));
+      }, 90_000);
+
+      let framesProcessed = 0;
+      let lastOriginalFrame = null;
+
+      worker.onmessage = (event) => {
+        const { type, frame, message, info } = event.data;
+
+        if (type === 'progress' && info?.message) {
+          setProgress(3, info.message, 'Loading model');
+          return;
+        }
+        if (type === 'ready') {
+          clearTimeout(initTimeout);
+          return resolveInit();
+        }
+        if (type === 'error') {
+          clearTimeout(initTimeout);
+          return rejectInit(new Error(message));
+        }
+        if (type === 'frame') {
+          if (lastOriginalFrame) outCtx.drawImage(lastOriginalFrame, 0, 0);
+          outCtx.drawImage(frame, 0, 0);
+          if (frame.close) frame.close();
+          framesProcessed++;
+          const pct = 8 + (framesProcessed / Math.max(1, totalFrames)) * 87;
+          setProgress(pct, `Interpolating frame ${framesProcessed} of ${totalFrames}…`, 'Interpolating');
+        }
+      };
+
+      worker.postMessage({ type: 'init', modelUrl: '/ai-models/rife-v4.9.onnx' });
+      await initPromise;
+
+      // ─── Recorder ───
+      const videoStream = outCanvas.captureStream(outputFps);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...(audioTrack ? [audioTrack] : []),
+      ]);
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm',
+      ];
+      let mimeType = '';
+      for (const m of mimeCandidates) {
+        if (MediaRecorder.isTypeSupported(m)) { mimeType = m; break; }
+      }
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: mimeType || undefined,
+        videoBitsPerSecond: 8_000_000,
+        audioBitsPerSecond: 128_000,
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      const donePromise = new Promise((resolve) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType || 'video/webm' }));
+      });
+
+      recorder.start(1000);
+      if (audioSource) audioSource.start(0);
+
+      setProgress(8, 'Processing frames…', 'Interpolating');
+
+      const frameBuffer = [];
+      await extractFrames(video, async (idx, sourceCanvas) => {
+        const bitmap = await createImageBitmap(sourceCanvas);
+        frameBuffer.push(bitmap);
+        if (frameBuffer.length >= 2) {
+          const a = frameBuffer.shift();
+          const b = frameBuffer[0];
+          if (lastOriginalFrame) lastOriginalFrame.close?.();
+          lastOriginalFrame = await createImageBitmap(a);
+          worker.postMessage({ type: 'interpolate', frameA: a, frameB: b }, [a]);
+          let waitTime = 0;
+          while (framesProcessed < idx && waitTime < 30_000) {
+            await new Promise(r => setTimeout(r, 40));
+            waitTime += 40;
+          }
+        }
+      }, { fps: inputFps });
+
+      setProgress(95, 'Finalizing…', 'Finalizing');
+      await new Promise(r => setTimeout(r, 800));
+      if (recorder.state !== 'inactive') recorder.stop();
+
+      outputBlob = await donePromise;
+      outputExt = (mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+
+      // Patch WebM duration for Android Gallery
+      if (outputExt === 'webm' && outputBlob.size > 0) {
+        try {
+          const fixModule = await import('fix-webm-duration');
+          const fixWebmDuration = fixModule.default || fixModule;
+          outputBlob = await fixWebmDuration(outputBlob, Math.round(video.duration * 1000), { logger: false });
+          console.log('[interp] ✓ WebM duration patched');
+        } catch (e) {
+          console.warn('[interp] patch failed:', e);
+        }
+      }
+
+      setProgress(100, 'Done!', 'Complete');
+
+      el('aif-processing').classList.add('hidden');
+      el('aif-result').classList.remove('hidden');
+
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      el('aif-result-name').textContent = `${base}-interpolated.${outputExt}`;
+      el('aif-result-size').textContent = `${(outputBlob.size / 1024 / 1024).toFixed(2)} MB • ${outputFps}fps`;
+      el('aif-preview').src = URL.createObjectURL(outputBlob);
+      el('aif-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      try { await audioCtx.close(); } catch {}
+    } catch (err) {
+      console.error('[interp] error:', err);
+      showError(err?.message || String(err));
+      el('aif-processing').classList.add('hidden');
+      el('aif-options').classList.remove('hidden');
+      startBtn.disabled = false;
+    } finally {
+      if (worker) { worker.terminate(); worker = null; }
+    }
+  });
+
+  // ─── Download ───
+  el('aif-download-btn').addEventListener('click', () => {
+    if (outputBlob && selectedFile) {
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      // downloadBlob was imported dynamically above; if missing, fallback
+      const url = URL.createObjectURL(outputBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${base}-interpolated.${outputExt}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+  });
+
+  // ─── Reset ───
+  el('aif-again-btn').addEventListener('click', () => {
+    if (worker) { worker.terminate(); worker = null; }
+    if (outputBlob) { try { URL.revokeObjectURL(el('aif-preview').src); } catch {} }
+    outputBlob = null;
+    selectedFile = null;
+    outputExt = 'webm';
+
+    el('aif-result').classList.add('hidden');
+    el('aif-selected-card').classList.add('hidden');
+    el('aif-options').classList.add('hidden');
+    el('aif-processing').classList.add('hidden');
+    el('aif-upload-zone').classList.remove('hidden');
+    el('aif-file-input').value = '';
+    el('aif-start-btn').disabled = false;
+    el('aif-preview').src = '';
+    clearError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>

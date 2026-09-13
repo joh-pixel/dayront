@@ -1,0 +1,563 @@
+---
+interface Props { toolConfig?: any; }
+const { toolConfig } = Astro.props;
+---
+
+<div class="ai-tool" data-tool="ai-remove-bg">
+  <div id="aib-upload-zone" class="border-2 border-dashed border-sky-200 dark:border-sky-900/50 bg-sky-50/40 dark:bg-sky-950/10 rounded-2xl p-8 sm:p-12 text-center transition">
+    <input type="file" id="aib-file-input" accept="image/*" class="hidden" />
+    <div class="text-5xl mb-4">🪄</div>
+    <p class="text-base text-gray-700 dark:text-gray-300 mb-2 font-medium">Drag & drop your image</p>
+    <p class="text-xs text-gray-400 mb-4">or</p>
+    <button id="aib-browse-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6 py-2.5 rounded-lg transition">Browse Files</button>
+    <p class="mt-4 text-xs text-gray-400">JPG, PNG, WebP — processed on your device</p>
+  </div>
+
+  <div id="aib-selected-card" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-black dark:text-white">Selected file</span>
+      <span class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2.5 py-1 rounded-full">1 file</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span id="aib-file-name" class="text-sm text-gray-700 dark:text-gray-300 truncate mr-4"></span>
+      <span id="aib-file-size" class="text-sm text-gray-500 shrink-0"></span>
+    </div>
+  </div>
+
+  <div id="aib-options" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
+    <button id="aib-start-btn" class="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition">✨ Remove Background</button>
+    <p class="text-[10px] text-gray-400 text-center">First run downloads an AI model (~11 MB, cached after)</p>
+  </div>
+
+  <div id="aib-processing" class="hidden mt-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
+        <span class="text-sm font-medium text-black dark:text-white" id="aib-processing-label">Preparing…</span>
+      </div>
+      <span id="aib-progress-pct" class="text-sm font-semibold text-sky-500">0%</span>
+    </div>
+    <div class="w-full h-2 bg-sky-100 dark:bg-sky-900/30 rounded-full overflow-hidden">
+      <div id="aib-progress-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <p id="aib-status" class="mt-2 text-xs text-gray-500"></p>
+  </div>
+
+  <div id="aib-result" class="hidden mt-4 space-y-4">
+    <div class="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-xl p-4">
+      <div class="flex items-start gap-3">
+        <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0 mt-0.5">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-sm text-black dark:text-white">Background removed</p>
+          <p id="aib-result-name" class="text-xs text-gray-600 dark:text-gray-400 mt-0.5 truncate"></p>
+          <p id="aib-result-size" class="text-xs text-gray-500"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ★ CANVAS-BASED BEFORE/AFTER (works everywhere) ★ -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-black dark:text-white">Preview — Drag to compare</h2>
+        <span class="text-[10px] text-gray-500">Before / After</span>
+      </div>
+
+      <div class="p-3 bg-gray-100 dark:bg-black">
+        <!-- Single canvas: draws both images side-by-side -->
+        <div id="aib-slider-wrap" class="relative rounded-xl overflow-hidden select-none mx-auto" style="max-width: 100%; cursor: ew-resize; touch-action: none;">
+          <canvas id="aib-compare-canvas" class="block w-full" style="display: block;"></canvas>
+
+          <!-- Divider (position-only, canvas does the drawing) -->
+          <div id="aib-divider" class="absolute top-0 bottom-0 z-30 pointer-events-none" style="left: 50%; transform: translateX(-50%); width: 3px; background: white; box-shadow: 0 0 6px rgba(0,0,0,0.5);">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center border-2 border-sky-500">
+              <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <p class="mt-3 text-xs text-gray-500 text-center">Drag the handle left or right to compare</p>
+      </div>
+    </div>
+
+    <!-- ★ BACKGROUND PREVIEW with custom image upload ★ -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-black dark:text-white">Test on background</h3>
+        <button id="aib-bg-reset" class="text-xs text-sky-500 hover:text-sky-600 font-medium">Reset</button>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Preview how your cutout looks on different backgrounds.</p>
+
+      <div class="flex gap-2 flex-wrap" id="aib-bg-swatches">
+        <button class="aib-bg-swatch relative w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition overflow-hidden" data-bg-type="transparent" title="Transparent">
+          <div class="w-full h-full" style="background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"></div>
+        </button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#ffffff" data-bg-type="color" data-bg="#ffffff" title="White"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#000000" data-bg-type="color" data-bg="#000000" title="Black"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#0ea5e9" data-bg-type="color" data-bg="#0ea5e9" title="Sky"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#ec4899" data-bg-type="color" data-bg="#ec4899" title="Pink"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#22c55e" data-bg-type="color" data-bg="#22c55e" title="Green"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#eab308" data-bg-type="color" data-bg="#eab308" title="Yellow"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#a855f7" data-bg-type="color" data-bg="#a855f7" title="Purple"></button>
+        <button class="aib-bg-swatch w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-700 hover:scale-105 transition" style="background:#f97316" data-bg-type="color" data-bg="#f97316" title="Orange"></button>
+
+        <label class="relative w-10 h-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-sky-400 hover:scale-105 transition flex items-center justify-center cursor-pointer overflow-hidden" title="Custom color">
+          <input type="color" id="aib-bg-custom-color" class="opacity-0 absolute w-0 h-0" value="#7c3aed" />
+          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+        </label>
+
+        <label class="relative w-10 h-10 rounded-lg border-2 border-dashed border-sky-300 dark:border-sky-700 hover:border-sky-500 hover:scale-105 transition flex items-center justify-center cursor-pointer overflow-hidden bg-sky-50 dark:bg-sky-950/30" title="Upload custom background image">
+          <input type="file" id="aib-bg-custom-image" accept="image/*" class="opacity-0 absolute w-0 h-0" />
+          <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        </label>
+      </div>
+
+      <div id="aib-bg-image-row" class="hidden flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <img id="aib-bg-image-thumb" class="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700" />
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-medium text-black dark:text-white truncate">Custom background image</p>
+          <p id="aib-bg-image-name" class="text-[10px] text-gray-500 truncate"></p>
+        </div>
+        <button id="aib-bg-image-remove" class="shrink-0 w-7 h-7 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center transition">
+          <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 space-y-3">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" id="aib-clean" checked class="accent-sky-500 w-4 h-4" />
+        <span class="text-xs text-gray-700 dark:text-gray-300">Clean metadata before download</span>
+      </label>
+      <button id="aib-download-btn" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 rounded-xl transition">⬇ Download Transparent PNG</button>
+      <button id="aib-download-bg-btn" class="hidden w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition">⬇ Download With Background</button>
+      <button id="aib-again-btn" class="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-xl transition">🔄 Remove Background from Another Image</button>
+    </div>
+  </div>
+
+  <div id="aib-error" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-200 text-sm"></div>
+</div>
+
+<script>
+  import { downloadBlob } from '../../ai/utils/video-codecs.js';
+
+  const el = (id) => document.getElementById(id);
+  let selectedFile = null;
+  let resultBlob = null;
+  let originalURL = null;
+  let resultURL = null;
+
+  // ★ Cached image objects (used by canvas)
+  let imgOriginal = null;
+  let imgCutout = null;
+
+  // Custom background state
+  let customBgFile = null;
+  let customBgURL = null;
+  let customBgImg = null;
+  let currentBgState = { type: 'transparent', color: null, imageURL: null };
+
+  // Slider state
+  let sliderPos = 50;
+
+  // ─── Upload handling ───
+  const dropZone = el('aib-upload-zone');
+  ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('border-sky-400'); }));
+  ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('border-sky-400'); }));
+  dropZone.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) handleFile(f); });
+  el('aib-browse-btn').addEventListener('click', () => el('aib-file-input').click());
+  el('aib-file-input').addEventListener('change', e => { const f = e.target.files?.[0]; if (f) handleFile(f); });
+
+  function handleFile(file) {
+    selectedFile = file;
+    el('aib-file-name').textContent = file.name;
+    el('aib-file-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+
+    if (originalURL) { try { URL.revokeObjectURL(originalURL); } catch {} }
+    originalURL = URL.createObjectURL(file);
+
+    el('aib-selected-card').classList.remove('hidden');
+    el('aib-options').classList.remove('hidden');
+    el('aib-result').classList.add('hidden');
+    clearError();
+  }
+
+  function showError(msg) {
+    el('aib-error').textContent = msg;
+    el('aib-error').classList.remove('hidden');
+  }
+  function clearError() {
+    el('aib-error').classList.add('hidden');
+    el('aib-error').textContent = '';
+  }
+  function setProgress(pct, label, statusMsg) {
+    const safe = Math.max(0, Math.min(100, pct));
+    el('aib-progress-bar').style.width = `${safe}%`;
+    el('aib-progress-pct').textContent = `${Math.round(safe)}%`;
+    if (label) el('aib-processing-label').textContent = label;
+    if (statusMsg !== undefined) el('aib-status').textContent = statusMsg;
+  }
+
+  // ─── Main action ───
+  el('aib-start-btn').addEventListener('click', async () => {
+    if (!selectedFile) return;
+    const startBtn = el('aib-start-btn');
+
+    try {
+      clearError();
+      startBtn.disabled = true;
+      el('aib-options').classList.add('hidden');
+      el('aib-processing').classList.remove('hidden');
+      setProgress(0, 'Preparing…', 'Loading background removal engine…');
+
+      const { removeBackground } = await import('../../ai/utils/background-remover.js');
+
+      const blob = await removeBackground(selectedFile, {
+        onProgress: (p) => {
+          const pct = p * 100;
+          let label = 'Preparing…';
+          let status = 'Loading AI model…';
+          if (p < 0.4) { label = 'Loading model…'; status = 'Downloading AI model (cached after first run)'; }
+          else if (p < 0.9) { label = 'Removing background…'; status = 'Analyzing image and cutting out the subject'; }
+          else if (p < 1) { label = 'Finalizing…'; status = 'Almost there…'; }
+          else { label = 'Done!'; status = 'Background removed successfully'; }
+          setProgress(pct, label, status);
+        },
+      });
+
+      resultBlob = blob;
+
+      if (resultURL) { try { URL.revokeObjectURL(resultURL); } catch {} }
+      resultURL = URL.createObjectURL(blob);
+
+      // ★ Load BOTH images as JS objects (avoids any DOM/clip-path quirks)
+      const [origImg, cutImg] = await Promise.all([
+        loadImageFromURL(originalURL),
+        loadImageFromURL(resultURL),
+      ]);
+
+      imgOriginal = origImg;
+      imgCutout = cutImg;
+
+      el('aib-processing').classList.add('hidden');
+      el('aib-result').classList.remove('hidden');
+
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      el('aib-result-name').textContent = `${base}-no-bg.png`;
+      el('aib-result-size').textContent = `${(blob.size / 1024 / 1024).toFixed(2)} MB • transparent PNG`;
+
+      // Reset to transparent
+      currentBgState = { type: 'transparent', color: null, imageURL: null };
+      updateSwatchSelection('transparent', null);
+      updateDownloadBgBtn();
+
+      // ★ First render of the canvas comparison
+      sliderPos = 50;
+      requestAnimationFrame(() => {
+        renderCompareCanvas();
+        requestAnimationFrame(() => {
+          el('aib-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    } catch (err) {
+      console.error('[bg-remover] error:', err);
+      showError(err?.message || String(err));
+      el('aib-processing').classList.add('hidden');
+      el('aib-options').classList.remove('hidden');
+      startBtn.disabled = false;
+    }
+  });
+
+  // Helper: load an Image from a URL as a promise
+  function loadImageFromURL(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ★ CANVAS COMPARISON RENDERER — works on all devices
+  // ═══════════════════════════════════════════════════════
+  function renderCompareCanvas() {
+    const canvas = el('aib-compare-canvas');
+    if (!canvas || !imgCutout || !imgOriginal) return;
+
+    // Use the cutout's natural size as the reference — this is what the
+    // library outputs. Original is drawn to match at the same box.
+    const baseW = imgCutout.naturalWidth;
+    const baseH = imgCutout.naturalHeight;
+
+    // Set the CSS aspect ratio so the container sizes correctly on mobile
+    const wrap = el('aib-slider-wrap');
+    if (wrap) wrap.style.aspectRatio = `${baseW} / ${baseH}`;
+
+    // Set canvas backing store size (device pixel ratio for sharpness)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const W = baseW;
+    const H = baseH;
+
+    // ─── 1. Draw the background layer (checkerboard, color, or image) ───
+    drawBackgroundLayer(ctx, W, H);
+
+    // ─── 2. Draw the cutout (transparent PNG) full size ───
+    ctx.drawImage(imgCutout, 0, 0, W, H);
+
+    // ─── 3. Draw the original photo, clipped to left portion ───
+    const clipX = (sliderPos / 100) * W;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, clipX, H);
+    ctx.clip();
+    ctx.drawImage(imgOriginal, 0, 0, W, H);
+    ctx.restore();
+  }
+
+  function drawBackgroundLayer(ctx, W, H) {
+    if (currentBgState.type === 'color' && currentBgState.color) {
+      ctx.fillStyle = currentBgState.color;
+      ctx.fillRect(0, 0, W, H);
+      return;
+    }
+
+    if (currentBgState.type === 'image' && customBgImg) {
+      // Cover-fit
+      const bgW = customBgImg.naturalWidth;
+      const bgH = customBgImg.naturalHeight;
+      const scale = Math.max(W / bgW, H / bgH);
+      const drawW = bgW * scale;
+      const drawH = bgH * scale;
+      ctx.drawImage(customBgImg, (W - drawW) / 2, (H - drawH) / 2, drawW, drawH);
+      return;
+    }
+
+    // Default: checkerboard
+    const tile = Math.max(12, Math.round(W / 30));
+    const light = '#e5e5e5';
+    const dark = '#ffffff';
+
+    for (let y = 0; y < H; y += tile) {
+      for (let x = 0; x < W; x += tile) {
+        const isEven = ((x / tile) + (y / tile)) % 2 === 0;
+        ctx.fillStyle = isEven ? dark : light;
+        ctx.fillRect(x, y, tile, tile);
+      }
+    }
+  }
+
+  // ─── Slider handling ───
+  const sliderWrap = el('aib-slider-wrap');
+  if (sliderWrap) {
+    let isDragging = false;
+    let rect = null;
+
+    const computePosition = (clientX) => {
+      if (!rect) rect = sliderWrap.getBoundingClientRect();
+      const x = clientX - rect.left;
+      return (x / rect.width) * 100;
+    };
+
+    const updateSliderFromClientX = (clientX) => {
+      sliderPos = Math.max(2, Math.min(98, computePosition(clientX)));
+      el('aib-divider').style.left = `${sliderPos}%`;
+      renderCompareCanvas();
+    };
+
+    const onDown = (e) => {
+      isDragging = true;
+      rect = sliderWrap.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      updateSliderFromClientX(clientX);
+      e.preventDefault();
+    };
+    const onMove = (e) => {
+      if (!isDragging) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      updateSliderFromClientX(clientX);
+      e.preventDefault();
+    };
+    const onUp = () => { isDragging = false; };
+
+    sliderWrap.addEventListener('pointerdown', onDown);
+    sliderWrap.addEventListener('pointermove', onMove);
+    sliderWrap.addEventListener('pointerup', onUp);
+    sliderWrap.addEventListener('pointercancel', onUp);
+    sliderWrap.addEventListener('touchstart', onDown, { passive: false });
+    sliderWrap.addEventListener('touchmove', onMove, { passive: false });
+    sliderWrap.addEventListener('touchend', onUp);
+  }
+
+  // Re-render on resize (mobile rotation, address bar show/hide)
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => renderCompareCanvas(), 200);
+  });
+
+  // ─── Background controls ───
+  function updateDownloadBgBtn() {
+    const btn = el('aib-download-bg-btn');
+    if (!btn) return;
+    btn.classList.toggle('hidden', currentBgState.type === 'transparent');
+  }
+
+  function updateSwatchSelection(type, value) {
+    document.querySelectorAll('.aib-bg-swatch').forEach(btn => {
+      const btnType = btn.dataset.bgType;
+      const btnValue = btn.dataset.bg;
+      const isActive = btnType === type && (type === 'transparent' || btnValue === value);
+      btn.classList.toggle('ring-2', isActive);
+      btn.classList.toggle('ring-sky-500', isActive);
+    });
+  }
+
+  document.querySelectorAll('.aib-bg-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.bgType;
+      const value = btn.dataset.bg || null;
+      currentBgState = {
+        type,
+        color: type === 'color' ? value : null,
+        imageURL: type === 'image' ? value : null,
+      };
+      updateSwatchSelection(type, value);
+      updateDownloadBgBtn();
+      renderCompareCanvas();
+    });
+  });
+
+  el('aib-bg-custom-color')?.addEventListener('input', (e) => {
+    currentBgState = { type: 'color', color: e.target.value, imageURL: null };
+    updateSwatchSelection('color', null);
+    updateDownloadBgBtn();
+    renderCompareCanvas();
+  });
+
+  el('aib-bg-custom-image')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (customBgURL) { try { URL.revokeObjectURL(customBgURL); } catch {} }
+    customBgFile = file;
+    customBgURL = URL.createObjectURL(file);
+    customBgImg = await loadImageFromURL(customBgURL);
+
+    el('aib-bg-image-row')?.classList.remove('hidden');
+    el('aib-bg-image-thumb').src = customBgURL;
+    el('aib-bg-image-name').textContent = file.name;
+
+    currentBgState = { type: 'image', color: null, imageURL: customBgURL };
+    updateSwatchSelection('image', customBgURL);
+    updateDownloadBgBtn();
+    renderCompareCanvas();
+  });
+
+  el('aib-bg-image-remove')?.addEventListener('click', () => {
+    if (customBgURL) { try { URL.revokeObjectURL(customBgURL); } catch {} }
+    customBgFile = null;
+    customBgURL = null;
+    customBgImg = null;
+    el('aib-bg-image-row')?.classList.add('hidden');
+    el('aib-bg-custom-image').value = '';
+    currentBgState = { type: 'transparent', color: null, imageURL: null };
+    updateSwatchSelection('transparent', null);
+    updateDownloadBgBtn();
+    renderCompareCanvas();
+  });
+
+  el('aib-bg-reset')?.addEventListener('click', () => {
+    if (customBgURL) { try { URL.revokeObjectURL(customBgURL); } catch {} }
+    customBgFile = null;
+    customBgURL = null;
+    customBgImg = null;
+    el('aib-bg-image-row')?.classList.add('hidden');
+    el('aib-bg-custom-image').value = '';
+    currentBgState = { type: 'transparent', color: null, imageURL: null };
+    updateSwatchSelection('transparent', null);
+    updateDownloadBgBtn();
+    renderCompareCanvas();
+  });
+
+  // ─── Downloads ───
+  el('aib-download-btn').addEventListener('click', () => {
+    if (resultBlob && selectedFile) {
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      downloadBlob(resultBlob, `${base}-no-bg.png`);
+    }
+  });
+
+  el('aib-download-bg-btn')?.addEventListener('click', async () => {
+    if (!imgCutout || !selectedFile) return;
+
+    const W = imgCutout.naturalWidth;
+    const H = imgCutout.naturalHeight;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Draw background layer
+    if (currentBgState.type === 'color' && currentBgState.color) {
+      ctx.fillStyle = currentBgState.color;
+      ctx.fillRect(0, 0, W, H);
+    } else if (currentBgState.type === 'image' && customBgImg) {
+      const bgW = customBgImg.naturalWidth;
+      const bgH = customBgImg.naturalHeight;
+      const scale = Math.max(W / bgW, H / bgH);
+      const drawW = bgW * scale;
+      const drawH = bgH * scale;
+      ctx.drawImage(customBgImg, (W - drawW) / 2, (H - drawH) / 2, drawW, drawH);
+    }
+
+    // Draw cutout on top
+    ctx.drawImage(imgCutout, 0, 0, W, H);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const base = selectedFile.name.replace(/\.[^.]+$/, '');
+      downloadBlob(blob, `${base}-with-bg.png`);
+    }, 'image/png', 0.95);
+  });
+
+  // ─── Reset everything ───
+  el('aib-again-btn').addEventListener('click', () => {
+    if (originalURL) { try { URL.revokeObjectURL(originalURL); } catch {} }
+    if (resultURL) { try { URL.revokeObjectURL(resultURL); } catch {} }
+    if (customBgURL) { try { URL.revokeObjectURL(customBgURL); } catch {} }
+    originalURL = null;
+    resultURL = null;
+    customBgURL = null;
+    customBgFile = null;
+    customBgImg = null;
+    selectedFile = null;
+    resultBlob = null;
+    imgOriginal = null;
+    imgCutout = null;
+    sliderPos = 50;
+
+    el('aib-result').classList.add('hidden');
+    el('aib-selected-card').classList.add('hidden');
+    el('aib-options').classList.add('hidden');
+    el('aib-processing').classList.add('hidden');
+    el('aib-upload-zone').classList.remove('hidden');
+    el('aib-file-input').value = '';
+    el('aib-start-btn').disabled = false;
+    el('aib-bg-image-row')?.classList.add('hidden');
+    clearError();
+    updateSwatchSelection('transparent', null);
+    updateDownloadBgBtn();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>

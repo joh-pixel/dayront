@@ -6,6 +6,14 @@ import PrivacyBadge from '../components/ui/PrivacyBadge.astro';
 import { tools } from '../lib/tools';
 import { getLangFromAstroUrl } from '../lib/i18n';
 
+// --- AI COMPONENT IMPORTS ---
+import AIUpscaler from '../components/ai/AIUpscaler.astro';
+import AIFrameInterpolation from '../components/ai/AIFrameInterpolation.astro';
+import AICaptions from '../components/ai/AICaptions.astro';
+import AIRemoveBackground from '../components/ai/AIRemoveBackground.astro';
+import AIPhotoEditor from '../components/ai/AIPhotoEditor.astro';
+import BurnSubtitles from '../components/ai/BurnSubtitles.astro';
+
 export interface Props {
   toolKey?: string;
   toolConfig?: {
@@ -18,7 +26,6 @@ export interface Props {
   };
   metaTitle?: string;
   metaDescription?: string;
-  // Added title/description as fallbacks
   title?: string;
   description?: string;
   toolName?: string;
@@ -30,7 +37,7 @@ export interface Props {
   postConverter?: any;
   extraContent?: {
     tutorial?: string;
-    relatedBlogs?: { slug: string; title: string }[];
+    relatedBlogs?: { slug: string; title: string; categories?: string[] }[];
   };
 }
 
@@ -51,14 +58,7 @@ const {
   extraContent,
 } = Astro.props;
 
-/* ------------------------------------------------------------------------
-   LANGUAGE DETECTION (REMOVED ?lang= query param)
------------------------------------------------------------------------- */
 const lang = getLangFromAstroUrl(Astro.url);
-
-/* ------------------------------------------------------------------------
-   LOAD TRANSLATIONS (tools + common)
------------------------------------------------------------------------- */
 
 let toolsTranslations: Record<string, any> = {};
 let commonTranslations: Record<string, any> = {};
@@ -68,22 +68,10 @@ try {
     fetch(new URL(`/locales/${lang}/tools.json`, Astro.url.origin)),
     fetch(new URL(`/locales/${lang}/common.json`, Astro.url.origin)),
   ]);
+  if (toolsRes.ok) toolsTranslations = await toolsRes.json();
+  if (commonRes.ok) commonTranslations = await commonRes.json();
+} catch {}
 
-  if (toolsRes.ok) {
-    toolsTranslations = await toolsRes.json();
-  }
-  if (commonRes.ok) {
-    commonTranslations = await commonRes.json();
-  }
-} catch {
-  // Fallback silently – English will be used below
-}
-
-/* ------------------------------------------------------------------------
-   BUILD TOOL DATA (with translation overrides)
------------------------------------------------------------------------- */
-
-// Prioritize metaTitle/metaDescription, fall back to title/description
 let metaTitle = metaTitleProp || titleProp || '';
 let metaDescription = metaDescriptionProp || descriptionProp || '';
 let toolName = toolNameProp || '';
@@ -96,7 +84,6 @@ let toolConfig = toolConfigProp;
 if (toolKey) {
   const toolData = tools.find(t => t.slug === toolKey);
   if (toolData) {
-    // Base English values
     metaTitle = metaTitle || toolData.metaTitle;
     metaDescription = metaDescription || toolData.metaDescription;
     toolName = toolName || toolData.name;
@@ -104,7 +91,6 @@ if (toolKey) {
     howTo = howTo.length > 0 ? howTo : toolData.howTo;
     faq = faq.length > 0 ? faq : toolData.faq;
 
-    // Apply translations if available
     const tTool = toolsTranslations[toolKey] || {};
     if (tTool.title) toolName = tTool.title;
     if (tTool.metaTitle) metaTitle = tTool.metaTitle;
@@ -119,7 +105,7 @@ if (toolKey) {
         from: toolData.from,
         to: toolData.to,
         outputFormat: toolData.outputFormat,
-        label: toolName,       // translated name
+        label: toolName,
         settings: toolData.settings || [],
       };
     }
@@ -129,16 +115,11 @@ if (toolKey) {
         .map((slug: string) => {
           const t = tools.find(tt => tt.slug === slug);
           if (!t) return null;
-
-          // Use translated name if available for related tools
           const relatedTrans = toolsTranslations[slug] || {};
-          const name = relatedTrans.title || t.name;
-          const icon = relatedTrans.icon || t.icon;
-
           return {
             href: t.from && t.to ? `/convert/${t.slug}` : `/tools/${t.slug}`,
-            icon,
-            name,
+            icon: relatedTrans.icon || t.icon,
+            name: relatedTrans.title || t.name,
           };
         })
         .filter(Boolean) as any[];
@@ -150,18 +131,25 @@ if (!toolConfig) {
   toolConfig = { type: 'convert', label: toolName || 'Conversion', settings: [] };
 }
 
-/* ------------------------------------------------------------------------
-   STATIC TEXT (headings)
------------------------------------------------------------------------- */
+// ─────────────────────────────────────────────────────────
+// List of AI (non-Converter) tool types.
+// Anything in this list uses a dedicated component.
+// ─────────────────────────────────────────────────────────
+const AI_TYPES = [
+  'ai-upscale',
+  'ai-interpolate',
+  'ai-captions',
+  'ai-remove-bg',
+  'ai-photo-editor',
+  'burn-subtitles',
+];
+
+const isAITool = AI_TYPES.includes(toolConfig.type);
 
 const howToHeading = commonTranslations.how_to_use || 'How to use';
 const faqHeading = commonTranslations.faq_heading || 'Frequently Asked Questions';
 const relatedToolsHeading = commonTranslations.related_tools || 'Related Tools';
 const relatedArticlesHeading = commonTranslations.related_articles || 'Related Articles';
-
-/* ------------------------------------------------------------------------
-   SCHEMA ORG DATA
------------------------------------------------------------------------- */
 
 const howToSchema = {
   '@context': 'https://schema.org',
@@ -182,10 +170,7 @@ const faqSchema = {
   mainEntity: faq.map((q: any) => ({
     '@type': 'Question',
     name: q.question,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: q.answer,
-    },
+    acceptedAnswer: { '@type': 'Answer', text: q.answer },
   })),
 };
 ---
@@ -195,7 +180,6 @@ const faqSchema = {
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
   <section class="max-w-7xl mx-auto px-4 py-8 sm:py-12">
-    <!-- Breadcrumbs -->
     <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
       <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
         <li><a href="/" class="hover:text-sky transition dark:hover:text-sky">Home</a></li>
@@ -208,7 +192,6 @@ const faqSchema = {
 
     <div class="lg:grid lg:grid-cols-3 lg:gap-10">
       <div class="lg:col-span-2">
-        <!-- Header -->
         <div class="flex items-center gap-3 mb-6">
           <span class="text-3xl">{toolIcon}</span>
           <h1 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white">{toolName}</h1>
@@ -218,7 +201,16 @@ const faqSchema = {
 
         {preConverter && <div class="mb-6">{preConverter}</div>}
 
-        <Converter client:load toolConfig={toolConfig} />
+        {/* ─── AI TOOL ROUTING ─── */}
+        {toolConfig.type === 'ai-upscale' && <AIUpscaler toolConfig={toolConfig} />}
+        {toolConfig.type === 'ai-interpolate' && <AIFrameInterpolation toolConfig={toolConfig} />}
+        {toolConfig.type === 'ai-captions' && <AICaptions toolConfig={toolConfig} />}
+        {toolConfig.type === 'ai-remove-bg' && <AIRemoveBackground toolConfig={toolConfig} />}
+        {toolConfig.type === 'ai-photo-editor' && <AIPhotoEditor toolConfig={toolConfig} />}
+        {toolConfig.type === 'burn-subtitles' && <BurnSubtitles toolConfig={toolConfig} />}
+
+        {/* ─── STANDARD CONVERTER (only if NOT an AI tool) ─── */}
+        {!isAITool && <Converter client:load toolConfig={toolConfig} />}
 
         {postConverter && <div class="mt-6">{postConverter}</div>}
 
@@ -279,7 +271,6 @@ const faqSchema = {
           </section>
         )}
 
-        {/* Related tools – visible on all devices */}
         {relatedTools.length > 0 && (
           <section class="mt-16">
             <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{relatedToolsHeading}</h2>
@@ -298,7 +289,6 @@ const faqSchema = {
         )}
       </div>
 
-      <!-- Sidebar (desktop) -->
       <aside class="hidden lg:block space-y-8">
         <div class="sticky top-24">
           <h3 class="text-lg font-semibold text-black dark:text-white mb-4">{relatedToolsHeading}</h3>
