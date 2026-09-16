@@ -1,6 +1,3 @@
 User-agent: *
-Disallow: /blog/tag/
-Disallow: /blog/category/
-Disallow: /*?lang=
 Allow: /
 Sitemap: https://dayront.com/sitemap-index.xml

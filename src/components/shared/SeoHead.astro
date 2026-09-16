@@ -8,16 +8,22 @@ export interface Props {
 
 const { title, description, ogImage, canonicalURL } = Astro.props;
 const siteName = 'Dayront';
+
+// Create a clean canonical URL: 
+// 1. Use the passed canonicalURL prop if it exists.
+// 2. Otherwise, construct a clean URL using the current pathname and your configured 'site' (from astro.config.mjs).
+// This removes query parameters like '?lang=en' and ensures 'www' is stripped if your site config uses non-www.
+const finalCanonicalURL = canonicalURL || new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <title>{title} | {siteName}</title>
 <meta name="description" content={description} />
-<link rel="canonical" href={canonicalURL || Astro.url.href} />
+<link rel="canonical" href={finalCanonicalURL} />
 
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:type" content="website" />
-<meta property="og:url" content={canonicalURL || Astro.url.href} />
+<meta property="og:url" content={finalCanonicalURL} />
 {ogImage && <meta property="og:image" content={ogImage} />}
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={title} />

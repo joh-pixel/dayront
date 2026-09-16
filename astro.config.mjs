@@ -28,7 +28,7 @@ export default defineConfig({
     }),
     robotsTxt({
       policy: [
-        { userAgent: "*", allow: "/", disallow: ["/blog/tag/", "/blog/category/", "/*?lang="] }
+        { userAgent: "*", allow: "/" } // UPDATED: Removed disallow to allow crawling
       ]
     }),
   ],
