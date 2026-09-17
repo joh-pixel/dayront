@@ -5,11 +5,23 @@ date: 2025-06-02
 author: "Dayront Team"
 categories: ["Data", "Conversion"]
 tags: ["statistics", "video to audio", "mp4 to mp3", "usage trends"]
-image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80"
+image: "video-to-audio-stats-what-people-convert-2.jpg"
 relatedPosts: ["the-complete-guide-to-converting-video-to-audio", "audio-quality-comparison-lossy-vs-lossless"]
 ---
 
-# What People Actually Convert: Video‑to‑Audio Usage Statistics & Insights
+import { Image } from 'astro:assets';
+import imgvideotoaudiosta2 from '../../images/video-to-audio-stats-what-people-convert-2.jpg';
+import imgvideotoaudiosta3 from '../../images/video-to-audio-stats-what-people-convert-3.jpg';
+
+
+
+
+
+
+
+
+import imgvideotoaudiosta1 from '../../images/video-to-audio-stats-what-people-convert-1.jpg';
+
 
 Ever wondered which video format gets converted the most? How large are the files people process? We crunched anonymised numbers from Dayront (only counting **number of conversions**, never looking at file contents) to bring you these fascinating trends.
 
@@ -28,7 +40,7 @@ Over the past month, here’s the breakdown of input video formats:
 | AVI    | 4%                   |
 | Other  | 1%                   |
 
-<img src="https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&q=80" alt="Chart showing conversion format shares" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgvideotoaudiosta2} alt="Chart showing conversion format shares" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
 
 MP4 dominates by a huge margin – no surprise given that smartphones, drones, and most cameras record in MP4. WebM has grown thanks to YouTube rips and web downloads, while MOV remains popular among iPhone users.
 
@@ -44,7 +56,7 @@ We grouped input files by size bucket (in MB):
 | 200–500 MB       | 7%         |
 | 500 MB+          | 2%         |
 
-<img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80" alt="Bar chart of file sizes" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgvideotoaudiosta3} alt="Bar chart of file sizes" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
 
 The sweet spot is **10–50 MB** – typically short videos under 5 minutes. This range converts quickly even on mobile devices, and the resulting MP3 files are usually under 5 MB.
 

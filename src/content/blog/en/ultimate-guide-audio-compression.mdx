@@ -5,11 +5,23 @@ date: 2025-05-01
 author: "Dayront Team"
 categories: ["Guides", "Audio Editing"]
 tags: ["compression", "audio editing", "file size", "quality"]
-image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80"
+image: "ultimate-guide-audio-compression-2.jpg"
 relatedPosts: ["understanding-audio-formats", "10-essential-audio-editing-tips"]
 ---
 
-# The Ultimate Guide to Audio Compression: Reduce File Size Without Losing Quality
+import { Image } from 'astro:assets';
+import imgultimateguideau2 from '../../images/ultimate-guide-audio-compression-2.jpg';
+import imgultimateguideau3 from '../../images/ultimate-guide-audio-compression-3.jpg';
+
+
+
+
+
+
+
+
+import imgultimateguideau1 from '../../images/ultimate-guide-audio-compression-1.jpg';
+
 
 The word “compression” has two meanings in audio: **dynamic range compression** and **data compression**. This guide covers both, with a focus on how to use Dayront’s Compressor tool to improve your audio while reducing file size.
 
@@ -34,7 +46,7 @@ Dayront’s **Audio Compressor** currently focuses on data compression, but we h
 
 Our Compressor uses FFmpeg’s `libmp3lame` encoder with a variable quality setting (0‑9, where 0 is best quality and 9 is smallest size). The default is 3, which balances quality and size.
 
-<img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80" alt="Data compression illustration" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgultimateguideau2} alt="Data compression illustration" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
 
 ## Step‑by‑Step: Compress an Audio File
 
@@ -56,7 +68,7 @@ Here’s what you can expect when compressing a 5‑minute, 44.1 kHz stereo WAV 
 | 6               | 128 kbps          | ~4.5 MB   | Good for speech   |
 | 9 (smallest)    | 64 kbps           | ~2.3 MB   | Noticeable loss   |
 
-<img src="https://images.unsplash.com/photo-1551817958-20204d6ab212?w=800&q=80" alt="Audio meter" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgultimateguideau3} alt="Audio meter" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
 
 ## When Not to Compress
 

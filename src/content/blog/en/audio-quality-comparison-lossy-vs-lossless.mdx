@@ -5,11 +5,14 @@ date: 2025-05-18
 author: "Dayront Team"
 categories: ["Audio Basics", "Comparison"]
 tags: ["audio quality", "lossless", "mp3", "flac", "testing"]
-image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80"
+image: "audio-quality-comparison-lossy-vs-lossless-2.jpg"
 relatedPosts: ["understanding-audio-formats", "ultimate-guide-audio-compression"]
 ---
 
-# Audio Quality Compared: Lossy vs Lossless – What You're Really Losing
+import { Image } from 'astro:assets';
+import imgaudioqualitycom2 from '../../images/audio-quality-comparison-lossy-vs-lossless-2.jpg';
+import imgaudioqualitycom3 from '../../images/audio-quality-comparison-lossy-vs-lossless-3.jpg';
+
 
 Does 320 kbps MP3 sound identical to a 24‑bit FLAC? Can the average listener hear the difference? In this deep‑dive we’ll look at **objective measurements** (spectral analysis, null tests) and **subjective listening** to help you choose the right format for your ears and your storage.
 
@@ -25,7 +28,7 @@ We took a 30‑second excerpt of a well‑recorded acoustic track (guitar + voca
 | AAC (256 kbps) | 256 kbps                 | 1.0 MB    |
 | OGG Vorbis     | q6 (~192 kbps)           | 0.8 MB    |
 
-<img src="https://images.unsplash.com/photo-1485579149621-3123dd979885?w=800&q=80" alt="Audio lab equipment" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgaudioqualitycom2} alt="Audio lab equipment" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
 
 ## Spectral Analysis: What Does the Data Say?
 
@@ -37,7 +40,7 @@ We used a spectrogram to visualize the frequency content of each file. FLAC and 
 
 ### Chart: Frequency Cutoff by Format
 
-<img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80" alt="Spectrogram comparison chart" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgaudioqualitycom3} alt="Spectrogram comparison chart" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
 
 *(You can replace this with an actual spectrogram screenshot)*
 

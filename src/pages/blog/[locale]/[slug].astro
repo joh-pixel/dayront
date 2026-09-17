@@ -16,8 +16,7 @@ export async function getStaticPaths() {
       // 3. Only fetch posts that match the current locale prefix (e.g., 'en/')
       .filter((post) => post.id.startsWith(`${locale}/`))
       .map((post) => {
-        // 4. Extract the clean slug WITHOUT the locale prefix
-        // FIXED: Use new RegExp() so the variable 'locale' works
+        // 4. Extract the clean slug WITHOUT the locale prefix or file extension
         const slug = post.id
           .replace(/\.(mdx|md)$/, '')
           .replace(new RegExp(`^${locale}\/`), '');
@@ -30,25 +29,27 @@ export async function getStaticPaths() {
   );
 }
 
+// Get the current post and locale from the generated params
 const { post, locale } = Astro.props;
 
 if (!post) {
   return new Response('Not Found', { status: 404 });
 }
 
+// Render the MDX content
 const { Content } = await render(post);
 
-// Word count & reading time
+// Calculate Word Count & Reading Time
 const rawBody = post.body || '';
 const wordCount = rawBody.split(/\s+/).filter(Boolean).length;
 const readingTime = `${Math.max(1, Math.ceil(wordCount / 225))} min read`;
 
-// 5. Build the correct URL for the layout
-// FIXED: Use new RegExp() here too
+// Build the display slug (used for the URL)
 const displaySlug = post.id
   .replace(/\.(mdx|md)$/, '')
   .replace(new RegExp(`^${locale}\/`), '');
 
+// Prepare data to pass to the layout
 const postData = {
   title: post.data.title,
   description: post.data.description,
@@ -59,8 +60,6 @@ const postData = {
   relatedSlugs: post.data.relatedPosts || [],
   readingTime,
 };
-
-// 6. Pass locale to the layout so it can load the correct public/locales/[locale]/*.json files
 ---
 
 <BlogPostLayout {...postData} content={Content} slug={displaySlug} locale={locale} />

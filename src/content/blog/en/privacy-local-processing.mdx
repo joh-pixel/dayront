@@ -5,11 +5,23 @@ date: 2025-03-10
 author: "Dayront Team"
 categories: ["Privacy", "Technology"]
 tags: ["privacy", "local processing", "ffmpeg", "webassembly", "security"]
-image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80"
+image: "privacy-local-processing-2.jpg"
 relatedPosts: ["how-to-convert-mp4-to-mp3", "why-browser-processing-secure"]
 ---
 
-# Why Local Processing Matters – Your Files, Your Device
+import { Image } from 'astro:assets';
+import imgprivacylocalpro2 from '../../images/privacy-local-processing-2.jpg';
+import imgprivacylocalpro3 from '../../images/privacy-local-processing-3.jpg';
+
+
+
+
+
+
+
+
+import imgprivacylocalpro1 from '../../images/privacy-local-processing-1.jpg';
+
 
 Every time you use an online converter, you place a tremendous amount of trust in the service. Most websites require you to **upload your file** to their server – and once it leaves your computer, you lose control. Dayront takes a fundamentally different approach: **all processing happens locally, right inside your browser.**
 
@@ -25,7 +37,7 @@ Online converters are convenient, but they come with serious privacy risks:
 - **Copyright scanning** – some platforms automatically scan uploaded content, which can lead to false flags or even legal issues.
 - **Targeted advertising** – free services often monetise your data, building profiles based on the media you convert.
 
-<img src="https://images.unsplash.com/photo-1562813733-b31f71025d54?w=800&q=80" alt="Server room with warning sign" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgprivacylocalpro2} alt="Server room with warning sign" width="800" height="534" class="rounded-xl my-6" loading="lazy" />
 
 ## What Is Local Processing?
 
@@ -44,7 +56,7 @@ Here’s exactly what happens when you convert a file with Dayront:
 
 At **no point** does your file leave your device. We don’t have servers that could receive it, and our code is designed so that there is no upload mechanism at all.
 
-<img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80" alt="Abstract data flow diagram" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
+<Image src={imgprivacylocalpro3} alt="Abstract data flow diagram" width="800" height="450" class="rounded-xl my-6" loading="lazy" />
 
 ## Security Benefits of the Browser Sandbox
 

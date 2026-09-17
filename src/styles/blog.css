@@ -1,0 +1,188 @@
+/* =====================================================
+   GLOBAL / UTILITIES
+====================================================== */
+.search-hidden { display: none !important; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* =====================================================
+   BUTTONS & PILLS
+====================================================== */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.875rem 1.75rem; border-radius: 9999px;
+  background: #38bdf8; color: black; font-weight: 700; font-size: 1rem;
+  transition: all 250ms ease; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+}
+.btn-primary:hover {
+  background: #7dd3fc; transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+}
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.6rem 1.25rem; border-radius: 9999px;
+  border: 1px solid rgb(229 231 235); background: white; color: black;
+  font-weight: 600; font-size: 0.875rem; transition: all 200ms ease;
+}
+.dark .btn-secondary { border-color: rgb(55 65 81); background: rgb(17 24 39); color: white; }
+.btn-secondary:hover { border-color: #38bdf8; color: #38bdf8; }
+.dark .btn-secondary:hover { border-color: #7dd3fc; color: #7dd3fc; }
+
+.category-filter {
+  flex-shrink: 0; padding: 0.6rem 1.25rem; border-radius: 9999px;
+  background: transparent; color: rgb(107 114 128); font-size: 0.875rem;
+  font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  transition: all 200ms ease; border: 1px solid transparent;
+}
+.dark .category-filter { color: rgb(156 163 175); }
+.category-filter:hover { color: black; }
+.dark .category-filter:hover { color: white; }
+.active-filter { background: black !important; color: white !important; }
+.dark .active-filter { background: white !important; color: black !important; }
+
+/* =====================================================
+   TYPOGRAPHY / HEADINGS
+====================================================== */
+.section-heading { display: flex; flex-direction: column; margin-bottom: 2rem; }
+.section-kicker {
+  font-size: 0.75rem; font-weight: 800; letter-spacing: 0.15em;
+  color: #38bdf8; text-transform: uppercase; margin-bottom: 0.5rem;
+}
+.dark .section-kicker { color: #7dd3fc; }
+.section-title {
+  font-size: 2.25rem; line-height: 1.1; font-weight: 900;
+  letter-spacing: -0.02em; color: black;
+}
+.dark .section-title { color: white; }
+
+/* =====================================================
+   CARDS
+====================================================== */
+.rich-card, .editorial-card, .simple-post {
+  border-radius: 1.5rem; background: white; border: 1px solid rgb(243 244 246);
+  transition: transform 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 300ms ease, box-shadow 300ms ease;
+  will-change: transform;
+}
+.dark .rich-card, .dark .editorial-card, .dark .simple-post {
+  background: rgb(17 24 39); border-color: rgb(31 41 55);
+}
+.rich-card { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
+.dark .rich-card { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3); }
+.rich-card:hover, .editorial-card:hover {
+  border-color: #38bdf8; box-shadow: 0 20px 40px -10px rgba(56, 189, 248, 0.1); z-index: 10;
+}
+.dark .rich-card:hover, .dark .editorial-card:hover {
+  border-color: #7dd3fc; box-shadow: 0 20px 40px -10px rgba(125, 211, 252, 0.2);
+}
+.simple-post { padding: 1.25rem; }
+.simple-post:hover { border-color: #38bdf8; transform: translateY(-2px); }
+.dark .simple-post:hover { border-color: #7dd3fc; }
+.card-image { width: 100%; height: 14rem; object-fit: cover; transition: transform 700ms ease; }
+.rich-card:hover .card-image { transform: scale(1.05); }
+.card-meta {
+  display: flex; gap: 0.5rem; align-items: center; color: rgb(156 163 175);
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+  font-weight: 600; margin-bottom: 0.75rem;
+}
+.card-title { color: black; font-size: 1.25rem; line-height: 1.3; font-weight: 900; margin-bottom: 0.75rem; }
+.dark .card-title { color: white; }
+.card-description {
+  color: rgb(75 85 99); font-size: 0.95rem; line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.dark .card-description { color: white; }
+.read-link { color: black; font-size: 0.875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.dark .read-link { color: white; }
+.rich-card:hover .read-link { color: #38bdf8; }
+.dark .rich-card:hover .read-link { color: #7dd3fc; }
+
+/* =====================================================
+   HORIZONTAL CARDS
+====================================================== */
+.horizontal-card {
+  display: flex; min-width: 300px; max-width: 380px; background: white;
+  border: 1px solid rgb(243 244 246); border-radius: 1.5rem;
+  overflow: hidden; scroll-snap-align: start; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+}
+.dark .horizontal-card {
+  background: rgb(17 24 39); border-color: rgb(31 41 55); box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* =====================================================
+   TIMELINE
+====================================================== */
+.timeline-item { position: relative; padding: 0 0 3rem 2.5rem; }
+.timeline-dot {
+  position: absolute; left: -7px; top: 0.3rem; width: 12px; height: 12px;
+  border-radius: 9999px; background: rgb(209 213 219); box-shadow: 0 0 0 6px white;
+  transition: all 300ms ease;
+}
+.dark .timeline-dot { background: rgb(55 65 81); box-shadow: 0 0 0 6px rgb(10 10 12); }
+
+/* =====================================================
+   SLIDER CONTROLS & DOTS
+====================================================== */
+.slider-button {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 20;
+  width: 48px; height: 48px; border-radius: 9999px;
+  background: rgba(255,255,255,0.95); color: black; font-size: 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); transition: all 200ms ease;
+  border: 1px solid rgb(229 231 235);
+}
+.dark .slider-button {
+  background: rgba(17,24,39,0.8); backdrop-filter: blur(8px);
+  color: white; border-color: rgb(55 65 81);
+}
+.slider-button:hover { transform: translateY(-50%) scale(1.1); color: #38bdf8; }
+.dark .slider-button:hover { color: #7dd3fc; }
+
+/* HIDE ARROWS ON MOBILE */
+.slider-button { display: none; }
+@media (min-width: 1024px) { .slider-button { display: flex; } }
+
+/* CLEAN DOTS - NO NUMBERS */
+.slider-dots-container {
+  position: absolute; bottom: 1rem; right: 1rem; z-index: 20;
+  display: flex; gap: 0.4rem; align-items: center;
+}
+@media (min-width: 1024px) {
+  .slider-dots-container { bottom: 2rem; right: 2.5rem; }
+}
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.1);
+  transition: all 300ms ease; backdrop-filter: blur(4px); cursor: pointer;
+}
+.dark .dot { background: rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.2); }
+.dot.active {
+  background: #38bdf8; border-color: #38bdf8; transform: scale(1.4);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+/* =====================================================
+   SCROLL REVEAL ANIMATIONS
+====================================================== */
+.reveal { opacity: 0; transform: translateY(30px) scale(0.98); transition: opacity 800ms ease, transform 800ms cubic-bezier(.16,1,.3,1); }
+.reveal-visible { opacity: 1; transform: translateY(0) scale(1); }
+.reveal-delay-1 { transition-delay: 150ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .rich-card, .editorial-card, .simple-post, .card-image, .slider-button, .timeline-dot, .group-hover\:scale-105 {
+    transition: none !important; transform: none !important; opacity: 1 !important;
+  }
+}
+
+/* DARK MODE OVERRIDES */
+.dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700,
+.dark .text-gray-600, .dark .text-gray-500, .dark .text-gray-400, .dark .text-gray-300 {
+  color: #ffffff !important;
+}
+.dark .card-description, .dark .simple-post time, .dark .discover-card p,
+.dark .editorial-card p, .dark .timeline-item p, .dark .magazine-card p {
+  color: #ffffff !important;
+}
+.dark .card-meta, .dark .horizontal-card time,
+.dark .magazine-card time, .dark .timeline-item time {
+  color: #e5e7eb !important;
+}
