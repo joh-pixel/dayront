@@ -13,8 +13,13 @@ const tool = {
     { title: "Convert", text: "Click convert to downscale to 720p HD." },
     { title: "Download", text: "Save your 720p HD video." }
   ],
-  faq: [{"q":"Does downscaling reduce file size?","a":"Yes, significantly. A 4K to 720p downscale can reduce file size by 80-90%."},{"q":"Will I lose quality?","a":"The output matches the target resolution exactly. Detail is preserved as well as possible at the lower resolution."}],
-  relatedTools: [],
+  faq: [{"question":"Does downscaling reduce file size?","answer":"Yes, significantly. A 4K to 720p downscale can reduce file size by 80-90%."},{"question":"Will I lose quality?","answer":"The output matches the target resolution exactly. Detail is preserved as well as possible at the lower resolution."}],
+  relatedTools: [
+    { href: '/convert/720p-to-480p', icon: '⬇️', name: '720p HD to 480p SD' },
+    { href: '/convert/720p-to-2k', icon: '⬆️', name: '720p HD to 2K QHD' },
+    { href: '/tools/resize-video', icon: '↔️', name: 'Custom Resize Video' },
+    { href: '/tools/video-compressor', icon: '📉', name: 'Video Compressor' }
+  ],
   type: "resolution-convert",
   from: "2k",
   to: "720p",
@@ -42,6 +47,7 @@ const tool = {
     presetHeight: tool.presetHeight,
     requiresDesktop: tool.requiresDesktop,
   }}
+  relatedTools={tool.relatedTools}
   extraContent={{
     tutorial: tool.tutorial,
     relatedBlogs: tool.relatedBlogs,

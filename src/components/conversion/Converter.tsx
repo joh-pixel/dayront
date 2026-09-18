@@ -18,6 +18,7 @@ import {
   videoToGif,
   gifToMp4,
   resizeVideo,
+  resolutionConvert, // ★ NEW
   cropVideo,
   changeFPS,
   muteVideo,
@@ -46,7 +47,8 @@ type ToolType =
   | 'change-fps'
   | 'mute-video'
   | 'extract-audio'
-  | 'convert-video';
+  | 'convert-video'
+  | 'resolution-convert'; // ★ NEW
 
 interface SettingDef {
   name: string;
@@ -65,6 +67,10 @@ interface ToolConfig {
   outputFormat?: string;
   label?: string;
   settings?: SettingDef[];
+  // ★ NEW: Resolution converter support
+  presetWidth?: number;
+  presetHeight?: number;
+  requiresDesktop?: boolean;
 }
 
 /** Detect time-related settings */
@@ -81,8 +87,29 @@ function rangeHint(setting: SettingDef): string | null {
   return null;
 }
 
+/** ★ NEW: Detect mobile devices (browser UA + viewport width) */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const mobileByUA = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const mobileByWidth = window.innerWidth < 768;
+      setIsMobile(mobileByUA || mobileByWidth);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
 /** Determine accepted input file extensions based on the tool's configuration */
 function getAllowedExtensions(config: ToolConfig): string[] {
+  // ★ NEW: Resolution converters accept any video input
+  if (config.type === 'resolution-convert') {
+    return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
+  }
+
   // 1. If we have a source format (e.g. mp4-to-mp3 has from: 'mp4'), use that
   if (config.from) {
     const formatMap: Record<string, string[]> = {
@@ -167,6 +194,10 @@ export default function Converter({
   // Preview blob URL
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
+
+  // ★ NEW: Mobile detection
+  const isMobile = useIsMobile();
+  const isBlockedOnMobile = isMobile && toolConfig.requiresDesktop === true;
 
   // Cleanup blob URL on unmount or reset
   useEffect(() => {
@@ -345,6 +376,20 @@ export default function Converter({
           );
           break;
         }
+        // ★ NEW: Resolution converter — uses dedicated tuned function
+        case 'resolution-convert': {
+          const w = toolConfig.presetWidth ?? 1920;
+          const h = toolConfig.presetHeight ?? 1080;
+          output = await resolutionConvert(
+            files[0],
+            w,
+            h,
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
         case 'crop-video': {
           output = await cropVideo(
             files[0],
@@ -441,7 +486,7 @@ export default function Converter({
   const settings = toolConfig.settings || [];
   const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
 
-  // ★ NEW: Compute allowed extensions based on the current tool's configuration ★
+  // ★ Compute allowed extensions based on the current tool's configuration
   const allowedExtensions = getAllowedExtensions(toolConfig);
 
   const inputClass = [
@@ -465,15 +510,42 @@ export default function Converter({
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
 
+  // ★ NEW: Show mobile blocking UI for heavy tools (e.g., 8K resolution)
+  if (isBlockedOnMobile) {
+    return (
+      <div class="w-full">
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800/50 dark:bg-amber-950/30">
+          <div class="flex gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl dark:bg-amber-900/50">
+              📱
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-amber-900 dark:text-amber-100">
+                Desktop recommended
+              </h2>
+              <p class="mt-2 text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+                This resolution requires significant processing power and memory that
+                most mobile browsers cannot allocate. For best results, please use a
+                desktop computer with 8GB+ RAM.
+              </p>
+              <p class="mt-3 text-xs text-amber-700 dark:text-amber-400">
+                Attempting this conversion on mobile may freeze your browser or crash the tab.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
       {!resultBlob && (
         <>
-          {/* ★ CHANGED: Pass allowedExtensions to FileDropzone ★ */}
-          <FileDropzone 
-            onFilesSelected={handleFiles} 
-            multiple={multipleAllowed} 
-            allowedExtensions={allowedExtensions} 
+          <FileDropzone
+            onFilesSelected={handleFiles}
+            multiple={multipleAllowed}
+            allowedExtensions={allowedExtensions}
           />
 
           {files.length > 0 && (

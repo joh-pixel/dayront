@@ -31,7 +31,7 @@ export interface Tool {
   type?: string;
   outputFormat?: string;
   settings?: SettingDef[];
-  // ★ NEW: Resolution converter support
+  // ★ Resolution converter support
   presetWidth?: number;
   presetHeight?: number;
   requiresDesktop?: boolean;
@@ -40,7 +40,13 @@ export interface Tool {
   relatedTools: string[];
 }
 
-export const tools: Tool[] = [
+/* --------------------------------------------------------------------------
+   BASE TOOLS (manually maintained)
+   NOTE: This is no longer exported directly. The final `tools` export below
+   combines these with the auto-generated resolution converters.
+-------------------------------------------------------------------------- */
+
+const baseTools: Tool[] = [
   // ── AUDIO UTILITIES ──────────────────────
   {
     slug: 'audio-cutter',
@@ -850,8 +856,8 @@ export const tools: Tool[] = [
     type: 'resize-video',
     outputFormat: 'mp4',
     settings: [
-      { name: 'width', label: 'Width (pixels)', type: 'number', min: 100, max: 3840, default: 1280 },
-      { name: 'height', label: 'Height (pixels)', type: 'number', min: 100, max: 2160, default: 720 },
+      { name: 'width', label: 'Width (pixels)', type: 'number', min: 100, max: 7680, default: 1280 },
+      { name: 'height', label: 'Height (pixels)', type: 'number', min: 100, max: 4320, default: 720 },
     ],
     faq: [
       { question: 'Will it keep aspect ratio?', answer: 'No, it will stretch to the exact dimensions. To maintain aspect ratio, set only width or height and leave the other blank (advanced mode coming soon).' },
@@ -1030,3 +1036,108 @@ export const tools: Tool[] = [
     relatedTools: ['ai-video-captions', 'video-cutter', 'video-compressor'],
   },
 ];
+
+/* --------------------------------------------------------------------------
+   ★ AUTO-GENERATED: RESOLUTION CONVERTERS (30 entries)
+   These automatically appear in the /tools listing and link to /convert/...
+   because their `from` and `to` fields trigger the /convert/ URL logic.
+-------------------------------------------------------------------------- */
+
+const RESOLUTION_PRESETS = [
+  { key: '480p',  label: '480p SD',         w: 854,  h: 480,  tier: 1 },
+  { key: '720p',  label: '720p HD',         w: 1280, h: 720,  tier: 2 },
+  { key: '1080p', label: '1080p Full HD',   w: 1920, h: 1080, tier: 3 },
+  { key: '2k',    label: '2K QHD',          w: 2560, h: 1440, tier: 4 },
+  { key: '4k',    label: '4K UHD',          w: 3840, h: 2160, tier: 5 },
+  { key: '8k',    label: '8K UHD',          w: 7680, h: 4320, tier: 6 },
+];
+
+const resolutionTools: Tool[] = [];
+
+for (const from of RESOLUTION_PRESETS) {
+  for (const to of RESOLUTION_PRESETS) {
+    if (from.key === to.key) continue;
+
+    const isUpscale = to.tier > from.tier;
+    const action = isUpscale ? 'Upscale' : 'Downscale';
+    const requiresDesktop =
+      from.key === '8k' || to.key === '8k' || (isUpscale && to.tier >= 5);
+    const is8k = to.key === '8k';
+
+    resolutionTools.push({
+      slug: `${from.key}-to-${to.key}`,
+      name: `${from.label} to ${to.label} ${action}er`,
+      category: 'video-conversion',
+      from: from.key,
+      to: to.key,
+      description: `${action} videos from ${from.label} to ${to.label} in your browser. Free, private, and 100% local.`,
+      metaTitle: `${from.label} to ${to.label} Converter – Free Online | Dayront`,
+      metaDescription: `${action} ${from.label} videos to ${to.label} in your browser. Free, private, no uploads. 100% local processing.`,
+      icon: '🎬',
+      type: 'resolution-convert',
+      outputFormat: 'mp4',
+      presetWidth: to.w,
+      presetHeight: to.h,
+      requiresDesktop,
+      settings: [],
+      faq: is8k
+        ? [
+            {
+              question: 'Can I convert to 8K on mobile?',
+              answer:
+                'No. 8K requires more memory than most mobile browsers can allocate. Use a desktop with 16GB+ RAM.',
+            },
+            {
+              question: 'How long does 8K conversion take?',
+              answer:
+                'A 30-second 1080p clip to 8K can take 3-10 minutes depending on your CPU.',
+            },
+          ]
+        : isUpscale
+        ? [
+            {
+              question: 'Will upscaling add detail?',
+              answer:
+                "No. Upscaling interpolates pixels but cannot recover detail that wasn't in the source. It standardizes resolution across your library.",
+            },
+            {
+              question: 'Is it free?',
+              answer: 'Yes, completely free with no signup.',
+            },
+          ]
+        : [
+            {
+              question: 'Does downscaling reduce file size?',
+              answer:
+                'Yes, significantly. A 4K to 720p downscale can reduce file size by 80-90%.',
+            },
+            {
+              question: 'Will I lose quality?',
+              answer:
+                'The output matches the target resolution exactly. Detail is preserved as well as possible at the lower resolution.',
+            },
+          ],
+      howTo: [
+        {
+          title: 'Upload video',
+          text: `Select a ${from.label} video file from your device.`,
+        },
+        {
+          title: 'Convert',
+          text: `Click convert to ${action.toLowerCase()} to ${to.label}.`,
+        },
+        {
+          title: 'Download',
+          text: `Save your ${to.label} video.`,
+        },
+      ],
+      relatedTools: ['resize-video', 'video-compressor', 'video-cutter'],
+    });
+  }
+}
+
+/* --------------------------------------------------------------------------
+   FINAL EXPORT: base tools + 30 resolution converters
+-------------------------------------------------------------------------- */
+
+export const tools: Tool[] = [...baseTools, ...resolutionTools];

@@ -13,8 +13,13 @@ const tool = {
     { title: "Convert", text: "Click convert to upscale to 2K QHD." },
     { title: "Download", text: "Save your 2K QHD video." }
   ],
-  faq: [{"q":"Will upscaling add detail?","a":"No. Upscaling interpolates pixels but cannot recover detail that wasn't in the source. It standardizes resolution across your library."},{"q":"Is it free?","a":"Yes, completely free with no signup."}],
-  relatedTools: [],
+  faq: [{"question":"Will upscaling add detail?","answer":"No. Upscaling interpolates pixels but cannot recover detail that wasn't in the source. It standardizes resolution across your library."},{"question":"Is it free?","answer":"Yes, completely free with no signup."}],
+  relatedTools: [
+    { href: '/convert/2k-to-4k', icon: '⬆️', name: '2K QHD to 4K UHD' },
+    { href: '/convert/2k-to-480p', icon: '⬇️', name: '2K QHD to 480p SD' },
+    { href: '/tools/resize-video', icon: '↔️', name: 'Custom Resize Video' },
+    { href: '/tools/video-compressor', icon: '📉', name: 'Video Compressor' }
+  ],
   type: "resolution-convert",
   from: "480p",
   to: "2k",
@@ -42,6 +47,7 @@ const tool = {
     presetHeight: tool.presetHeight,
     requiresDesktop: tool.requiresDesktop,
   }}
+  relatedTools={tool.relatedTools}
   extraContent={{
     tutorial: tool.tutorial,
     relatedBlogs: tool.relatedBlogs,

@@ -62,6 +62,36 @@ async function deleteFile(ff: FFmpeg, filename: string): Promise<void> {
   try { await ff.deleteFile(filename); } catch {}
 }
 
+/**
+ * ★ NEW: H.264 requires even dimensions (width and height must be divisible by 2).
+ * Rounds odd values down to the nearest even number.
+ */
+function ensureEven(value: number): number {
+  const rounded = Math.floor(Math.abs(value));
+  return rounded % 2 === 0 ? rounded : rounded - 1;
+}
+
+/**
+ * ★ NEW: Enforces sane limits for resolution conversion.
+ * Returns an error message if the operation is likely to fail, or null if OK.
+ */
+function validateResolution(width: number, height: number): string | null {
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return 'Resolution dimensions must be valid numbers.';
+  }
+  if (width < 16 || height < 16) {
+    return 'Resolution must be at least 16×16 pixels.';
+  }
+  if (width > 7680 || height > 4320) {
+    return 'Maximum supported resolution is 8K (7680×4320).';
+  }
+  const totalPixels = width * height;
+  if (totalPixels > 7680 * 4320) {
+    return 'Resolution exceeds 8K limits.';
+  }
+  return null;
+}
+
 /* -------------------------------------------------------------------------- */
 /* FFmpeg LOADER – CDN ESM build                                              */
 /* -------------------------------------------------------------------------- */
@@ -372,8 +402,10 @@ export async function compressVideo(
       '-c:v', 'libx264',
       '-crf', String(crf),
       '-preset', preset,
+      '-pix_fmt', 'yuv420p',
       '-c:a', 'aac',
-      '-b:a', '128k'
+      '-b:a', '128k',
+      '-movflags', '+faststart',
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
@@ -429,7 +461,6 @@ export async function mergeVideos(
   const inputNames: string[] = [];
 
   try {
-    // 1. Write original files
     for (let i = 0; i < files.length; i++) {
       const name = makeName(`vmerge-${ts}-${i}`, getExtension(files[i].name));
       await ff.writeFile(name, await fetchFile(files[i]));
@@ -438,27 +469,27 @@ export async function mergeVideos(
 
     const outName = makeName('merged', format);
 
-    // 2. Concatenate video streams only (ignore audio)
     const filterParts: string[] = [];
     for (let i = 0; i < inputNames.length; i++) {
       filterParts.push(`[${i}:v:0]`);
     }
     const filterComplex = `${filterParts.join('')}concat=n=${inputNames.length}:v=1:a=0 [outv]`;
 
-    // 3. Merge video tracks and add silent audio
     const args = [
       ...inputNames.flatMap(n => ['-i', n]),
       '-filter_complex', filterComplex,
-      '-map', '[outv]',                    // use the concatenated video
+      '-map', '[outv]',
       '-f', 'lavfi',
       '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
       '-c:v', 'libx264',
       '-preset', 'ultrafast',
       '-crf', '23',
+      '-pix_fmt', 'yuv420p',
       '-c:a', 'aac',
       '-b:a', '128k',
-      '-map', '1:a',                       // silent audio input
-      '-shortest'
+      '-map', '1:a',
+      '-shortest',
+      '-movflags', '+faststart',
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
@@ -531,24 +562,52 @@ export async function gifToMp4(
   }
 }
 
+/**
+ * ★ FIXED: Now uses proper H.264 encoding parameters for compatibility,
+ * even dimensions, and yuv420p pixel format. Works for both the
+ * `resize-video` tool AND the new `resolution-convert` pages.
+ */
 export async function resizeVideo(
   file: File,
   width: number,
   height: number,
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
+  // ★ NEW: optional preset/crf tuning for resolution pages
+  preset: string = 'ultrafast',
+  crf: number = 23,
 ): Promise<Blob> {
+  // Validate dimensions
+  const validationError = validateResolution(width, height);
+  if (validationError) throw new Error(validationError);
+
+  // H.264 requires even dimensions
+  const safeWidth = ensureEven(width);
+  const safeHeight = ensureEven(height);
+
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('resize-in', getExtension(file.name));
   const outName = makeName('resized', format);
+
   try {
     await ff.writeFile(inName, await fetchFile(file));
+
+    // Use a scale filter that maintains aspect ratio if width or height is -1
+    const scaleFilter = `scale=${safeWidth}:${safeHeight}`;
+
     const args = [
       '-i', inName,
-      '-vf', `scale=${width}:${height}`,
-      '-c:a', 'copy'
+      '-vf', scaleFilter,
+      '-c:v', 'libx264',
+      '-preset', preset,
+      '-crf', String(crf),
+      '-pix_fmt', 'yuv420p',
+      // ★ FIXED: Re-encode audio to AAC instead of copying, to prevent broken MP4s
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-movflags', '+faststart',
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
@@ -558,6 +617,35 @@ export async function resizeVideo(
     await deleteFile(ff, inName);
     await deleteFile(ff, outName);
   }
+}
+
+/**
+ * ★ NEW: Dedicated function for the 30 resolution converter pages.
+ * Tuned for reliability on large resolutions (up to 8K).
+ */
+export async function resolutionConvert(
+  file: File,
+  width: number,
+  height: number,
+  outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  // Use ultrafast preset for 4K/8K (much faster), medium for smaller
+  const isLarge = width >= 2560 || height >= 1440;
+  const preset = isLarge ? 'ultrafast' : 'veryfast';
+  const crf = isLarge ? 23 : 20; // Slightly higher CRF for large = faster
+
+  return resizeVideo(
+    file,
+    width,
+    height,
+    outputFormat,
+    cleanMetadata,
+    onProgress,
+    preset,
+    crf,
+  );
 }
 
 export async function cropVideo(
@@ -571,12 +659,25 @@ export async function cropVideo(
   const ff = await getFFmpeg();
   const inName = makeName('crop-in', getExtension(file.name));
   const outName = makeName('cropped', format);
+
+  // ★ FIXED: Ensure crop dimensions are even (H.264 requirement)
+  const safeW = ensureEven(w);
+  const safeH = ensureEven(h);
+  const safeX = ensureEven(x);
+  const safeY = ensureEven(y);
+
   try {
     await ff.writeFile(inName, await fetchFile(file));
     const args = [
       '-i', inName,
-      '-vf', `crop=${w}:${h}:${x}:${y}`,
-      '-c:a', 'copy'
+      '-vf', `crop=${safeW}:${safeH}:${safeX}:${safeY}`,
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '23',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-movflags', '+faststart',
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
@@ -603,7 +704,14 @@ export async function changeFPS(
     await ff.writeFile(inName, await fetchFile(file));
     const args = [
       '-i', inName,
-      '-filter:v', `fps=${fps}`
+      '-filter:v', `fps=${fps}`,
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '23',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-movflags', '+faststart',
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);

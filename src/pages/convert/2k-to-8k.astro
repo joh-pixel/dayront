@@ -13,8 +13,12 @@ const tool = {
     { title: "Convert", text: "Click convert to upscale to 8K UHD." },
     { title: "Download", text: "Save your 8K UHD video." }
   ],
-  faq: [{"q":"Can I convert to 8K on mobile?","a":"No. 8K requires more memory than most mobile browsers can allocate. Use a desktop with 16GB+ RAM."},{"q":"How long does 8K conversion take?","a":"A 30-second 1080p clip to 8K can take 3-10 minutes depending on your CPU."}],
-  relatedTools: [],
+  faq: [{"question":"Can I convert to 8K on mobile?","answer":"No. 8K requires more memory than most mobile browsers can allocate. Use a desktop with 16GB+ RAM."},{"question":"How long does 8K conversion take?","answer":"A 30-second 1080p clip to 8K can take 3-10 minutes depending on your CPU."}],
+  relatedTools: [
+    { href: '/convert/8k-to-2k', icon: '⬇️', name: '8K UHD to 2K QHD' },
+    { href: '/tools/resize-video', icon: '↔️', name: 'Custom Resize Video' },
+    { href: '/tools/video-compressor', icon: '📉', name: 'Video Compressor' }
+  ],
   type: "resolution-convert",
   from: "2k",
   to: "8k",
@@ -42,6 +46,7 @@ const tool = {
     presetHeight: tool.presetHeight,
     requiresDesktop: tool.requiresDesktop,
   }}
+  relatedTools={tool.relatedTools}
   extraContent={{
     tutorial: tool.tutorial,
     relatedBlogs: tool.relatedBlogs,
