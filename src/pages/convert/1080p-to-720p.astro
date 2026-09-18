@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "1080p-to-720p",
+  name: "1080p Full HD to 720p HD Downscaleer",
+  metaTitle: "1080p Full HD to 720p HD Converter – Free Online | Dayront",
+  metaDescription: "Downscale 1080p Full HD videos to 720p HD in your browser. Free, private, no uploads. 100% local processing.",
+  icon: "🎬",
+  howTo: [
+    { title: "Upload video", text: "Select a 1080p Full HD video file from your device." },
+    { title: "Convert", text: "Click convert to downscale to 720p HD." },
+    { title: "Download", text: "Save your 720p HD video." }
+  ],
+  faq: [{"q":"Does downscaling reduce file size?","a":"Yes, significantly. A 4K to 720p downscale can reduce file size by 80-90%."},{"q":"Will I lose quality?","a":"The output matches the target resolution exactly. Detail is preserved as well as possible at the lower resolution."}],
+  relatedTools: [],
+  type: "resolution-convert",
+  from: "1080p",
+  to: "720p",
+  outputFormat: "mp4",
+  presetWidth: 1280,
+  presetHeight: 720,
+  requiresDesktop: false,
+  warningMessage: "",
+  settings: [],
+  tutorial: "\n      <h2>Why Downscale 1080p Full HD to 720p HD?</h2>\n      <p>Downscaling to 720p HD reduces file size, improves playback on older devices, and meets upload limits on social platforms.</p>\n      <h3>Resolution Comparison</h3>\n      <table>\n        <thead><tr><th>Format</th><th>Dimensions</th><th>Total Pixels</th></tr></thead>\n        <tbody>\n          <tr><td>Source (1080p Full HD)</td><td>1920 × 1080 (2.07 MP)</td></tr>\n          <tr><td>Output (720p HD)</td><td>1280 × 720 (0.92 MP)</td></tr>\n        </tbody>\n      </table>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n      </ul>\n    ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+    presetWidth: tool.presetWidth,
+    presetHeight: tool.presetHeight,
+    requiresDesktop: tool.requiresDesktop,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

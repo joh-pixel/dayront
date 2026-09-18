@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "480p-to-720p",
+  name: "480p SD to 720p HD Upscaleer",
+  metaTitle: "480p SD to 720p HD Converter – Free Online | Dayront",
+  metaDescription: "Upscale 480p SD videos to 720p HD in your browser. Free, private, no uploads. 100% local processing.",
+  icon: "🎬",
+  howTo: [
+    { title: "Upload video", text: "Select a 480p SD video file from your device." },
+    { title: "Convert", text: "Click convert to upscale to 720p HD." },
+    { title: "Download", text: "Save your 720p HD video." }
+  ],
+  faq: [{"q":"Will upscaling add detail?","a":"No. Upscaling interpolates pixels but cannot recover detail that wasn't in the source. It standardizes resolution across your library."},{"q":"Is it free?","a":"Yes, completely free with no signup."}],
+  relatedTools: [],
+  type: "resolution-convert",
+  from: "480p",
+  to: "720p",
+  outputFormat: "mp4",
+  presetWidth: 1280,
+  presetHeight: 720,
+  requiresDesktop: false,
+  warningMessage: "",
+  settings: [],
+  tutorial: "\n      <h2>Why Upscale 480p SD to 720p HD?</h2>\n      <p>Upscaling to 720p HD prepares your footage for large displays, projectors, or platforms that require higher resolutions.</p>\n      <h3>Resolution Comparison</h3>\n      <table>\n        <thead><tr><th>Format</th><th>Dimensions</th><th>Total Pixels</th></tr></thead>\n        <tbody>\n          <tr><td>Source (480p SD)</td><td>854 × 480 (0.41 MP)</td></tr>\n          <tr><td>Output (720p HD)</td><td>1280 × 720 (0.92 MP)</td></tr>\n        </tbody>\n      </table>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n      </ul>\n    ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+    presetWidth: tool.presetWidth,
+    presetHeight: tool.presetHeight,
+    requiresDesktop: tool.requiresDesktop,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

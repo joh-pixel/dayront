@@ -1,306 +1,823 @@
----
-import BaseLayout from './BaseLayout.astro';
-import AdSlot from '../components/layout/AdSlot.astro';
-import Converter from '../components/conversion/Converter';
-import PrivacyBadge from '../components/ui/PrivacyBadge.astro';
-import { tools } from '../lib/tools';
-import { getLangFromAstroUrl } from '../lib/i18n';
+import { useState, useEffect, useRef } from 'preact/hooks';
+import FileDropzone from './FileDropzone';
+import ProgressBar from './ProgressBar';
+import PrivacyToggle from './PrivacyToggle';
 
-// --- AI COMPONENT IMPORTS ---
-import AICaptions from '../components/ai/AICaptions.astro';
-import AIRemoveBackground from '../components/ai/AIRemoveBackground.astro';
-import AIPhotoEditor from '../components/ai/AIPhotoEditor.astro';
-import BurnSubtitles from '../components/ai/BurnSubtitles.astro';
+import {
+  convertFile,
+  cutAudio,
+  mergeAudio,
+  compressAudio,
+  boostVolume,
+  changeSpeed,
+  reverseAudio,
+  stereoToMono,
+  compressVideo,
+  cutVideo,
+  mergeVideos,
+  videoToGif,
+  gifToMp4,
+  resizeVideo,
+  cropVideo,
+  changeFPS,
+  muteVideo,
+  extractAudio,
+} from '../../lib/ffmpeg';
 
-export interface Props {
-  toolKey?: string;
-  toolConfig?: {
-    type: string;
-    from?: string;
-    to?: string;
-    outputFormat?: string;
-    label: string;
-    settings?: any[];
-  };
-  metaTitle?: string;
-  metaDescription?: string;
-  title?: string;
-  description?: string;
-  toolName?: string;
-  toolIcon?: string;
-  howTo?: { title: string; text: string }[];
-  faq?: { question: string; answer: string }[];
-  relatedTools?: { href: string; icon: string; name: string }[];
-  preConverter?: any;
-  postConverter?: any;
-  extraContent?: {
-    tutorial?: string;
-    relatedBlogs?: { slug: string; title: string; categories?: string[] }[];
-  };
+import { saveFile } from '../../lib/db';
+import { formatBytes } from '../../lib/utils';
+
+type ToolType =
+  | 'convert'
+  | 'cut'
+  | 'merge'
+  | 'compress'
+  | 'boost'
+  | 'speed'
+  | 'reverse'
+  | 'stereo-to-mono'
+  | 'video-compress'
+  | 'video-cut'
+  | 'video-merge'
+  | 'video-to-gif'
+  | 'gif-to-video'
+  | 'resize-video'
+  | 'crop-video'
+  | 'change-fps'
+  | 'mute-video'
+  | 'extract-audio'
+  | 'convert-video'
+  | 'resolution-convert'; // ★ NEW
+
+interface SettingDef {
+  name: string;
+  label: string;
+  type: 'range' | 'number' | 'select';
+  min?: number;
+  max?: number;
+  options?: string[];
+  default: string | number;
 }
 
-const {
-  toolKey,
-  toolConfig: toolConfigProp,
-  metaTitle: metaTitleProp,
-  metaDescription: metaDescriptionProp,
-  title: titleProp,
-  description: descriptionProp,
-  toolName: toolNameProp,
-  toolIcon: toolIconProp,
-  howTo: howToProp,
-  faq: faqProp,
-  relatedTools: relatedToolsProp = [],
-  preConverter,
-  postConverter,
-  extraContent,
-} = Astro.props;
+interface ToolConfig {
+  type: ToolType;
+  from?: string;
+  to?: string;
+  outputFormat?: string;
+  label?: string;
+  settings?: SettingDef[];
+  // ★ NEW: Resolution converter support
+  presetWidth?: number;
+  presetHeight?: number;
+  requiresDesktop?: boolean;
+}
 
-const lang = getLangFromAstroUrl(Astro.url);
+/** Detect time-related settings */
+function isTimeSetting(name: string): boolean {
+  const lower = name.toLowerCase();
+  return lower.includes('start') || lower.includes('duration') || lower.includes('cut');
+}
 
-let toolsTranslations: Record<string, any> = {};
-let commonTranslations: Record<string, any> = {};
+/** Human-readable hint for range sliders */
+function rangeHint(setting: SettingDef): string | null {
+  const name = setting.name.toLowerCase();
+  if (name === 'crf') return 'Lower = better quality, larger file';
+  if (name === 'quality') return '0 = best, 9 = smallest';
+  return null;
+}
 
-try {
-  const [toolsRes, commonRes] = await Promise.all([
-    fetch(new URL(`/locales/${lang}/tools.json`, Astro.url.origin)),
-    fetch(new URL(`/locales/${lang}/common.json`, Astro.url.origin)),
-  ]);
-  if (toolsRes.ok) toolsTranslations = await toolsRes.json();
-  if (commonRes.ok) commonTranslations = await commonRes.json();
-} catch {}
+/** ★ NEW: Detect mobile devices */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () =>
+      window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
 
-let metaTitle = metaTitleProp || titleProp || '';
-let metaDescription = metaDescriptionProp || descriptionProp || '';
-let toolName = toolNameProp || '';
-let toolIcon = toolIconProp || '';
-let howTo = howToProp || [];
-let faq = faqProp || [];
-let relatedTools = relatedToolsProp || [];
-let toolConfig = toolConfigProp;
+/** Determine accepted input file extensions based on the tool's configuration */
+function getAllowedExtensions(config: ToolConfig): string[] {
+  // Resolution converters accept any video input
+  if (config.type === 'resolution-convert') {
+    return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
+  }
 
-if (toolKey) {
-  const toolData = tools.find(t => t.slug === toolKey);
-  if (toolData) {
-    metaTitle = metaTitle || toolData.metaTitle;
-    metaDescription = metaDescription || toolData.metaDescription;
-    toolName = toolName || toolData.name;
-    toolIcon = toolIcon || toolData.icon;
-    howTo = howTo.length > 0 ? howTo : toolData.howTo;
-    faq = faq.length > 0 ? faq : toolData.faq;
+  // If we have a source format (e.g. mp4-to-mp3 has from: 'mp4'), use that
+  if (config.from) {
+    const formatMap: Record<string, string[]> = {
+      mp3: ['mp3'],
+      wav: ['wav'],
+      mp4: ['mp4', 'm4v'],
+      flac: ['flac'],
+      m4a: ['m4a'],
+      mov: ['mov', 'qt'],
+      webm: ['webm'],
+      aac: ['aac'],
+      ogg: ['ogg', 'oga'],
+      opus: ['opus'],
+      avi: ['avi'],
+      mkv: ['mkv'],
+      aiff: ['aiff', 'aif'],
+      amr: ['amr'],
+      ape: ['ape'],
+      flv: ['flv'],
+      gif: ['gif'],
+    };
+    return formatMap[config.from] || [];
+  }
 
-    const tTool = toolsTranslations[toolKey] || {};
-    if (tTool.title) toolName = tTool.title;
-    if (tTool.metaTitle) metaTitle = tTool.metaTitle;
-    if (tTool.metaDescription) metaDescription = tTool.metaDescription;
-    if (tTool.icon) toolIcon = tTool.icon;
-    if (tTool.howTo) howTo = tTool.howTo;
-    if (tTool.faq) faq = tTool.faq;
+  // Otherwise, determine by the tool type
+  switch (config.type) {
+    case 'cut':
+    case 'merge':
+    case 'compress':
+    case 'boost':
+    case 'speed':
+    case 'reverse':
+    case 'stereo-to-mono':
+      return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'];
 
-    if (!toolConfig) {
-      toolConfig = {
-        type: toolData.type || 'convert',
-        from: toolData.from,
-        to: toolData.to,
-        outputFormat: toolData.outputFormat,
-        label: toolName,
-        settings: toolData.settings || [],
-      };
-    }
+    case 'video-compress':
+    case 'video-cut':
+    case 'video-merge':
+    case 'video-to-gif':
+    case 'resize-video':
+    case 'crop-video':
+    case 'change-fps':
+    case 'mute-video':
+    case 'extract-audio':
+      return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
 
-    if (relatedTools.length === 0 && toolData.relatedTools) {
-      relatedTools = toolData.relatedTools
-        .map((slug: string) => {
-          const t = tools.find(tt => tt.slug === slug);
-          if (!t) return null;
-          const relatedTrans = toolsTranslations[slug] || {};
-          return {
-            href: t.from && t.to ? `/convert/${t.slug}` : `/tools/${t.slug}`,
-            icon: relatedTrans.icon || t.icon,
-            name: relatedTrans.title || t.name,
-          };
-        })
-        .filter(Boolean) as any[];
-    }
+    case 'gif-to-video':
+      return ['gif'];
+
+    case 'convert':
+    case 'convert-video':
+      return []; // Fallback — should not happen since `from` is set
+
+    default:
+      return [];
   }
 }
 
-if (!toolConfig) {
-  toolConfig = { type: 'convert', label: toolName || 'Conversion', settings: [] };
-}
+export default function Converter({
+  toolConfig,
+}: {
+  toolConfig: ToolConfig;
+}) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [outputFilename, setOutputFilename] = useState('');
+  const [privacy, setPrivacy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-// ─────────────────────────────────────────────────────────
-// List of AI (non-Converter) tool types.
-// Anything in this list uses a dedicated component.
-// ─────────────────────────────────────────────────────────
-const AI_TYPES = [
-  'ai-captions',
-  'ai-remove-bg',
-  'ai-photo-editor',
-  'burn-subtitles',
-];
+  const [settingsState, setSettingsState] = useState<Record<string, string | number>>(() => {
+    const initial: Record<string, string | number> = {};
+    toolConfig.settings?.forEach((setting) => {
+      initial[setting.name] = setting.default;
+    });
+    return initial;
+  });
 
-const isAITool = AI_TYPES.includes(toolConfig.type);
+  const [timeUnits, setTimeUnits] = useState<Record<string, 'seconds' | 'minutes'>>({});
 
-const howToHeading = commonTranslations.how_to_use || 'How to use';
-const faqHeading = commonTranslations.faq_heading || 'Frequently Asked Questions';
-const relatedToolsHeading = commonTranslations.related_tools || 'Related Tools';
-const relatedArticlesHeading = commonTranslations.related_articles || 'Related Articles';
+  // Preview blob URL
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
 
-const howToSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'HowTo',
-  name: toolName,
-  description: metaDescription,
-  step: howTo.map((step: any, i: number) => ({
-    '@type': 'HowToStep',
-    position: i + 1,
-    name: step.title,
-    text: step.text,
-  })),
-};
+  // ★ NEW: Mobile detection
+  const isMobile = useIsMobile();
+  const isBlockedOnMobile = isMobile && toolConfig.requiresDesktop === true;
 
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: faq.map((q: any) => ({
-    '@type': 'Question',
-    name: q.question,
-    acceptedAnswer: { '@type': 'Answer', text: q.answer },
-  })),
-};
----
+  // Cleanup blob URL on unmount or reset
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
-<BaseLayout title={metaTitle} description={metaDescription}>
-  <script type="application/ld+json" set:html={JSON.stringify(howToSchema)} />
-  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  function clampProgress(value: number) {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
 
-  <section class="max-w-7xl mx-auto px-4 py-8 sm:py-12">
-    <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
-      <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
-        <li><a href="/" class="hover:text-sky transition dark:hover:text-sky">Home</a></li>
-        <li aria-hidden="true">/</li>
-        <li><a href="/tools" class="hover:text-sky transition dark:hover:text-sky">Tools</a></li>
-        <li aria-hidden="true">/</li>
-        <li class="text-gray-900 dark:text-white font-medium">{toolName}</li>
-      </ol>
-    </nav>
+  function updateProgress(value: number) {
+    setProgress(clampProgress(value));
+  }
 
-    <div class="lg:grid lg:grid-cols-3 lg:gap-10">
-      <div class="lg:col-span-2">
-        <div class="flex items-center gap-3 mb-6">
-          <span class="text-3xl">{toolIcon}</span>
-          <h1 class="text-3xl sm:text-4xl font-extrabold text-black dark:text-white">{toolName}</h1>
+  function getSetting(name: string) {
+    return settingsState[name];
+  }
+
+  function updateSetting(name: string, value: string | number) {
+    setSettingsState((previous) => ({ ...previous, [name]: value }));
+  }
+
+  function toDisplayValue(name: string, internalValue: number): number {
+    const unit = timeUnits[name] || 'seconds';
+    return unit === 'minutes' ? internalValue / 60 : internalValue;
+  }
+
+  function fromDisplayValue(name: string, displayValue: number): number {
+    const unit = timeUnits[name] || 'seconds';
+    return unit === 'minutes' ? displayValue * 60 : displayValue;
+  }
+
+  function handleFiles(selected: File[]) {
+    if (processing) return;
+    setFiles(selected);
+    setResultBlob(null);
+    setOutputFilename('');
+    setError(null);
+    setProgress(0);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }
+
+  async function startConversion() {
+    if (files.length === 0 || processing) return;
+
+    setProcessing(true);
+    setProgress(0);
+    setError(null);
+    setResultBlob(null);
+    setOutputFilename('');
+
+    try {
+      let output: Blob;
+      const type = toolConfig.type;
+
+      // Pass the `privacy` boolean directly to FFmpeg functions
+      // so metadata is stripped in a single pass (saves memory)
+      switch (type) {
+        case 'cut': {
+          const start = Math.max(0, Number(getSetting('start') ?? 0));
+          const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
+          output = await cutAudio(
+            files[0],
+            start,
+            duration,
+            toolConfig.outputFormat || 'mp3',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'merge': {
+          if (files.length < 2) throw new Error('Please select at least 2 audio files.');
+          output = await mergeAudio(files, toolConfig.outputFormat || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'compress': {
+          output = await compressAudio(
+            files[0],
+            Number(getSetting('quality') ?? 3),
+            toolConfig.outputFormat || 'mp3',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'boost': {
+          output = await boostVolume(
+            files[0],
+            Number(getSetting('gain') ?? 6),
+            toolConfig.outputFormat || 'mp3',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'speed': {
+          output = await changeSpeed(
+            files[0],
+            Number(getSetting('factor') ?? 1.5),
+            toolConfig.outputFormat || 'mp3',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'reverse': {
+          output = await reverseAudio(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'stereo-to-mono': {
+          output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'convert': {
+          output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'video-compress': {
+          output = await compressVideo(
+            files[0],
+            Number(getSetting('crf') ?? 23),
+            String(getSetting('preset') ?? 'medium'),
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'video-cut': {
+          const start = Math.max(0, Number(getSetting('start') ?? 0));
+          const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
+          output = await cutVideo(
+            files[0],
+            start,
+            duration,
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'video-merge': {
+          if (files.length < 2) throw new Error('Please select at least 2 video files.');
+          output = await mergeVideos(files, toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
+        case 'video-to-gif': {
+          output = await videoToGif(
+            files[0],
+            Number(getSetting('fps') ?? 10),
+            Number(getSetting('width') ?? 320),
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'gif-to-video': {
+          output = await gifToMp4(files[0], privacy, updateProgress);
+          break;
+        }
+        case 'resize-video': {
+          output = await resizeVideo(
+            files[0],
+            Number(getSetting('width') ?? 1280),
+            Number(getSetting('height') ?? 720),
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'crop-video': {
+          output = await cropVideo(
+            files[0],
+            Number(getSetting('x') ?? 0),
+            Number(getSetting('y') ?? 0),
+            Number(getSetting('w') ?? 640),
+            Number(getSetting('h') ?? 480),
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'change-fps': {
+          output = await changeFPS(
+            files[0],
+            Number(getSetting('fps') ?? 30),
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'mute-video': {
+          output = await muteVideo(files[0], toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
+        case 'extract-audio': {
+          output = await extractAudio(
+            files[0],
+            String(getSetting('format') ?? 'mp3'),
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        case 'convert-video': {
+          output = await convertFile(files[0], toolConfig.to || 'mp4', privacy, updateProgress);
+          break;
+        }
+        // ★ NEW: Resolution converter — uses presetWidth/presetHeight
+        case 'resolution-convert': {
+          const w = toolConfig.presetWidth ?? 1920;
+          const h = toolConfig.presetHeight ?? 1080;
+          output = await resizeVideo(
+            files[0],
+            w,
+            h,
+            toolConfig.outputFormat || 'mp4',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
+        default:
+          throw new Error('Unsupported tool.');
+      }
+
+      // Save the result (privacy is now handled inside the FFmpeg operation)
+      const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      await saveFile(id, output);
+
+      const format = toolConfig.outputFormat || toolConfig.to || 'mp3';
+      const originalName = files[0]?.name || 'file';
+      const base = originalName.replace(/\.[^/.]+$/, '');
+      const filename = `${base}.${format}`;
+
+      // Create preview URL
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const url = URL.createObjectURL(output);
+      setPreviewUrl(url);
+      setResultBlob(output);
+      setOutputFilename(filename);
+      setProgress(100);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || 'An error occurred while processing your file.');
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  function download() {
+    if (!resultBlob) return;
+    const url = URL.createObjectURL(resultBlob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = outputFilename || 'output.mp3';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function resetAll() {
+    setFiles([]);
+    setResultBlob(null);
+    setOutputFilename('');
+    setError(null);
+    setProgress(0);
+    setProcessing(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }
+
+  const settings = toolConfig.settings || [];
+  const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
+
+  // Compute allowed extensions based on the current tool's configuration
+  const allowedExtensions = getAllowedExtensions(toolConfig);
+
+  const inputClass = [
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
+    'outline-none transition placeholder:text-gray-400',
+    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
+    'dark:border-gray-600 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500',
+    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
+  ].join(' ');
+
+  const selectClass = [
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
+    'outline-none transition',
+    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
+    'dark:border-gray-600 dark:bg-gray-950 dark:text-white',
+    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
+  ].join(' ');
+
+  // Determine if the output is a video (or GIF) for preview player
+  const outputFormat = toolConfig.outputFormat || toolConfig.to || 'mp3';
+  const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
+  const isGif = outputFormat === 'gif';
+
+  // ★ NEW: Show mobile blocking UI for heavy tools
+  if (isBlockedOnMobile) {
+    return (
+      <div class="w-full">
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800/50 dark:bg-amber-950/30">
+          <div class="flex gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl dark:bg-amber-900/50">
+              📱
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-amber-900 dark:text-amber-100">
+                Desktop recommended
+              </h2>
+              <p class="mt-2 text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+                This resolution requires significant processing power and memory that
+                most mobile browsers cannot allocate. For best results, please use a
+                desktop computer with 8GB+ RAM.
+              </p>
+              <p class="mt-3 text-xs text-amber-700 dark:text-amber-400">
+                Attempting this conversion on mobile may freeze your browser or crash the tab.
+              </p>
+            </div>
+          </div>
         </div>
-
-        <PrivacyBadge />
-
-        {preConverter && <div class="mb-6">{preConverter}</div>}
-
-        {/* ─── AI TOOL ROUTING ─── */}
-        {toolConfig.type === 'ai-captions' && <AICaptions toolConfig={toolConfig} />}
-        {toolConfig.type === 'ai-remove-bg' && <AIRemoveBackground toolConfig={toolConfig} />}
-        {toolConfig.type === 'ai-photo-editor' && <AIPhotoEditor toolConfig={toolConfig} />}
-        {toolConfig.type === 'burn-subtitles' && <BurnSubtitles toolConfig={toolConfig} />}
-
-        {/* ─── STANDARD CONVERTER (only if NOT an AI tool) ─── */}
-        {!isAITool && <Converter client:load toolConfig={toolConfig} />}
-
-        {postConverter && <div class="mt-6">{postConverter}</div>}
-
-        <AdSlot position="below-tool" class="my-10" />
-
-        {howTo.length > 0 && (
-          <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">
-              {howToHeading} {toolName}
-            </h2>
-            <ol class="space-y-6">
-              {howTo.map((step: any, i: number) => (
-                <li class="flex gap-4">
-                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-sky text-black font-bold flex items-center justify-center text-sm">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <h3 class="font-semibold text-lg text-black dark:text-white">{step.title}</h3>
-                    <p class="text-gray-600 dark:text-white">{step.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-
-        {faq.length > 0 && (
-          <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{faqHeading}</h2>
-            <dl class="space-y-6">
-              {faq.map((q: any) => (
-                <div>
-                  <dt class="font-semibold text-lg text-black dark:text-white mb-2">{q.question}</dt>
-                  <dd class="text-gray-600 dark:text-white">{q.answer}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        )}
-
-        {extraContent?.tutorial && (
-          <section class="mt-16 prose dark:prose-invert max-w-none" set:html={extraContent.tutorial} />
-        )}
-
-        {extraContent?.relatedBlogs && extraContent.relatedBlogs.length > 0 && (
-          <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{relatedArticlesHeading}</h2>
-            <div class="grid sm:grid-cols-2 gap-4">
-              {extraContent.relatedBlogs.map((post: any) => (
-                <a
-                  href={`/blog/${post.slug}`}
-                  class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 hover:border-sky transition"
-                >
-                  <h3 class="font-semibold text-black dark:text-white text-sm">{post.title}</h3>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {relatedTools.length > 0 && (
-          <section class="mt-16">
-            <h2 class="text-2xl font-bold text-black dark:text-white mb-6">{relatedToolsHeading}</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {relatedTools.map((tool: any) => (
-                <a
-                  href={tool.href}
-                  class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 hover:border-sky transition flex flex-col items-start gap-2"
-                >
-                  <span class="text-2xl">{tool.icon}</span>
-                  <span class="text-sm font-medium text-black dark:text-white">{tool.name}</span>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
+    );
+  }
 
-      <aside class="hidden lg:block space-y-8">
-        <div class="sticky top-24">
-          <h3 class="text-lg font-semibold text-black dark:text-white mb-4">{relatedToolsHeading}</h3>
-          <ul class="space-y-2">
-            {relatedTools.map((tool: any) => (
-              <li>
-                <a
-                  href={tool.href}
-                  class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+  return (
+    <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
+      {!resultBlob && (
+        <>
+          <FileDropzone
+            onFilesSelected={handleFiles}
+            multiple={multipleAllowed}
+            allowedExtensions={allowedExtensions}
+          />
+
+          {files.length > 0 && (
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
+                <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                  {files.length} {files.length === 1 ? 'file' : 'files'}
+                </span>
+              </div>
+              <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                {files.map((file) => (
+                  <li
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
+                    class="flex items-center justify-between gap-4 px-5 py-3"
+                  >
+                    <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {file.name}
+                    </span>
+                    <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {formatBytes(file.size)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {settings.length > 0 && (
+            <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div class="border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-lg dark:bg-sky-900/40">
+                    ⚙️
+                  </div>
+                  <div class="min-w-0">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white">Settings &amp; Adjustments</h2>
+                    <p class="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">
+                      Customize your output before processing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-6 p-5">
+                {settings.map((setting) => {
+                  const value = settingsState[setting.name] ?? setting.default;
+                  return (
+                    <div key={setting.name} class="space-y-2.5">
+                      <label
+                        for={`setting-${setting.name}`}
+                        class="block text-sm font-semibold text-gray-900 dark:text-white"
+                      >
+                        {setting.label}
+                      </label>
+
+                      {setting.type === 'select' && (
+                        <select
+                          id={`setting-${setting.name}`}
+                          value={String(value)}
+                          disabled={processing}
+                          class={selectClass}
+                          onChange={(event) =>
+                            updateSetting(setting.name, event.currentTarget.value)
+                          }
+                        >
+                          {setting.options?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {setting.type === 'range' && (
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-950">
+                          <div class="flex items-center gap-3">
+                            <input
+                              id={`setting-${setting.name}`}
+                              type="range"
+                              min={setting.min}
+                              max={setting.max}
+                              value={Number(value)}
+                              disabled={processing}
+                              onInput={(event) =>
+                                updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
+                              }
+                              class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-300 accent-sky-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700"
+                            />
+                            <output
+                              aria-live="polite"
+                              class="flex h-9 min-w-[52px] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-xs font-bold tabular-nums text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                            >
+                              {value}
+                            </output>
+                          </div>
+                          {rangeHint(setting) && (
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{rangeHint(setting)}</p>
+                          )}
+                          {(setting.min !== undefined || setting.max !== undefined) && (
+                            <div class="mt-2 flex justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                              <span>{setting.min ?? ''}</span>
+                              <span>{setting.max ?? ''}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {setting.type === 'number' && (
+                        isTimeSetting(setting.name) ? (
+                          <div class="flex gap-2">
+                            <input
+                              type="number"
+                              id={`setting-${setting.name}`}
+                              min={setting.min != null ? (timeUnits[setting.name] === 'minutes' ? Math.ceil((setting.min || 0) / 60) : setting.min) : undefined}
+                              max={setting.max != null ? (timeUnits[setting.name] === 'minutes' ? Math.floor((setting.max || 9999) / 60) : setting.max) : undefined}
+                              value={toDisplayValue(setting.name, Number(value))}
+                              disabled={processing}
+                              onInput={(e) => {
+                                const displayVal = Number((e.target as HTMLInputElement).value);
+                                if (!isNaN(displayVal)) {
+                                  updateSetting(setting.name, fromDisplayValue(setting.name, displayVal));
+                                }
+                              }}
+                              class={inputClass}
+                              step={timeUnits[setting.name] === 'minutes' ? 0.1 : 1}
+                            />
+                            <select
+                              value={timeUnits[setting.name] || 'seconds'}
+                              onChange={(e) => setTimeUnits((prev) => ({ ...prev, [setting.name]: e.currentTarget.value as 'seconds' | 'minutes' }))}
+                              class="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-white"
+                            >
+                              <option value="seconds">Seconds</option>
+                              <option value="minutes">Minutes</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <input
+                            type="number"
+                            id={`setting-${setting.name}`}
+                            min={setting.min}
+                            max={setting.max}
+                            value={Number(value)}
+                            disabled={processing}
+                            onInput={(event) =>
+                              updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
+                            }
+                            class={inputClass}
+                          />
+                        )
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <PrivacyToggle checked={privacy} onChange={setPrivacy} />
+          </div>
+
+          <button
+            type="button"
+            disabled={files.length === 0 || processing}
+            onClick={startConversion}
+            aria-busy={processing}
+            class="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl bg-sky-500 px-6 py-3.5 font-semibold text-white shadow-sm transition-all hover:bg-sky-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-sky-500 dark:hover:bg-sky-400"
+          >
+            {processing ? (
+              <>
+                <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Processing…
+              </>
+            ) : (
+              `Start ${toolConfig.label || 'Conversion'}`
+            )}
+          </button>
+
+          {processing && (
+            <div
+              class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+              role="status"
+              aria-live="polite"
+              aria-label={`Processing ${progress}% complete`}
+            >
+              <div class="px-5 py-4">
+                <div class="mb-3 flex items-center justify-between gap-4">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />
+                    <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">Processing</span>
+                  </div>
+                  <span class="shrink-0 text-sm font-bold tabular-nums text-sky-600 dark:text-sky-400">
+                    {clampProgress(progress)}%
+                  </span>
+                </div>
+                <ProgressBar percent={clampProgress(progress)} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {error && (
+        <div class="overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-sm dark:border-red-900/70 dark:bg-red-950/40">
+          <div class="p-5">
+            <div class="flex gap-3">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 font-bold text-red-600 dark:bg-red-900/50 dark:text-red-300">!</div>
+              <div class="min-w-0">
+                <p class="font-semibold text-red-900 dark:text-red-100">Something went wrong</p>
+                <p class="mt-1 break-words text-sm leading-6 text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  class="mt-3 font-semibold text-red-700 underline decoration-red-300 underline-offset-4 hover:no-underline dark:text-red-300 dark:decoration-red-700"
+                  onClick={resetAll}
                 >
-                  <span>{tool.icon}</span>
-                  <span class="text-sm font-medium text-black dark:text-white">{tool.name}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </aside>
+      )}
+
+      {resultBlob && (
+        <div class="overflow-hidden rounded-2xl border border-green-200 bg-green-50 shadow-sm dark:border-green-900/70 dark:bg-green-950/30">
+          <div class="p-6">
+            <div class="flex items-start gap-4">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-100 text-xl font-bold text-green-700 dark:bg-green-900/50 dark:text-green-300">✓</div>
+              <div class="min-w-0">
+                <h2 class="text-lg font-bold text-green-900 dark:text-green-100">Your file is ready</h2>
+                <p class="mt-1 break-all text-sm font-medium text-green-700 dark:text-green-300">{outputFilename}</p>
+                <p class="mt-1 text-xs font-medium text-green-600 dark:text-green-400">{formatBytes(resultBlob.size)}</p>
+              </div>
+            </div>
+
+            {/* Preview player */}
+            {previewUrl && (
+              <div class="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                {isGif ? (
+                  <img src={previewUrl} alt="Preview" class="w-full h-auto" />
+                ) : isVideoPreview ? (
+                  <video controls class="w-full max-h-96" src={previewUrl}>
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <audio controls class="w-full" src={previewUrl}>
+                    Your browser does not support the audio element.
+                  </audio>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div class="border-t border-green-200 bg-white p-5 dark:border-green-900/70 dark:bg-gray-900/60">
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={download}
+                class="w-full rounded-xl bg-sky-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-sky-600 active:scale-[0.98] dark:bg-sky-500 dark:hover:bg-sky-400"
+              >
+                Download File
+              </button>
+              <button
+                type="button"
+                onClick={resetAll}
+                class="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-3 font-semibold text-gray-800 transition hover:bg-gray-200 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              >
+                Convert Another File
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </section>
-</BaseLayout>
+  );
+}

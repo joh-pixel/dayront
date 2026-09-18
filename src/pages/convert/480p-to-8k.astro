@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "480p-to-8k",
+  name: "480p SD to 8K UHD Upscaleer",
+  metaTitle: "480p SD to 8K UHD Converter – Free Online | Dayront",
+  metaDescription: "Upscale 480p SD videos to 8K UHD in your browser. Free, private, no uploads. 100% local processing.",
+  icon: "🎬",
+  howTo: [
+    { title: "Upload video", text: "Select a 480p SD video file from your device." },
+    { title: "Convert", text: "Click convert to upscale to 8K UHD." },
+    { title: "Download", text: "Save your 8K UHD video." }
+  ],
+  faq: [{"q":"Can I convert to 8K on mobile?","a":"No. 8K requires more memory than most mobile browsers can allocate. Use a desktop with 16GB+ RAM."},{"q":"How long does 8K conversion take?","a":"A 30-second 1080p clip to 8K can take 3-10 minutes depending on your CPU."}],
+  relatedTools: [],
+  type: "resolution-convert",
+  from: "480p",
+  to: "8k",
+  outputFormat: "mp4",
+  presetWidth: 7680,
+  presetHeight: 4320,
+  requiresDesktop: true,
+  warningMessage: "Converting to 8K is extremely resource-intensive. A 30-second clip can consume 4GB+ of RAM. Use a powerful desktop computer.",
+  settings: [],
+  tutorial: "\n      <h2>Why Upscale 480p SD to 8K UHD?</h2>\n      <p>Upscaling to 8K UHD prepares your footage for large displays, projectors, or platforms that require higher resolutions.</p>\n      <h3>Resolution Comparison</h3>\n      <table>\n        <thead><tr><th>Format</th><th>Dimensions</th><th>Total Pixels</th></tr></thead>\n        <tbody>\n          <tr><td>Source (480p SD)</td><td>854 × 480 (0.41 MP)</td></tr>\n          <tr><td>Output (8K UHD)</td><td>7680 × 4320 (33.18 MP)</td></tr>\n        </tbody>\n      </table>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n      </ul>\n    ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+    presetWidth: tool.presetWidth,
+    presetHeight: tool.presetHeight,
+    requiresDesktop: tool.requiresDesktop,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

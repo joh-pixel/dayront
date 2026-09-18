@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "720p-to-2k",
+  name: "720p HD to 2K QHD Upscaleer",
+  metaTitle: "720p HD to 2K QHD Converter – Free Online | Dayront",
+  metaDescription: "Upscale 720p HD videos to 2K QHD in your browser. Free, private, no uploads. 100% local processing.",
+  icon: "🎬",
+  howTo: [
+    { title: "Upload video", text: "Select a 720p HD video file from your device." },
+    { title: "Convert", text: "Click convert to upscale to 2K QHD." },
+    { title: "Download", text: "Save your 2K QHD video." }
+  ],
+  faq: [{"q":"Will upscaling add detail?","a":"No. Upscaling interpolates pixels but cannot recover detail that wasn't in the source. It standardizes resolution across your library."},{"q":"Is it free?","a":"Yes, completely free with no signup."}],
+  relatedTools: [],
+  type: "resolution-convert",
+  from: "720p",
+  to: "2k",
+  outputFormat: "mp4",
+  presetWidth: 2560,
+  presetHeight: 1440,
+  requiresDesktop: false,
+  warningMessage: "",
+  settings: [],
+  tutorial: "\n      <h2>Why Upscale 720p HD to 2K QHD?</h2>\n      <p>Upscaling to 2K QHD prepares your footage for large displays, projectors, or platforms that require higher resolutions.</p>\n      <h3>Resolution Comparison</h3>\n      <table>\n        <thead><tr><th>Format</th><th>Dimensions</th><th>Total Pixels</th></tr></thead>\n        <tbody>\n          <tr><td>Source (720p HD)</td><td>1280 × 720 (0.92 MP)</td></tr>\n          <tr><td>Output (2K QHD)</td><td>2560 × 1440 (3.69 MP)</td></tr>\n        </tbody>\n      </table>\n      <h3>Key Benefits</h3>\n      <ul>\n        <li><strong>100% Private</strong> – Your files never leave your device.</li>\n        <li><strong>No Software Install</strong> – Works directly in your browser.</li>\n        <li><strong>Free & Unlimited</strong> – Use it as many times as you need.</li>\n      </ul>\n    ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+    presetWidth: tool.presetWidth,
+    presetHeight: tool.presetHeight,
+    requiresDesktop: tool.requiresDesktop,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

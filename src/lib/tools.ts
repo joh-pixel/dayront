@@ -31,6 +31,10 @@ export interface Tool {
   type?: string;
   outputFormat?: string;
   settings?: SettingDef[];
+  // ★ NEW: Resolution converter support
+  presetWidth?: number;
+  presetHeight?: number;
+  requiresDesktop?: boolean;
   faq: FAQ[];
   howTo: HowToStep[];
   relatedTools: string[];
@@ -946,7 +950,6 @@ export const tools: Tool[] = [
   },
 
   // ── AI TOOLS ─────────────────────────────
-
   {
     slug: 'ai-video-captions',
     name: 'AI Video Captions',
@@ -964,7 +967,6 @@ export const tools: Tool[] = [
       { title: 'AI transcribes', text: 'Whisper AI generates captions.' },
       { title: 'Download', text: 'Get video with subtitles.' },
     ],
-    // ★ FIXED: 'ai-video-upscaler' → 'burn-subtitles' (removed tool)
     relatedTools: ['extract-audio', 'burn-subtitles', 'video-cutter'],
   },
   {
