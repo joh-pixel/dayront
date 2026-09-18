@@ -81,6 +81,66 @@ function rangeHint(setting: SettingDef): string | null {
   return null;
 }
 
+/** Determine accepted input file extensions based on the tool's configuration */
+function getAllowedExtensions(config: ToolConfig): string[] {
+  // 1. If we have a source format (e.g. mp4-to-mp3 has from: 'mp4'), use that
+  if (config.from) {
+    const formatMap: Record<string, string[]> = {
+      mp3: ['mp3'],
+      wav: ['wav'],
+      mp4: ['mp4', 'm4v'],
+      flac: ['flac'],
+      m4a: ['m4a'],
+      mov: ['mov', 'qt'],
+      webm: ['webm'],
+      aac: ['aac'],
+      ogg: ['ogg', 'oga'],
+      opus: ['opus'],
+      avi: ['avi'],
+      mkv: ['mkv'],
+      aiff: ['aiff', 'aif'],
+      amr: ['amr'],
+      ape: ['ape'],
+      flv: ['flv'],
+      gif: ['gif'],
+    };
+    return formatMap[config.from] || [];
+  }
+
+  // 2. Otherwise, determine by the tool type
+  switch (config.type) {
+    case 'cut':
+    case 'merge':
+    case 'compress':
+    case 'boost':
+    case 'speed':
+    case 'reverse':
+    case 'stereo-to-mono':
+      return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'];
+
+    case 'video-compress':
+    case 'video-cut':
+    case 'video-merge':
+    case 'video-to-gif':
+    case 'resize-video':
+    case 'crop-video':
+    case 'change-fps':
+    case 'mute-video':
+    case 'extract-audio':
+      return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
+
+    case 'gif-to-video':
+      return ['gif'];
+
+    case 'convert':
+    case 'convert-video':
+      return []; // Fallback — should not happen since `from` is set
+
+    default:
+      return [];
+  }
+}
+
 export default function Converter({
   toolConfig,
 }: {
@@ -381,6 +441,9 @@ export default function Converter({
   const settings = toolConfig.settings || [];
   const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
 
+  // ★ NEW: Compute allowed extensions based on the current tool's configuration ★
+  const allowedExtensions = getAllowedExtensions(toolConfig);
+
   const inputClass = [
     'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
     'outline-none transition placeholder:text-gray-400',
@@ -406,7 +469,12 @@ export default function Converter({
     <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
       {!resultBlob && (
         <>
-          <FileDropzone onFilesSelected={handleFiles} multiple={multipleAllowed} />
+          {/* ★ CHANGED: Pass allowedExtensions to FileDropzone ★ */}
+          <FileDropzone 
+            onFilesSelected={handleFiles} 
+            multiple={multipleAllowed} 
+            allowedExtensions={allowedExtensions} 
+          />
 
           {files.length > 0 && (
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">

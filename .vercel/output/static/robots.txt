@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dayront.com/sitemap-index.xml
