@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import FileDropzone from './FileDropzone';
-import ProgressBar from './ProgressBar';
+import ProgressBar, { useSmoothProgress } from './ProgressBar'; // ★ NEW: import hook
 import PrivacyToggle from './PrivacyToggle';
 
 import {
@@ -18,7 +18,7 @@ import {
   videoToGif,
   gifToMp4,
   resizeVideo,
-  resolutionConvert, // ★ NEW
+  resolutionConvert,
   cropVideo,
   changeFPS,
   muteVideo,
@@ -48,7 +48,7 @@ type ToolType =
   | 'mute-video'
   | 'extract-audio'
   | 'convert-video'
-  | 'resolution-convert'; // ★ NEW
+  | 'resolution-convert';
 
 interface SettingDef {
   name: string;
@@ -67,7 +67,6 @@ interface ToolConfig {
   outputFormat?: string;
   label?: string;
   settings?: SettingDef[];
-  // ★ NEW: Resolution converter support
   presetWidth?: number;
   presetHeight?: number;
   requiresDesktop?: boolean;
@@ -87,7 +86,7 @@ function rangeHint(setting: SettingDef): string | null {
   return null;
 }
 
-/** ★ NEW: Detect mobile devices (browser UA + viewport width) */
+/** Detect mobile devices (browser UA + viewport width) */
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -105,12 +104,10 @@ function useIsMobile() {
 
 /** Determine accepted input file extensions based on the tool's configuration */
 function getAllowedExtensions(config: ToolConfig): string[] {
-  // ★ NEW: Resolution converters accept any video input
   if (config.type === 'resolution-convert') {
     return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
   }
 
-  // 1. If we have a source format (e.g. mp4-to-mp3 has from: 'mp4'), use that
   if (config.from) {
     const formatMap: Record<string, string[]> = {
       mp3: ['mp3'],
@@ -134,7 +131,6 @@ function getAllowedExtensions(config: ToolConfig): string[] {
     return formatMap[config.from] || [];
   }
 
-  // 2. Otherwise, determine by the tool type
   switch (config.type) {
     case 'cut':
     case 'merge':
@@ -161,7 +157,7 @@ function getAllowedExtensions(config: ToolConfig): string[] {
 
     case 'convert':
     case 'convert-video':
-      return []; // Fallback — should not happen since `from` is set
+      return [];
 
     default:
       return [];
@@ -191,15 +187,15 @@ export default function Converter({
 
   const [timeUnits, setTimeUnits] = useState<Record<string, 'seconds' | 'minutes'>>({});
 
-  // Preview blob URL
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
 
-  // ★ NEW: Mobile detection
   const isMobile = useIsMobile();
   const isBlockedOnMobile = isMobile && toolConfig.requiresDesktop === true;
 
-  // Cleanup blob URL on unmount or reset
+  // ★ NEW: Smooth animated progress (auto-creeps + eases toward real target)
+  const smoothProgress = useSmoothProgress(progress);
+
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -259,19 +255,14 @@ export default function Converter({
       let output: Blob;
       const type = toolConfig.type;
 
-      // Pass the `privacy` boolean directly to FFmpeg functions
-      // so metadata is stripped in a single pass (saves memory)
       switch (type) {
         case 'cut': {
           const start = Math.max(0, Number(getSetting('start') ?? 0));
           const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
           output = await cutAudio(
-            files[0],
-            start,
-            duration,
+            files[0], start, duration,
             toolConfig.outputFormat || 'mp3',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
@@ -282,31 +273,25 @@ export default function Converter({
         }
         case 'compress': {
           output = await compressAudio(
-            files[0],
-            Number(getSetting('quality') ?? 3),
+            files[0], Number(getSetting('quality') ?? 3),
             toolConfig.outputFormat || 'mp3',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
         case 'boost': {
           output = await boostVolume(
-            files[0],
-            Number(getSetting('gain') ?? 6),
+            files[0], Number(getSetting('gain') ?? 6),
             toolConfig.outputFormat || 'mp3',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
         case 'speed': {
           output = await changeSpeed(
-            files[0],
-            Number(getSetting('factor') ?? 1.5),
+            files[0], Number(getSetting('factor') ?? 1.5),
             toolConfig.outputFormat || 'mp3',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
@@ -324,12 +309,10 @@ export default function Converter({
         }
         case 'video-compress': {
           output = await compressVideo(
-            files[0],
-            Number(getSetting('crf') ?? 23),
+            files[0], Number(getSetting('crf') ?? 23),
             String(getSetting('preset') ?? 'medium'),
             toolConfig.outputFormat || 'mp4',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
@@ -337,12 +320,9 @@ export default function Converter({
           const start = Math.max(0, Number(getSetting('start') ?? 0));
           const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
           output = await cutVideo(
-            files[0],
-            start,
-            duration,
+            files[0], start, duration,
             toolConfig.outputFormat || 'mp4',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
@@ -353,11 +333,9 @@ export default function Converter({
         }
         case 'video-to-gif': {
           output = await videoToGif(
-            files[0],
-            Number(getSetting('fps') ?? 10),
+            files[0], Number(getSetting('fps') ?? 10),
             Number(getSetting('width') ?? 320),
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
@@ -371,45 +349,35 @@ export default function Converter({
             Number(getSetting('width') ?? 1280),
             Number(getSetting('height') ?? 720),
             toolConfig.outputFormat || 'mp4',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
-        // ★ NEW: Resolution converter — uses dedicated tuned function
         case 'resolution-convert': {
           const w = toolConfig.presetWidth ?? 1920;
           const h = toolConfig.presetHeight ?? 1080;
           output = await resolutionConvert(
-            files[0],
-            w,
-            h,
+            files[0], w, h,
             toolConfig.outputFormat || 'mp4',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
         case 'crop-video': {
           output = await cropVideo(
             files[0],
-            Number(getSetting('x') ?? 0),
-            Number(getSetting('y') ?? 0),
-            Number(getSetting('w') ?? 640),
-            Number(getSetting('h') ?? 480),
+            Number(getSetting('x') ?? 0), Number(getSetting('y') ?? 0),
+            Number(getSetting('w') ?? 640), Number(getSetting('h') ?? 480),
             toolConfig.outputFormat || 'mp4',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
         case 'change-fps': {
           output = await changeFPS(
-            files[0],
-            Number(getSetting('fps') ?? 30),
+            files[0], Number(getSetting('fps') ?? 30),
             toolConfig.outputFormat || 'mp4',
-            privacy,
-            updateProgress,
+            privacy, updateProgress,
           );
           break;
         }
@@ -419,10 +387,8 @@ export default function Converter({
         }
         case 'extract-audio': {
           output = await extractAudio(
-            files[0],
-            String(getSetting('format') ?? 'mp3'),
-            privacy,
-            updateProgress,
+            files[0], String(getSetting('format') ?? 'mp3'),
+            privacy, updateProgress,
           );
           break;
         }
@@ -434,7 +400,6 @@ export default function Converter({
           throw new Error('Unsupported tool.');
       }
 
-      // Save the result (privacy is now handled inside the FFmpeg operation)
       const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       await saveFile(id, output);
 
@@ -443,7 +408,6 @@ export default function Converter({
       const base = originalName.replace(/\.[^/.]+$/, '');
       const filename = `${base}.${format}`;
 
-      // Create preview URL
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       const url = URL.createObjectURL(output);
       setPreviewUrl(url);
@@ -485,8 +449,6 @@ export default function Converter({
 
   const settings = toolConfig.settings || [];
   const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
-
-  // ★ Compute allowed extensions based on the current tool's configuration
   const allowedExtensions = getAllowedExtensions(toolConfig);
 
   const inputClass = [
@@ -505,12 +467,10 @@ export default function Converter({
     'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
   ].join(' ');
 
-  // Determine if the output is a video (or GIF) for preview player
   const outputFormat = toolConfig.outputFormat || toolConfig.to || 'mp3';
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
 
-  // ★ NEW: Show mobile blocking UI for heavy tools (e.g., 8K resolution)
   if (isBlockedOnMobile) {
     return (
       <div class="w-full">
@@ -727,24 +687,38 @@ export default function Converter({
             )}
           </button>
 
+          {/* ★ UPDATED: Smooth progress card with stall detection */}
           {processing && (
             <div
               class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
               role="status"
               aria-live="polite"
-              aria-label={`Processing ${progress}% complete`}
+              aria-label={`Processing ${Math.round(smoothProgress)}% complete`}
             >
               <div class="px-5 py-4">
                 <div class="mb-3 flex items-center justify-between gap-4">
                   <div class="flex min-w-0 items-center gap-2.5">
                     <span class="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />
-                    <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">Processing</span>
+                    <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                      {progress === 0 && smoothProgress < 12
+                        ? 'Preparing…'
+                        : progress === 0
+                        ? 'Starting…'
+                        : 'Processing'}
+                    </span>
                   </div>
                   <span class="shrink-0 text-sm font-bold tabular-nums text-sky-600 dark:text-sky-400">
-                    {clampProgress(progress)}%
+                    {Math.round(smoothProgress)}%
                   </span>
                 </div>
-                <ProgressBar percent={clampProgress(progress)} />
+
+                <ProgressBar percent={smoothProgress} />
+
+                {progress === 0 && smoothProgress >= 12 && (
+                  <p class="mt-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Still working — this may take a moment for larger files…
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -784,7 +758,6 @@ export default function Converter({
               </div>
             </div>
 
-            {/* Preview player */}
             {previewUrl && (
               <div class="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
                 {isGif ? (
