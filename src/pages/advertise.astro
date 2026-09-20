@@ -1,0 +1,544 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metaTitle = 'Advertise on Dayront – Reach Creators & Media Editors | Dayront';
+const metaDescription = 'Promote your product to podcasters, video editors, and content creators. Direct ad placements, no ad networks, no intermediaries. Get started from $99/month.';
+
+const stats = [
+  { value: '10K+',   label: 'Monthly visitors' },
+  { value: '5M+',    label: 'Seconds of media processed' },
+  { value: '100%',   label: 'Private in-browser' },
+  { value: '0',      label: 'Files uploaded' },
+];
+
+const categories = [
+  { label: 'Audio Tools',      value: 'audio' },
+  { label: 'Video Tools',      value: 'video' },
+  { label: 'AI Tools',         value: 'ai' },
+  { label: 'Blog / Editorial', value: 'blog' },
+];
+
+const showcaseTabs = [
+  {
+    key: 'tools',
+    label: 'Tools',
+    headline: 'The Tools People Come Back To',
+    description: 'Every day, thousands of creators use Dayront to convert, cut, compress, and merge audio and video files — without ever uploading them to a server. That\'s 100% privacy-first processing, right in the browser.',
+    image: '/advertise/showcase-tools.jpg',
+    features: ['MP4, MP3, WAV, MOV & 20+ formats', 'No accounts, no uploads, no logs', 'Real-time conversions with WebAssembly'],
+  },
+  {
+    key: 'blog',
+    label: 'Blog',
+    headline: 'Editorial That Helps Creators Ship',
+    description: 'Our blog dives deep into workflows, privacy, and the "how" behind media. It\'s not fluff — it\'s the kind of long-form content creators actually bookmark and come back to.',
+    image: '/advertise/showcase-blog.jpg',
+    features: ['60+ in-depth guides', 'Privacy-first, jargon-light', 'Topics: podcasting, video, formats, workflows'],
+  },
+  {
+    key: 'ai',
+    label: 'AI Tools',
+    headline: 'Next-Gen Processing, Still Local',
+    description: 'From AI captions to background removal, we\'re building the kind of tools that used to require expensive software or cloud services — running entirely on your device.',
+    image: '/advertise/showcase-ai.jpg',
+    features: ['AI video captions with Whisper', 'Background removal via ONNX', 'Zero cloud dependency'],
+  },
+];
+
+const placements = [
+  { icon: '🎯', name: 'Below Header',     tier: 'High visibility', description: 'Appears on every page, right below the navigation.' },
+  { icon: '📄', name: 'Below Tool',       tier: 'In-content',      description: 'Positioned after every tool\'s content area. Deep engagement.' },
+  { icon: '📱', name: 'Sticky Footer',    tier: 'Persistent',      description: 'Always visible at the bottom of the viewport. Highest impressions.' },
+  { icon: '✍️', name: 'Sponsored Post',   tier: 'Editorial',       description: 'A dedicated blog post featuring your product. Permanent placement.' },
+];
+
+const specialties = [
+  { image: '/advertise/grid-1.jpg', title: 'Content Solutions',       subtitle: 'Reach users in flow' },
+  { image: '/advertise/grid-2.jpg', title: 'Targeted Audio Reach',    subtitle: 'Podcasters & editors' },
+  { image: '/advertise/grid-3.jpg', title: 'Video Workflows',         subtitle: 'Creators & studios' },
+  { image: '/advertise/grid-4.jpg', title: 'AI & Innovation',         subtitle: 'Early adopters' },
+  { image: '/advertise/grid-5.jpg', title: 'Creator Economy',         subtitle: 'Independent makers' },
+  { image: '/advertise/grid-6.jpg', title: 'Studio & Pro Tools',      subtitle: 'Power users' },
+];
+---
+
+<BaseLayout title={metaTitle} description={metaDescription}>
+  <main class="bg-white dark:bg-gray-950 text-black dark:text-white">
+
+    <!-- ═══════════════════════════════════════════
+         HERO
+    ═══════════════════════════════════════════ -->
+    <section class="relative overflow-hidden border-b border-gray-200 dark:border-gray-800">
+      <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute -top-[30%] -right-[10%] w-[600px] h-[600px] rounded-full bg-sky-500/10 dark:bg-sky-500/20 blur-[120px]"></div>
+        <div class="absolute top-[40%] -left-[15%] w-[500px] h-[500px] rounded-full bg-sky-400/10 dark:bg-sky-400/10 blur-[100px]"></div>
+      </div>
+
+      <div class="relative max-w-7xl mx-auto px-6 py-20 sm:py-28 lg:py-32 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div>
+          <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 mb-6">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+            </span>
+            Advertising
+          </span>
+
+          <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter leading-[1.05] mb-6">
+            From intent to
+            <span class="text-sky-500">inspiration,</span>
+            Dayront delivers.
+          </h1>
+
+          <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-xl mb-10">
+            We reach creators at the exact moment they're working on their media. Whether they're podcasting, editing video, or converting formats — that's your moment to be seen.
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="#contact" class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-7 py-3.5 font-bold text-white shadow-lg shadow-sky-500/25 transition hover:bg-sky-600 active:scale-[0.98]">
+              Start a campaign
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7"/></svg>
+            </a>
+            <a href="#placements" class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-7 py-3.5 font-bold text-gray-900 dark:text-white transition hover:border-sky-400">
+              See placements
+            </a>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="aspect-[4/3] rounded-3xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-2xl shadow-sky-500/10 bg-gradient-to-br from-sky-500/20 via-sky-400/10 to-transparent">
+            <img
+              src="/advertise/hero.jpg"
+              alt="Dayront advertising showcase"
+              class="w-full h-full object-cover"
+              loading="eager"
+              onerror="this.style.display='none'"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         STATS
+    ═══════════════════════════════════════════ -->
+    <section class="bg-gray-50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-800 py-20">
+      <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-center text-3xl sm:text-4xl font-black mb-12 tracking-tight">
+          The impact is real.
+        </h2>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {stats.map((stat) => (
+            <div class="flex flex-col items-center text-center">
+              <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center mb-4 shadow-lg shadow-sky-500/5 transition hover:shadow-sky-500/20 hover:scale-105">
+                <span class="text-2xl sm:text-3xl font-black text-sky-500">{stat.value}</span>
+              </div>
+              <p class="text-sm font-semibold text-gray-600 dark:text-gray-400 max-w-[140px]">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SHOWCASE TABS
+    ═══════════════════════════════════════════ -->
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="mb-12">
+          <span class="text-xs font-black uppercase tracking-widest text-sky-500">What we offer</span>
+          <h2 class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight max-w-3xl">
+            With experiences that bring brands to life.
+          </h2>
+        </div>
+
+        <!-- Tab nav -->
+        <div class="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-800 mb-10">
+          {showcaseTabs.map((tab, i) => (
+            <button
+              type="button"
+              class="showcase-tab px-5 py-3 text-sm font-bold uppercase tracking-wider transition border-b-2 -mb-px"
+              data-target={tab.key}
+              data-active={i === 0 ? 'true' : 'false'}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <!-- Tab panels -->
+        {showcaseTabs.map((tab, i) => (
+          <div
+            class="showcase-panel grid lg:grid-cols-2 gap-10 items-center"
+            data-panel={tab.key}
+            data-active={i === 0 ? 'true' : 'false'}
+          >
+            <div class="order-2 lg:order-1">
+              <h3 class="text-2xl sm:text-3xl font-black tracking-tight mb-4">
+                {tab.headline}
+              </h3>
+              <p class="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+                {tab.description}
+              </p>
+              <ul class="space-y-3">
+                {tab.features.map((f) => (
+                  <li class="flex items-start gap-3">
+                    <span class="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-sky-500/15 text-sky-500 flex items-center justify-center text-xs font-black">✓</span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div class="order-1 lg:order-2 aspect-[4/3] rounded-3xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-xl bg-gradient-to-br from-sky-500/20 to-transparent">
+              <img
+                src={tab.image}
+                alt={tab.headline}
+                class="w-full h-full object-cover"
+                loading="lazy"
+                onerror="this.style.display='none'"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         AD PLACEMENTS
+    ═══════════════════════════════════════════ -->
+    <section id="placements" class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="mb-12 text-center max-w-3xl mx-auto">
+          <span class="text-xs font-black uppercase tracking-widest text-sky-500">Available placements</span>
+          <h2 class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4">
+            Four exclusive slots.
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+            Each placement is sold to a single advertiser at a time. No bidding, no ad networks — just direct partnerships.
+          </p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-5">
+          {placements.map((p) => (
+            <div class="group rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-7 transition hover:border-sky-400 hover:shadow-xl hover:shadow-sky-500/10">
+              <div class="flex items-start justify-between mb-4">
+                <span class="text-3xl">{p.icon}</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-sky-500 bg-sky-50 dark:bg-sky-500/10 px-2.5 py-1 rounded-full">
+                  {p.tier}
+                </span>
+              </div>
+              <h3 class="font-black text-lg mb-1.5 group-hover:text-sky-500 transition">{p.name}</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{p.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SPECIALTY GRID
+    ═══════════════════════════════════════════ -->
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="mb-12 max-w-3xl">
+          <span class="text-xs font-black uppercase tracking-widest text-sky-500">Specialty marketing</span>
+          <h2 class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
+            Campaigns built around <span class="text-sky-500">real audiences.</span>
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {specialties.map((item) => (
+            <div class="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition hover:border-sky-400 hover:shadow-lg">
+              <div class="aspect-square overflow-hidden bg-gradient-to-br from-sky-500/20 to-sky-400/5">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                  onerror="this.style.display='none'"
+                />
+              </div>
+              <div class="p-4">
+                <p class="text-sm font-black text-black dark:text-white leading-tight">{item.title}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.subtitle}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         PRICING
+    ═══════════════════════════════════════════ -->
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-12 max-w-2xl mx-auto">
+          <span class="text-xs font-black uppercase tracking-widest text-sky-500">Simple pricing</span>
+          <h2 class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4">
+            No setup fees. Cancel anytime.
+          </h2>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-7">
+            <h3 class="font-black text-xl mb-1">Starter</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Perfect for testing the waters</p>
+            <p class="text-4xl font-black mb-6">$99<span class="text-base font-medium text-gray-500">/mo</span></p>
+            <ul class="space-y-3 text-sm text-gray-700 dark:text-gray-300 mb-7">
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Below Tool placement</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> 1 active ad</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Basic impression stats</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Cancel anytime</li>
+            </ul>
+            <a href="#contact" class="block text-center rounded-xl border border-gray-300 dark:border-gray-700 px-6 py-3 font-bold transition hover:border-sky-400">Get started</a>
+          </div>
+
+          <div class="rounded-2xl border-2 border-sky-500 bg-white dark:bg-sky-500/5 p-7 relative shadow-xl shadow-sky-500/10">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Most popular</div>
+            <h3 class="font-black text-xl mb-1">Growth</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">For brands serious about reach</p>
+            <p class="text-4xl font-black mb-6">$249<span class="text-base font-medium text-gray-500">/mo</span></p>
+            <ul class="space-y-3 text-sm text-gray-700 dark:text-gray-300 mb-7">
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Below Header placement</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Below Tool placement</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> 2 active ads</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Detailed analytics</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Priority support</li>
+            </ul>
+            <a href="#contact" class="block text-center rounded-xl bg-sky-500 px-6 py-3 font-bold text-white transition hover:bg-sky-600">Get started</a>
+          </div>
+
+          <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-7">
+            <h3 class="font-black text-xl mb-1">Premium</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Maximum visibility + exclusive slots</p>
+            <p class="text-4xl font-black mb-6">$599<span class="text-base font-medium text-gray-500">/mo</span></p>
+            <ul class="space-y-3 text-sm text-gray-700 dark:text-gray-300 mb-7">
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> All placements included</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Sticky Footer (exclusive)</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Sponsored blog post</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> 3 active ads</li>
+              <li class="flex gap-2"><span class="text-sky-500">✓</span> Custom campaigns</li>
+            </ul>
+            <a href="#contact" class="block text-center rounded-xl border border-gray-300 dark:border-gray-700 px-6 py-3 font-bold transition hover:border-sky-400">Get started</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         CONTACT FORM
+    ═══════════════════════════════════════════ -->
+    <section id="contact" class="py-20 bg-black dark:bg-black text-white">
+      <div class="max-w-7xl mx-auto px-6">
+
+        <div class="grid lg:grid-cols-12 gap-10 lg:gap-16">
+
+          <!-- Left column: info -->
+          <div class="lg:col-span-4">
+            <h2 class="text-4xl sm:text-5xl font-black tracking-tight leading-[1.05] mb-6">
+              Let's talk.
+            </h2>
+            <p class="text-gray-300 leading-relaxed mb-10">
+              Tell us about your brand and your goals. We reply within one business day with available slots and a custom quote.
+            </p>
+
+            <div class="space-y-5 text-sm">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-1">Advertising inquiries</p>
+                <a href="mailto:advertise@dayront.com" class="text-white hover:text-sky-400 transition font-medium">advertise@dayront.com</a>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-1">General support</p>
+                <a href="mailto:hello@dayront.com" class="text-white hover:text-sky-400 transition font-medium">hello@dayront.com</a>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-1">Response time</p>
+                <p class="text-white font-medium">Within 24 hours</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right column: form -->
+          <div class="lg:col-span-8">
+            <form
+              action="https://formsubmit.co/advertise@dayront.com"
+              method="POST"
+              class="grid sm:grid-cols-2 gap-4"
+            >
+              <!-- FormSubmit config -->
+              <input type="hidden" name="_subject" value="New advertising inquiry from dayront.com" />
+              <input type="hidden" name="_captcha" value="false" />
+              <input type="hidden" name="_template" value="table" />
+              <input type="text" name="_honey" style="display:none" />
+
+              <div>
+                <label for="firstName" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">First name *</label>
+                <input id="firstName" name="First name" type="text" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="lastName" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Last name *</label>
+                <input id="lastName" name="Last name" type="text" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="company" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Company *</label>
+                <input id="company" name="Company" type="text" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="title" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Title / Role</label>
+                <input id="title" name="Title" type="text" class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="email" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Business email *</label>
+                <input id="email" name="Email" type="email" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="phone" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Phone</label>
+                <input id="phone" name="Phone" type="tel" class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="website" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Website</label>
+                <input id="website" name="Website" type="url" placeholder="https://" class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div>
+                <label for="category" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Business category *</label>
+                <select id="category" name="Category" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition">
+                  <option value="">Select one…</option>
+                  <option>Audio / Music Software</option>
+                  <option>Video Editing / Production</option>
+                  <option>AI / Creative Tools</option>
+                  <option>Podcasting / Media</option>
+                  <option>Hardware / Accessories</option>
+                  <option>Education / Courses</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="placement" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Placement of interest *</label>
+                <select id="placement" name="Placement" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition">
+                  <option value="">Select one…</option>
+                  <option>Below Header</option>
+                  <option>Below Tool</option>
+                  <option>Sticky Footer</option>
+                  <option>Sponsored Post</option>
+                  <option>Not sure yet</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="budget" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Monthly budget *</label>
+                <select id="budget" name="Budget" required class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition">
+                  <option value="">Select one…</option>
+                  <option>Under $100</option>
+                  <option>$100 – $250</option>
+                  <option>$250 – $500</option>
+                  <option>$500 – $1,000</option>
+                  <option>$1,000+</option>
+                  <option>Custom / Let's discuss</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="country" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Country</label>
+                <input id="country" name="Country" type="text" class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" />
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="message" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Message</label>
+                <textarea id="message" name="Message" rows={5} maxLength={1000} placeholder="Tell us about your goals…" class="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition resize-none"></textarea>
+              </div>
+
+              <div class="sm:col-span-2 flex items-center justify-between gap-4 pt-2">
+                <p class="text-xs text-gray-500">
+                  By submitting, you agree to our privacy policy.
+                </p>
+                <button
+                  type="submit"
+                  class="inline-flex items-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-600 px-7 py-3.5 font-bold text-white shadow-lg shadow-sky-500/25 transition active:scale-[0.98]"
+                >
+                  Send inquiry
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Footer address block -->
+        <div class="mt-20 pt-10 border-t border-white/10 grid sm:grid-cols-3 gap-8 text-sm">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-3">Advertising</p>
+            <p class="text-gray-400 leading-relaxed">
+              advertise@dayront.com<br />
+              Response within 24 hours
+            </p>
+          </div>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-3">General</p>
+            <p class="text-gray-400 leading-relaxed">
+              hello@dayront.com<br />
+              Privacy-first media tools
+            </p>
+          </div>
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-3">Legal</p>
+            <p class="text-gray-400 leading-relaxed">
+              <a href="/privacy" class="hover:text-white transition">Privacy Policy</a><br />
+              <a href="/terms" class="hover:text-white transition">Terms of Service</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  /* Showcase tabs */
+  .showcase-tab {
+    color: rgb(107 114 128);
+    border-color: transparent;
+  }
+  .showcase-tab:hover {
+    color: rgb(14 165 233);
+  }
+  .showcase-tab[data-active='true'] {
+    color: rgb(14 165 233);
+    border-color: rgb(14 165 233);
+  }
+
+  .showcase-panel[data-active='false'] {
+    display: none;
+  }
+</style>
+
+<script>
+  // Showcase tabs
+  const tabs = document.querySelectorAll<HTMLButtonElement>('.showcase-tab');
+  const panels = document.querySelectorAll<HTMLElement>('.showcase-panel');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.target;
+
+      tabs.forEach((t) => t.setAttribute('data-active', t.dataset.target === target ? 'true' : 'false'));
+      panels.forEach((p) => p.setAttribute('data-active', p.dataset.panel === target ? 'true' : 'false'));
+    });
+  });
+</script>

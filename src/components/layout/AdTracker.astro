@@ -1,0 +1,63 @@
+---
+export interface Props {
+  adId: string;
+  position: string;
+  advertiser: string;
+}
+const { adId, position, advertiser } = Astro.props;
+---
+
+<script
+  is:inline
+  define:vars={{ adId, position, advertiser }}
+>
+  (function () {
+    if (typeof window === 'undefined') return;
+
+    const trackEvent = function (name, data) {
+      if (typeof window.va === 'function') {
+        window.va('event', { name: name, data: data });
+      }
+    };
+
+    const fireImpression = function () {
+      trackEvent('ad_impression', {
+        adId: adId,
+        position: position,
+        advertiser: advertiser,
+      });
+    };
+
+    // Fire impression once DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fireImpression, { once: true });
+    } else {
+      // Small delay to ensure Vercel Analytics has loaded
+      setTimeout(fireImpression, 100);
+    }
+
+    // Attach click handler to the anchor
+    const attachClick = function () {
+      const link = document.querySelector('[data-ad-id="' + adId + '"]');
+      if (link) {
+        link.addEventListener(
+          'click',
+          function () {
+            trackEvent('ad_click', {
+              adId: adId,
+              position: position,
+              advertiser: advertiser,
+            });
+          },
+          { once: true }
+        );
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', attachClick, { once: true });
+    } else {
+      setTimeout(attachClick, 0);
+    }
+  })();
+</script>
