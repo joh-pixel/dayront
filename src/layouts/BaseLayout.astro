@@ -59,9 +59,6 @@ const allSearchItems = [...toolItems, ...blogItems];
     />
 
     <!-- ★ IMPORT MAP — resolves bare module specifiers for CDN-loaded libs ★ -->
-    <!-- Required for @imgly/background-removal loaded from CDN (it imports
-         'onnxruntime-web' internally, which needs to be mapped to a URL).
-         NOTE: v1.21.0 uses .mjs files directly in dist/ (not dist/esm/*.js) -->
     <script type="importmap">
     {
       "imports": {
@@ -101,10 +98,8 @@ const allSearchItems = [...toolItems, ...blogItems];
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Dayront" />
 
-    <!-- Client‑side translation (Updated for path-based i18n) -->
     <script src="/i18n.js" defer></script>
 
-    <!-- Synchronise language dropdown and <html lang> from URL path -->
     <script is:inline>
       (() => {
         const pathSegments = window.location.pathname.split('/').filter(Boolean);
@@ -133,8 +128,9 @@ const allSearchItems = [...toolItems, ...blogItems];
   >
     <Header lang={lang} />
 
+    <!-- ★ AD SLOT — Below Header (rotates every few seconds) ★ -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-      <AdSlot position="below-header" class="my-2" />
+      <AdSlot position="below-header" class="my-3 md:my-4" />
     </div>
 
     <main class="flex-1">
@@ -143,6 +139,7 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <Footer lang={lang} />
 
+    <!-- ★ AD SLOT — Sticky Footer (fixed to bottom of viewport, always visible) ★ -->
     <AdSlot position="sticky-footer" class="fixed bottom-0 left-0 right-0 z-40" />
 
     <SearchModal items={allSearchItems} />
@@ -226,13 +223,15 @@ const allSearchItems = [...toolItems, ...blogItems];
 </html>
 
 <style is:global>
+  /* Reserve space at the bottom for the sticky footer ad
+     (adds a few px safety margin so content never hides behind the ad) */
   body {
-    padding-bottom: 60px;
+    padding-bottom: 64px;
   }
 
   @media (min-width: 768px) {
     body {
-      padding-bottom: 90px;
+      padding-bottom: 96px;
     }
   }
 

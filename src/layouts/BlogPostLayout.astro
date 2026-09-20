@@ -15,7 +15,7 @@ export interface Props {
   readingTime?: string;
   content: any;
   slug?: string;
-  locale?: string; // NEW: Passed from the [locale] dynamic route
+  locale?: string;
 }
 
 const {
@@ -29,50 +29,41 @@ const {
   readingTime = '5 min read',
   content: Content,
   slug,
-  locale = 'en', // Default to English if not passed
+  locale = 'en',
 } = Astro.props;
 
 /* --------------------------------------------------------------------------
    LANGUAGE
 -------------------------------------------------------------------------- */
-
-// 1. Statically import the JSON files based on the passed locale
-// (This runs at build time, so Pinterest sees the translated text instantly)
 let common: Record<string, any> = {};
 try {
   const commonModule = await import(`../../public/locales/${locale}/common.json`);
   common = commonModule.default || commonModule;
-} catch {
-  // Fallback silently – English will be used below
-}
+} catch {}
 
-// Helper: get a translated string or fallback to English
 function t(key: string, fallback: string): string {
   return common[key] || fallback;
 }
 
 /* --------------------------------------------------------------------------
-   FORMATTED DATE (respect language)
+   FORMATTED DATE
 -------------------------------------------------------------------------- */
-
 const formattedDate = new Date(date).toLocaleDateString(
   locale && locale !== 'en' ? locale : 'en-US',
   { year: 'numeric', month: 'long', day: 'numeric' }
 );
 
 /* --------------------------------------------------------------------------
-   RELATED POSTS – fetch from the same language folder
+   RELATED POSTS
 -------------------------------------------------------------------------- */
-
 let relatedPosts: any[] = [];
 if (relatedSlugs.length > 0) {
-  // Filter posts based on the passed locale, not the query param
   const allPosts = await getCollection('blog', (entry) =>
     entry.id.startsWith(`${locale}/`)
   );
-  
+
   relatedPosts = allPosts
-    .filter(p => relatedSlugs.includes(p.slug)) 
+    .filter(p => relatedSlugs.includes(p.slug))
     .map(p => ({
       title: p.data.title,
       description: p.data.description,
@@ -86,19 +77,16 @@ if (relatedSlugs.length > 0) {
 <BaseLayout title={title} description={description}>
   <div class="max-w-7xl mx-auto px-4 py-8 sm:py-12 lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
     <div>
-      <!-- Breadcrumbs with translated labels -->
+      <!-- Breadcrumbs -->
       <nav class="text-sm text-gray-500 dark:text-gray-400 mb-6" aria-label="Breadcrumb">
         <ol class="flex items-center flex-wrap gap-x-2 gap-y-1">
-          <!-- Updated home link to include the locale prefix -->
           <li><a href={`/${locale}`} class="hover:text-sky transition">{t('home', 'Home')}</a></li>
           <li aria-hidden="true">/</li>
-          <!-- Updated blog link to include the locale prefix -->
           <li><a href={`/blog/${locale}`} class="hover:text-sky transition">{t('blog', 'Blog')}</a></li>
           {categories[0] && (
             <>
               <li aria-hidden="true">/</li>
               <li>
-                <!-- Updated category link -->
                 <a href={`/blog/${locale}/category/${categories[0].toLowerCase()}`} class="hover:text-sky transition">{categories[0]}</a>
               </li>
             </>
@@ -134,14 +122,53 @@ if (relatedSlugs.length > 0) {
           )}
         </header>
 
-        <div class="prose dark:prose-invert max-w-none mb-12">
+        <div class="prose dark:prose-invert max-w-none mb-12" data-prose-content>
           <Content />
         </div>
       </article>
 
+      <!-- Inline ad template (cloned by script between H2 sections) -->
+      <template id="inline-ad-template">
+        <div class="inline-ad-slot not-prose">
+          <a
+            href="/advertise"
+            class="inline-ad-card group relative block overflow-hidden rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gradient-to-r from-sky-50 via-white to-sky-50/40 dark:from-sky-500/5 dark:via-gray-900 dark:to-sky-500/5 transition hover:border-sky-400 hover:shadow-md"
+          >
+            <div class="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-sky-400/15 blur-2xl transition-transform duration-500 group-hover:scale-150"></div>
+
+            <div class="relative flex items-center gap-3 px-4 py-3">
+              <span class="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-md shadow-sky-500/40" aria-hidden="true">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 0 1-3.417.592l-2.147-6.15M18 13a3 3 0 1 0 0-6M5.436 13.683A4.001 4.001 0 0 1 7 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 0 1-1.564-.317z"/>
+                </svg>
+              </span>
+
+              <div class="min-w-0 flex-1">
+                <p class="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] text-sky-500">
+                  <span class="relative flex h-1.5 w-1.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-500 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-sky-500"></span>
+                  </span>
+                  Advertise with us
+                </p>
+                <p class="text-[13px] sm:text-sm font-extrabold text-gray-900 dark:text-white leading-tight">
+                  Reach creators who <span class="text-sky-500">care about their craft.</span>
+                </p>
+              </div>
+
+              <span class="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all duration-300 group-hover:bg-sky-500 group-hover:text-white group-hover:gap-2">
+                Learn more
+                <svg class="w-3 h-3 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-7-7 7 7-7 7"/>
+                </svg>
+              </span>
+            </div>
+          </a>
+        </div>
+      </template>
+
       <AdSlot position="in-content" class="mb-12" />
 
-      <!-- Related Posts – translated heading + links include language -->
       {relatedPosts.length > 0 && (
         <section class="mt-16">
           <h2 class="text-2xl font-bold text-black dark:text-white mb-6">
@@ -162,7 +189,6 @@ if (relatedSlugs.length > 0) {
                       )}
                     </time>
                     <h3 class="font-semibold text-black dark:text-white mt-1 mb-2 line-clamp-2">{post.title}</h3>
-                    <!-- Updated link to include the locale prefix -->
                     <a href={`/blog/${locale}/${post.slug}`} class="text-sky text-sm font-medium hover:underline">Read →</a>
                   </div>
                 </div>
@@ -181,3 +207,87 @@ if (relatedSlugs.length > 0) {
     </aside>
   </div>
 </BaseLayout>
+
+<script>
+  (function () {
+    function injectInlineAds() {
+      const prose = document.querySelector('[data-prose-content]');
+      const template = document.getElementById('inline-ad-template') as HTMLTemplateElement | null;
+      if (!prose || !template) return;
+
+      // Skip if already injected (Astro page transitions)
+      if (prose.querySelector('.inline-ad-slot')) return;
+
+      const children = Array.from(prose.children);
+      const h2Indexes: number[] = [];
+
+      children.forEach((child, i) => {
+        if (child.tagName === 'H2') h2Indexes.push(i);
+      });
+
+      // Skip posts with fewer than 2 H2 sections
+      if (h2Indexes.length < 2) return;
+
+      // Decide how many ads to inject based on article length
+      // 2-3 sections  → 1 ad
+      // 4-6 sections  → 2 ads
+      // 7+  sections  → 3 ads
+      let maxAds = 1;
+      if (h2Indexes.length >= 7) maxAds = 3;
+      else if (h2Indexes.length >= 4) maxAds = 2;
+
+      // Determine insertion indexes (before the H2 of sections 2, 4, 6...)
+      const insertionPoints: number[] = [];
+      for (let i = 1; i < h2Indexes.length && insertionPoints.length < maxAds; i += 2) {
+        // Insert just before the NEXT h2 (end of current section)
+        const nextH2 = h2Indexes[i];
+        insertionPoints.push(nextH2);
+      }
+
+      // Insert ads in REVERSE order to keep DOM indexes stable
+      insertionPoints.reverse().forEach((idx) => {
+        const target = children[idx];
+        if (!target) return;
+        const clone = template.content.cloneNode(true);
+        target.parentNode?.insertBefore(clone, target);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', injectInlineAds, { once: true });
+    } else {
+      injectInlineAds();
+    }
+
+    // Re-run on Astro page transitions
+    document.addEventListener('astro:after-swap', injectInlineAds);
+  })();
+</script>
+
+<style>
+  /* Inline ad slot – inserted between H2 sections */
+  .inline-ad-slot {
+    margin: 2.5rem 0;
+    /* Prevent prose styles from bleeding into the ad card */
+    font-style: normal;
+    line-height: normal;
+  }
+
+  .inline-ad-card {
+    max-width: 100%;
+    text-decoration: none;
+  }
+
+  /* Ensure the ad slot breaks out of prose defaults */
+  :global(.prose .inline-ad-slot *) {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  /* Tighten spacing on mobile */
+  @media (max-width: 640px) {
+    .inline-ad-slot {
+      margin: 2rem 0;
+    }
+  }
+</style>

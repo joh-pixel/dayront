@@ -20,13 +20,19 @@ const dimensionsMap = {
 const reservedHeight = dimensionsMap[position];
 const ads = getActiveAds(position);
 const slideshowId = `adslot-${position}-${Math.random().toString(36).slice(2, 8)}`;
+
+// ★ Only apply `relative` when we're NOT sticky.
+// Sticky relies on the `fixed` class passed from BaseLayout.
+const isSticky = position === 'sticky-footer';
+const positioning = isSticky ? '' : 'relative';
 ---
 
 {ads.length === 0 && (
   <a
     href="/advertise"
     class:list={[
-      'adslot group relative w-full overflow-hidden rounded-xl',
+      'adslot group w-full overflow-hidden rounded-xl',
+      positioning,
       'flex items-center justify-center',
       'border border-sky-200/60 dark:border-sky-500/20',
       'transition-all duration-300 hover:scale-[1.005] hover:border-sky-400',
@@ -76,7 +82,8 @@ const slideshowId = `adslot-${position}-${Math.random().toString(36).slice(2, 8)
   <div
     id={slideshowId}
     class:list={[
-      'adslot-slideshow group relative w-full overflow-hidden rounded-xl',
+      'adslot-slideshow group w-full overflow-hidden rounded-xl',
+      positioning,
       'border border-gray-200 dark:border-gray-800',
       'bg-white dark:bg-gray-900',
       'transition-all duration-200 hover:border-sky-400 hover:shadow-md',
@@ -119,23 +126,23 @@ const slideshowId = `adslot-${position}-${Math.random().toString(36).slice(2, 8)
         )}
 
         {!ad.image && ad.isDayront && (
-          <div class="absolute inset-0 flex items-center">
+          <div class="absolute inset-0">
             <div class="absolute inset-0 adslot-bg" aria-hidden="true"></div>
             <div class="absolute inset-0 adslot-shimmer" aria-hidden="true"></div>
             <div class="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-sky-400/20 blur-3xl transition-transform duration-700 group-hover:scale-150" aria-hidden="true"></div>
 
-            <div class="relative flex items-center gap-3 md:gap-4 px-4 md:px-6 w-full">
-              <span class="relative shrink-0 flex items-center justify-center w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-md shadow-sky-500/40 text-base md:text-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-4deg]" aria-hidden="true">
+            <div class="relative h-full flex items-center gap-3 md:gap-4 px-4 md:px-6 w-full">
+              <span class="relative shrink-0 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-md shadow-sky-500/40 text-sm md:text-base transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-4deg]" aria-hidden="true">
                 <span class="absolute inset-0 rounded-xl bg-sky-400/50 adslot-ping"></span>
                 <span class="relative">{ad.emoji || '✨'}</span>
               </span>
 
-              <div class="min-w-0 flex flex-col leading-tight gap-0.5 flex-1">
-                <span class="text-[13px] md:text-[15px] font-extrabold text-gray-900 dark:text-white truncate tracking-tight">
+              <div class="min-w-0 flex flex-col leading-none gap-0.5 flex-1">
+                <span class="text-[12px] md:text-[14px] font-extrabold text-gray-900 dark:text-white truncate tracking-tight">
                   {ad.title}
                 </span>
                 {ad.subtitle && (
-                  <span class="text-[11px] md:text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <span class="text-[10px] md:text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
                     {ad.subtitle}
                   </span>
                 )}
