@@ -57,6 +57,18 @@ const audienceFacts = [
 ];
 
 /* ─────────────────────────────────────────────
+   SPECIALTY VERTICALS — restored
+   ───────────────────────────────────────────── */
+const specialties = [
+  { image: '/advertise/grid-1.jpg', title: 'Content Solutions',    subtitle: 'Reach users in flow' },
+  { image: '/advertise/grid-2.jpg', title: 'Targeted Audio Reach', subtitle: 'Podcasters & editors' },
+  { image: '/advertise/grid-3.jpg', title: 'Video Workflows',      subtitle: 'Creators & studios' },
+  { image: '/advertise/grid-4.jpg', title: 'AI & Innovation',      subtitle: 'Early adopters' },
+  { image: '/advertise/grid-5.jpg', title: 'Creator Economy',      subtitle: 'Independent makers' },
+  { image: '/advertise/grid-6.jpg', title: 'Studio & Pro Tools',   subtitle: 'Power users' },
+];
+
+/* ─────────────────────────────────────────────
    PROOF — engagement & brand safety
    ───────────────────────────────────────────── */
 const proofStats = [
@@ -429,9 +441,46 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         4. PROOF / BRAND SAFETY
+         4. SPECIALTY VERTICALS — restored
     ═══════════════════════════════════════════ -->
     <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="mb-12 max-w-3xl">
+          <span class="text-xs font-black uppercase tracking-widest text-sky-500">Specialty marketing</span>
+          <h2 class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4">
+            Campaigns built around <span class="text-sky-500">real audiences.</span>
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+            From content tooling to studio gear, we match your brand to the segment most likely to convert. Below are the verticals our audience cares about most.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {specialties.map((item) => (
+            <div class="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition hover:border-sky-400 hover:shadow-lg">
+              <div class="aspect-square overflow-hidden bg-gradient-to-br from-sky-500/20 to-sky-400/5">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                  onerror="this.style.display='none'"
+                />
+              </div>
+              <div class="p-4">
+                <p class="text-sm font-black text-black dark:text-white leading-tight">{item.title}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.subtitle}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         5. PROOF / BRAND SAFETY
+    ═══════════════════════════════════════════ -->
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center max-w-2xl mx-auto mb-12">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">The proof</span>
@@ -464,9 +513,9 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         5. PRODUCT SHOWCASE — kept intact
+         6. PRODUCT SHOWCASE — kept intact
     ═══════════════════════════════════════════ -->
-    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
       <div class="max-w-7xl mx-auto px-6">
         <div class="mb-12">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">Where your ad appears</span>
@@ -531,9 +580,9 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         6. INVENTORY — placements with impression data
+         7. INVENTORY — placements with impression data
     ═══════════════════════════════════════════ -->
-    <section id="placements" class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+    <section id="placements" class="py-20 border-b border-gray-200 dark:border-gray-800">
       <div class="max-w-7xl mx-auto px-6">
         <div class="mb-12 text-center max-w-3xl mx-auto">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">Available inventory</span>
@@ -590,9 +639,9 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         7. PRICING — with CPM math
+         8. PRICING — with CPM math
     ═══════════════════════════════════════════ -->
-    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-12 max-w-2xl mx-auto">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">Transparent pricing</span>
@@ -662,9 +711,9 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         8. HOW IT WORKS
+         9. HOW IT WORKS
     ═══════════════════════════════════════════ -->
-    <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center max-w-2xl mx-auto mb-14">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">How it works</span>
@@ -689,9 +738,9 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         9. TESTIMONIALS
+         10. TESTIMONIALS
     ═══════════════════════════════════════════ -->
-    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center max-w-2xl mx-auto mb-14">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">What advertisers say</span>
@@ -718,9 +767,9 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         10. FAQ
+         11. FAQ
     ═══════════════════════════════════════════ -->
-    <section class="py-20 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+    <section class="py-20 border-b border-gray-200 dark:border-gray-800">
       <div class="max-w-3xl mx-auto px-6">
         <div class="text-center mb-12">
           <span class="text-xs font-black uppercase tracking-widest text-sky-500">FAQ</span>
@@ -749,7 +798,7 @@ const faqs = [
     </section>
 
     <!-- ═══════════════════════════════════════════
-         11. CONTACT
+         12. CONTACT
     ═══════════════════════════════════════════ -->
     <section id="contact" class="py-20 bg-black dark:bg-black text-white">
       <div class="max-w-7xl mx-auto px-6">
