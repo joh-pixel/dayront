@@ -106,7 +106,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 }
 
 /* -------------------------------------------------------------------------- */
-/* FFmpeg LOADER — multi-CDN fallback with timeouts                           */
+/* FFmpeg LOADER — mobile-friendly with extended timeouts                     */
 /* -------------------------------------------------------------------------- */
 
 const CORE_VERSION = '0.12.6';
@@ -122,28 +122,48 @@ const CDN_BASES: string[] = [
   `https://esm.sh/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
 ];
 
+/** Detect mobile devices — phones need longer timeouts for WASM init */
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+}
+
+/**
+ * Timeouts are intentionally generous on mobile. Phones on 4G can take
+ * 60-180 seconds to download + compile 30MB of WASM.
+ * Desktop connections are much faster but we still allow headroom.
+ */
+const TIMEOUTS = {
+  coreJs: 60_000,                                              // 1 min
+  wasm: isMobileDevice() ? 300_000 : 180_000,                  // 5 min mobile / 3 min desktop
+  init: isMobileDevice() ? 180_000 : 90_000,                   // 3 min mobile / 90s desktop
+};
+
 async function loadFromCDN(baseUrl: string, instance: FFmpeg): Promise<void> {
   console.log(`[FFmpeg] Trying CDN: ${baseUrl}`);
 
   const coreURL = await withTimeout(
     toBlobURL(`${baseUrl}/ffmpeg-core.js`, 'text/javascript'),
-    30_000,
+    TIMEOUTS.coreJs,
     'ffmpeg-core.js download',
   );
+  console.log('[FFmpeg] ✅ ffmpeg-core.js downloaded');
 
   const wasmURL = await withTimeout(
     toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, 'application/wasm'),
-    120_000, // WASM is ~30MB, allow more time on slow connections
-    'ffmpeg-core.wasm download',
+    TIMEOUTS.wasm,
+    'ffmpeg-core.wasm download (~30MB — slower on mobile)',
   );
+  console.log('[FFmpeg] ✅ ffmpeg-core.wasm downloaded — initializing runtime…');
 
   await withTimeout(
     instance.load({ coreURL, wasmURL }),
-    45_000,
-    'FFmpeg initialization',
+    TIMEOUTS.init,
+    'FFmpeg runtime initialization',
   );
 
-  console.log(`[FFmpeg] ✅ Loaded successfully from ${baseUrl}`);
+  console.log(`[FFmpeg] ✅ Fully loaded from ${baseUrl}`);
 }
 
 async function getFFmpeg(): Promise<FFmpeg> {
@@ -176,6 +196,15 @@ async function getFFmpeg(): Promise<FFmpeg> {
     }
 
     ffmpeg = null;
+
+    // ★ Mobile-friendly error message
+    if (isMobileDevice()) {
+      throw new Error(
+        `FFmpeg couldn't load on this device. Mobile browsers often struggle with the 30MB WASM download needed for in-browser video processing. ` +
+        `Try a Wi-Fi connection, keep the tab open, or use a desktop computer for large files.`
+      );
+    }
+
     throw new Error(
       `FFmpeg failed to load from all CDNs. Last error: ${lastError?.message || 'Unknown'}. ` +
       `Please check your internet connection and try again.`

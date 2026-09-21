@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import FileDropzone from './FileDropzone';
-import ProgressBar, { useSmoothProgress } from './ProgressBar'; // ★ NEW: import hook
+import ProgressBar, { useSmoothProgress } from './ProgressBar';
 import PrivacyToggle from './PrivacyToggle';
 
 import {
@@ -193,7 +193,7 @@ export default function Converter({
   const isMobile = useIsMobile();
   const isBlockedOnMobile = isMobile && toolConfig.requiresDesktop === true;
 
-  // ★ NEW: Smooth animated progress (auto-creeps + eases toward real target)
+  // Smooth animated progress (auto-creeps + eases toward real target)
   const smoothProgress = useSmoothProgress(progress);
 
   useEffect(() => {
@@ -471,6 +471,16 @@ export default function Converter({
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
 
+  /* ─────────── Loading stage label ─────────── */
+  // Provides clearer feedback while FFmpeg is loading (especially on mobile)
+  function getLoadingLabel(): string {
+    if (progress > 0) return 'Processing your file…';
+    if (smoothProgress < 4) return 'Downloading FFmpeg engine…';
+    if (smoothProgress < 8) return 'Compiling WASM (this takes a moment)…';
+    if (smoothProgress < 12) return 'Almost ready…';
+    return 'Still loading FFmpeg…';
+  }
+
   if (isBlockedOnMobile) {
     return (
       <div class="w-full">
@@ -687,7 +697,7 @@ export default function Converter({
             )}
           </button>
 
-          {/* ★ UPDATED: Smooth progress card with stall detection */}
+          {/* Smooth progress card with stage-aware labels */}
           {processing && (
             <div
               class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -700,11 +710,7 @@ export default function Converter({
                   <div class="flex min-w-0 items-center gap-2.5">
                     <span class="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />
                     <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                      {progress === 0 && smoothProgress < 12
-                        ? 'Preparing…'
-                        : progress === 0
-                        ? 'Starting…'
-                        : 'Processing'}
+                      {getLoadingLabel()}
                     </span>
                   </div>
                   <span class="shrink-0 text-sm font-bold tabular-nums text-sky-600 dark:text-sky-400">
@@ -716,7 +722,7 @@ export default function Converter({
 
                 {progress === 0 && smoothProgress >= 12 && (
                   <p class="mt-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Still working — this may take a moment for larger files…
+                    First-time load can take 1–2 minutes on mobile. Please keep this tab open.
                   </p>
                 )}
               </div>

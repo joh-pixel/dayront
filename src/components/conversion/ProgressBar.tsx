@@ -8,11 +8,14 @@ import { useEffect, useRef, useState } from 'preact/hooks';
      (up to 12%) so users see activity during FFmpeg's initial load phase.
    - Smooth easing: never jumps, always glides toward the target.
    - Never goes backward visually.
+   - ★ NEW: Resets to 0 when a fresh conversion cycle begins (target drops
+     from a high value back to 0).
 -------------------------------------------------------------------------- */
 export function useSmoothProgress(target: number): number {
   const [display, setDisplay] = useState(0);
   const startTimeRef = useRef(Date.now());
   const mountedRef = useRef(false);
+  const wasHighRef = useRef(false); // ★ NEW: track if we've ever seen real progress
 
   // Initialize on first render
   useEffect(() => {
@@ -23,6 +26,16 @@ export function useSmoothProgress(target: number): number {
   }, []);
 
   useEffect(() => {
+    // ★ NEW: Detect a fresh cycle (target was high, now it's 0) → reset the display
+    if (target > 12) {
+      wasHighRef.current = true;
+    }
+    if (target === 0 && wasHighRef.current) {
+      setDisplay(0);
+      startTimeRef.current = Date.now();
+      wasHighRef.current = false;
+    }
+
     const tick = () => {
       setDisplay((prev) => {
         // Auto-creep only when real progress is still at 0
@@ -32,7 +45,7 @@ export function useSmoothProgress(target: number): number {
 
         let next = Math.max(target, creepFloor);
 
-        // Never go backwards
+        // Never go backwards (except the explicit reset above)
         if (next < prev) next = prev;
 
         // Cap at 100
