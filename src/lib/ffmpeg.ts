@@ -63,7 +63,7 @@ async function deleteFile(ff: FFmpeg, filename: string): Promise<void> {
 }
 
 /**
- * ★ NEW: H.264 requires even dimensions (width and height must be divisible by 2).
+ * H.264 requires even dimensions (width and height must be divisible by 2).
  * Rounds odd values down to the nearest even number.
  */
 function ensureEven(value: number): number {
@@ -72,7 +72,7 @@ function ensureEven(value: number): number {
 }
 
 /**
- * ★ NEW: Enforces sane limits for resolution conversion.
+ * Enforces sane limits for resolution conversion.
  * Returns an error message if the operation is likely to fail, or null if OK.
  */
 function validateResolution(width: number, height: number): string | null {
@@ -92,33 +92,98 @@ function validateResolution(width: number, height: number): string | null {
   return null;
 }
 
+/** Wrap a promise with a timeout so it can't hang forever */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s.`));
+    }, ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
 /* -------------------------------------------------------------------------- */
-/* FFmpeg LOADER – CDN ESM build                                              */
+/* FFmpeg LOADER — multi-CDN fallback with timeouts                           */
 /* -------------------------------------------------------------------------- */
+
+const CORE_VERSION = '0.12.6';
+
+/**
+ * Multiple CDN bases to try in order. If one fails (blocked, slow, 404),
+ * we fall back to the next. This dramatically improves reliability on
+ * mobile networks where some CDNs may be blocked or rate-limited.
+ */
+const CDN_BASES: string[] = [
+  `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
+  `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
+  `https://esm.sh/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
+];
+
+async function loadFromCDN(baseUrl: string, instance: FFmpeg): Promise<void> {
+  console.log(`[FFmpeg] Trying CDN: ${baseUrl}`);
+
+  const coreURL = await withTimeout(
+    toBlobURL(`${baseUrl}/ffmpeg-core.js`, 'text/javascript'),
+    30_000,
+    'ffmpeg-core.js download',
+  );
+
+  const wasmURL = await withTimeout(
+    toBlobURL(`${baseUrl}/ffmpeg-core.wasm`, 'application/wasm'),
+    120_000, // WASM is ~30MB, allow more time on slow connections
+    'ffmpeg-core.wasm download',
+  );
+
+  await withTimeout(
+    instance.load({ coreURL, wasmURL }),
+    45_000,
+    'FFmpeg initialization',
+  );
+
+  console.log(`[FFmpeg] ✅ Loaded successfully from ${baseUrl}`);
+}
 
 async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpeg) return ffmpeg;
-  if (typeof window === 'undefined') throw new Error('FFmpeg can only run in the browser.');
+  if (typeof window === 'undefined') {
+    throw new Error('FFmpeg can only run in the browser.');
+  }
   if (loadingPromise) return loadingPromise;
 
   loadingPromise = (async () => {
     const instance = new FFmpeg();
-    try {
-      const CORE_VERSION = '0.12.6';
-      const BASE_URL = `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/esm`;
-      const coreURL = await toBlobURL(`${BASE_URL}/ffmpeg-core.js`, 'text/javascript');
-      const wasmURL = await toBlobURL(`${BASE_URL}/ffmpeg-core.wasm`, 'application/wasm');
-      await instance.load({ coreURL, wasmURL });
-      ffmpeg = instance;
-      return instance;
-    } catch (error: unknown) {
-      ffmpeg = null;
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`FFmpeg load failed: ${message}`);
-    } finally {
-      loadingPromise = null;
+
+    // Detailed log output for debugging
+    instance.on('log', ({ message }) => {
+      console.log('[FFmpeg]', message);
+    });
+
+    let lastError: Error | null = null;
+
+    for (const baseUrl of CDN_BASES) {
+      try {
+        await loadFromCDN(baseUrl, instance);
+        ffmpeg = instance;
+        return instance;
+      } catch (error: unknown) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`[FFmpeg] ❌ CDN failed (${baseUrl}):`, lastError.message);
+        // Continue to next CDN
+      }
     }
-  })();
+
+    ffmpeg = null;
+    throw new Error(
+      `FFmpeg failed to load from all CDNs. Last error: ${lastError?.message || 'Unknown'}. ` +
+      `Please check your internet connection and try again.`
+    );
+  })().finally(() => {
+    loadingPromise = null;
+  });
+
   return loadingPromise;
 }
 
@@ -562,11 +627,6 @@ export async function gifToMp4(
   }
 }
 
-/**
- * ★ FIXED: Now uses proper H.264 encoding parameters for compatibility,
- * even dimensions, and yuv420p pixel format. Works for both the
- * `resize-video` tool AND the new `resolution-convert` pages.
- */
 export async function resizeVideo(
   file: File,
   width: number,
@@ -574,15 +634,12 @@ export async function resizeVideo(
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
   onProgress?: (p: number) => void,
-  // ★ NEW: optional preset/crf tuning for resolution pages
   preset: string = 'ultrafast',
   crf: number = 23,
 ): Promise<Blob> {
-  // Validate dimensions
   const validationError = validateResolution(width, height);
   if (validationError) throw new Error(validationError);
 
-  // H.264 requires even dimensions
   const safeWidth = ensureEven(width);
   const safeHeight = ensureEven(height);
 
@@ -594,7 +651,6 @@ export async function resizeVideo(
   try {
     await ff.writeFile(inName, await fetchFile(file));
 
-    // Use a scale filter that maintains aspect ratio if width or height is -1
     const scaleFilter = `scale=${safeWidth}:${safeHeight}`;
 
     const args = [
@@ -604,7 +660,6 @@ export async function resizeVideo(
       '-preset', preset,
       '-crf', String(crf),
       '-pix_fmt', 'yuv420p',
-      // ★ FIXED: Re-encode audio to AAC instead of copying, to prevent broken MP4s
       '-c:a', 'aac',
       '-b:a', '128k',
       '-movflags', '+faststart',
@@ -619,10 +674,6 @@ export async function resizeVideo(
   }
 }
 
-/**
- * ★ NEW: Dedicated function for the 30 resolution converter pages.
- * Tuned for reliability on large resolutions (up to 8K).
- */
 export async function resolutionConvert(
   file: File,
   width: number,
@@ -631,10 +682,9 @@ export async function resolutionConvert(
   cleanMetadata: boolean = false,
   onProgress?: (p: number) => void,
 ): Promise<Blob> {
-  // Use ultrafast preset for 4K/8K (much faster), medium for smaller
   const isLarge = width >= 2560 || height >= 1440;
   const preset = isLarge ? 'ultrafast' : 'veryfast';
-  const crf = isLarge ? 23 : 20; // Slightly higher CRF for large = faster
+  const crf = isLarge ? 23 : 20;
 
   return resizeVideo(
     file,
@@ -660,7 +710,6 @@ export async function cropVideo(
   const inName = makeName('crop-in', getExtension(file.name));
   const outName = makeName('cropped', format);
 
-  // ★ FIXED: Ensure crop dimensions are even (H.264 requirement)
   const safeW = ensureEven(w);
   const safeH = ensureEven(h);
   const safeX = ensureEven(x);
