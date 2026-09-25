@@ -1,5 +1,6 @@
 ---
 // src/pages/status.astro
+// Fully standalone page - matches Dayront brand colors
 ---
 
 <!DOCTYPE html>
@@ -14,6 +15,18 @@
   <div class="page-wrapper">
     <main class="status-card">
       
+      <!-- Brand Header -->
+      <div class="brand-header">
+        <div class="brand-logo">
+          <!-- Simple SVG placeholder for Dayront logo -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#0ea5e9"/>
+            <path d="M12 8V16M8 12H16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Dayront</span>
+        </div>
+      </div>
+
       <!-- Header -->
       <header class="header">
         <h1>System Status</h1>
@@ -48,21 +61,27 @@
         </a>
       </section>
 
-      <!-- Footer / CTA -->
-      <footer class="footer">
-        <p>Experiencing an issue with a specific tool? Let us know.</p>
-        <a href="/contact" class="btn">Contact Support</a>
-      </footer>
-
     </main>
   </div>
 </body>
 
 <style>
-  /* Scoped CSS for this page only */
+  /* Dayront Brand Variables */
+  :root {
+    --brand-blue: #0ea5e9;
+    --brand-blue-hover: #0284c7;
+    --brand-bg: #f0f9ff;
+    --brand-text-dark: #0f172a;
+    --brand-text-body: #475569;
+    --brand-border: #e2e8f0;
+    --brand-success-bg: #f0fdf4;
+    --brand-success-text: #166534;
+    --brand-success-dot: #22c55e;
+  }
+
   .page-wrapper {
     min-height: 100vh;
-    background-color: #f9fafb;
+    background-color: var(--brand-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -72,12 +91,27 @@
 
   .status-card {
     background: white;
-    max-width: 500px;
+    max-width: 520px;
     width: 100%;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f3f4f6;
+    padding: 2.5rem 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.08), 0 8px 10px -6px rgba(14, 165, 233, 0.04);
+    border: 1px solid var(--brand-border);
+  }
+
+  .brand-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--brand-text-dark);
   }
 
   .header {
@@ -86,15 +120,16 @@
   }
 
   .header h1 {
-    font-size: 1.75rem;
+    font-size: 1.875rem;
     font-weight: 800;
-    color: #111827;
+    color: var(--brand-text-dark);
     margin: 0;
+    letter-spacing: -0.025em;
   }
 
   .subtitle {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--brand-text-body);
     margin-top: 0.5rem;
   }
 
@@ -103,10 +138,10 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    background-color: #f0fdf4;
+    background-color: var(--brand-success-bg);
     border: 1px solid #dcfce7;
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 2rem;
   }
 
@@ -123,7 +158,7 @@
     height: 100%;
     width: 100%;
     border-radius: 50%;
-    background-color: #4ade80;
+    background-color: var(--brand-success-dot);
     opacity: 0.75;
     animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
@@ -134,7 +169,7 @@
     border-radius: 50%;
     height: 12px;
     width: 12px;
-    background-color: #22c55e;
+    background-color: var(--brand-success-dot);
   }
 
   @keyframes ping {
@@ -146,64 +181,37 @@
 
   .status-text {
     font-weight: 600;
-    color: #166534;
+    color: var(--brand-success-text);
   }
 
   .explanation h2 {
     font-size: 1rem;
-    font-weight: 600;
-    color: #111827;
+    font-weight: 700;
+    color: var(--brand-text-dark);
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
   }
 
   .explanation p {
-    font-size: 0.875rem;
-    color: #374151;
-    line-height: 1.5;
+    font-size: 0.9375rem;
+    color: var(--brand-text-body);
+    line-height: 1.6;
     margin-bottom: 0.75rem;
   }
 
   .link {
-    display: inline-block;
-    color: #2563eb;
-    font-weight: 500;
-    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    color: var(--brand-blue);
+    font-weight: 600;
+    font-size: 0.9375rem;
     text-decoration: none;
     margin-top: 0.5rem;
+    transition: color 0.2s;
   }
 
   .link:hover {
-    color: #1d4ed8;
+    color: var(--brand-blue-hover);
     text-decoration: underline;
-  }
-
-  .footer {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #f3f4f6;
-    text-align: center;
-  }
-
-  .footer p {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-bottom: 1rem;
-  }
-
-  .btn {
-    display: inline-block;
-    background-color: #2563eb;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-decoration: none;
-    transition: background-color 0.2s;
-  }
-
-  .btn:hover {
-    background-color: #1d4ed8;
   }
 </style>
