@@ -72,7 +72,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
 
 <BaseLayout
   title="Download Dayront — Desktop & Mobile Apps"
-  description="Get Dayront for Windows, macOS, Linux, Android, or iOS. Process 5GB+ files with native FFmpeg, no memory limits, no uploads."
+  description="Get Dayront for Windows, macOS, Linux, Android, or iOS. Process 5GB+ files directly on your device. No memory limits, no uploads."
 >
   <main class="download-page">
     <header class="download-hero">
@@ -87,7 +87,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
         <h1>Get the Dayront App</h1>
       </div>
       <p class="lead">
-        Process files up to <strong>5 GB</strong> with native FFmpeg.
+        Process files up to <strong>5 GB</strong> directly on your device.
         No memory limits, no uploads, no waiting.
       </p>
       <div class="hero-badges">
@@ -106,7 +106,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
         </div>
 
         <h2 class="notify-hero__title">Be first to get the app</h2>
-        <p class="notify-hero__sub" id="notify-hero-sub">
+        <p class="notify-hero__sub">
           Enter your email and we'll let you know the moment Dayront is available.
         </p>
 
@@ -289,7 +289,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
         </details>
         <details>
           <summary>Why is the app faster than the browser?</summary>
-          <p>The browser version runs FFmpeg compiled to WebAssembly, which is limited to about 300 MB of memory per tab. The app runs native FFmpeg directly on your device — 10× faster and no memory limit.</p>
+          <p>The browser version has stricter memory limits per tab. The app processes files directly on your device — 10× faster and no memory limit.</p>
         </details>
         <details>
           <summary>Does the app upload my files?</summary>
@@ -308,7 +308,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
 
     <footer class="download-footer">
       <p>
-        Built with <strong>native FFmpeg</strong> and <strong>zero telemetry</strong>.
+        Built for your device, with <strong>zero telemetry</strong>.
         Your files never leave your device.
       </p>
       <a href="/tools" class="btn btn--ghost">Browse all tools →</a>
@@ -789,7 +789,6 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
     .download-card__icon {
       background: #1E293B;
     }
-    /* Make Apple logo white in dark mode */
     .download-card__icon svg path[fill="#0F172A"] {
       fill: #E2E8F0;
     }
@@ -836,36 +835,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
 
 <script>
   (() => {
-    /* ── 1. Detect OS and highlight matching download card ── */
-    type PlatformKey = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
-
-    function detectOS(): { key: PlatformKey; name: string } | null {
-      const ua = navigator.userAgent || '';
-      const platform = (navigator as any).userAgentData?.platform || navigator.platform || '';
-      const s = (ua + ' ' + platform).toLowerCase();
-
-      if (/android/.test(s))            return { key: 'android', name: 'Android' };
-      if (/iphone|ipad|ipod/.test(s))   return { key: 'ios',     name: 'iPhone' };
-      if (/mac os x|macintosh/.test(s)) return { key: 'macos',   name: 'macOS' };
-      if (/windows/.test(s))            return { key: 'windows', name: 'Windows' };
-      if (/linux|x11|cros/.test(s))     return { key: 'linux',   name: 'Linux' };
-      return null;
-    }
-
-    const os = detectOS();
-    if (os) {
-      const subEl = document.getElementById('notify-hero-sub');
-      if (subEl) {
-        subEl.textContent = `We detected you're on ${os.name}. Enter your email and we'll let you know when it's ready.`;
-      }
-
-      const card = document.querySelector<HTMLElement>(`[data-platform="${os.key}"]`);
-      if (card) {
-        card.classList.add('download-card--recommended');
-      }
-    }
-
-    /* ── 2. PWA install prompt ─────────────────────────── */
+    /* PWA install prompt — no OS detection */
     let deferredPrompt: any = null;
     const pwaBtn = document.getElementById('pwa-install-btn') as HTMLButtonElement | null;
 
