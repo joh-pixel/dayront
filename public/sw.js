@@ -1,6 +1,6 @@
 /*
  * Dayront Service Worker
- * Version: 2026.08.11.1
+ * Version: 2026.09.30.1
  *
  * Strategy:
  * - HTML/navigation: NETWORK FIRST
@@ -13,7 +13,7 @@
  * while still providing useful offline support for static assets.
  */
 
-const VERSION = '2026.08.11.1';
+const VERSION = '2026.09.30.1';
 
 const STATIC_CACHE = `dayront-static-${VERSION}`;
 const OFFLINE_CACHE = `dayront-offline-${VERSION}`;
@@ -22,7 +22,9 @@ const OFFLINE_URL = '/';
 
 const STATIC_ASSETS = [
   '/favicon.svg',
-  '/manifest.json',
+  '/manifest.webmanifest',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 /* ---------------------------------------------------------

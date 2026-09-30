@@ -1,0 +1,85 @@
+---
+// src/components/ui/PlatformBadge.astro
+import { getToolBySlug } from '../../lib/tools';
+
+interface Props {
+  toolSlug: string;
+  label?: string;
+}
+
+const { toolSlug, label } = Astro.props;
+const tool = getToolBySlug(toolSlug);
+if (!tool) return null;
+
+const tier = tool.tier ?? 'medium';
+const icons: Record<typeof tier, string> = {
+  light: '⚡',
+  medium: '✓',
+  heavy: '📱',
+};
+const defaultLabels: Record<typeof tier, string> = {
+  light: 'Fast on Web',
+  medium: 'Web-friendly',
+  heavy: 'App Recommended',
+};
+
+const displayIcon = icons[tier];
+const displayLabel = label ?? defaultLabels[tier];
+---
+
+<span class={`platform-badge platform-badge--${tier}`} title={`${tool.name} — ${displayLabel}`}>
+  <span aria-hidden="true">{displayIcon}</span>
+  <span>{displayLabel}</span>
+</span>
+
+<style>
+  .platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.22rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    border: 1px solid;
+    vertical-align: middle;
+    letter-spacing: 0.01em;
+  }
+
+  .platform-badge--light {
+    background: #DCFCE7;
+    color: #166534;
+    border-color: #86EFAC;
+  }
+  .platform-badge--medium {
+    background: #E5F7FE;
+    color: #075985;
+    border-color: #8FD6F8;
+  }
+  .platform-badge--heavy {
+    background: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
+    color: #0369A1;
+    border-color: #57C0F3;
+    box-shadow: 0 1px 3px rgba(44, 181, 240, 0.15);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .platform-badge--light {
+      background: #052E16;
+      color: #86EFAC;
+      border-color: #166534;
+    }
+    .platform-badge--medium {
+      background: #0C2A42;
+      color: #8FD6F8;
+      border-color: #075985;
+    }
+    .platform-badge--heavy {
+      background: linear-gradient(135deg, #0C2A42 0%, #0C4A6E 100%);
+      color: #57C0F3;
+      border-color: #0369A1;
+    }
+  }
+</style>

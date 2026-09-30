@@ -1,13 +1,40 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import {
+  getToolBySlug,
+  isFileSafeForTool,
+  detectPlatform,
+  type PlatformInfo,
+  type Tool,
+} from './tools';
+
+/* ========================================================================== */
+/* 1. PLATFORM STATE                                                          */
+/* ========================================================================== */
+
+export const PLATFORM: PlatformInfo = detectPlatform();
+
+/**
+ * Flip to `true` once you've implemented the Capacitor/Tauri native bridge.
+ * Until then, all size checks fall back to WASM limits even on native builds.
+ */
+const NATIVE_ENGINE_IMPLEMENTED = false;
+
+function isNativeActive(): boolean {
+  return PLATFORM.engine === 'native' && NATIVE_ENGINE_IMPLEMENTED;
+}
+
+/* ========================================================================== */
+/* 2. GLOBAL STATE                                                            */
+/* ========================================================================== */
 
 let ffmpeg: FFmpeg | null = null;
 let loadingPromise: Promise<FFmpeg> | null = null;
 let operationQueue: Promise<void> = Promise.resolve();
 
-/* -------------------------------------------------------------------------- */
-/* MIME TYPES                                                                 */
-/* -------------------------------------------------------------------------- */
+/* ========================================================================== */
+/* 3. MIME TYPES                                                              */
+/* ========================================================================== */
 
 function getMimeType(format: string): string {
   const ext = format.toLowerCase().replace(/^\./, '');
@@ -27,14 +54,15 @@ function getMimeType(format: string): string {
     mpeg: 'video/mpeg',
     mpg: 'video/mpeg',
     gif: 'image/gif',
+    png: 'image/png',
     bin: 'application/octet-stream',
   };
   return mimeTypes[ext] || 'application/octet-stream';
 }
 
-/* -------------------------------------------------------------------------- */
-/* HELPERS                                                                    */
-/* -------------------------------------------------------------------------- */
+/* ========================================================================== */
+/* 4. HELPERS                                                                 */
+/* ========================================================================== */
 
 function normalizeFormat(format: string): string {
   return format.toLowerCase().replace(/^\./, '').trim();
@@ -59,22 +87,18 @@ function makeName(prefix: string, extension: string): string {
 }
 
 async function deleteFile(ff: FFmpeg, filename: string): Promise<void> {
-  try { await ff.deleteFile(filename); } catch {}
+  try {
+    await ff.deleteFile(filename);
+  } catch {
+    /* ignore */
+  }
 }
 
-/**
- * H.264 requires even dimensions (width and height must be divisible by 2).
- * Rounds odd values down to the nearest even number.
- */
 function ensureEven(value: number): number {
   const rounded = Math.floor(Math.abs(value));
   return rounded % 2 === 0 ? rounded : rounded - 1;
 }
 
-/**
- * Enforces sane limits for resolution conversion.
- * Returns an error message if the operation is likely to fail, or null if OK.
- */
 function validateResolution(width: number, height: number): string | null {
   if (!Number.isFinite(width) || !Number.isFinite(height)) {
     return 'Resolution dimensions must be valid numbers.';
@@ -85,14 +109,12 @@ function validateResolution(width: number, height: number): string | null {
   if (width > 7680 || height > 4320) {
     return 'Maximum supported resolution is 8K (7680×4320).';
   }
-  const totalPixels = width * height;
-  if (totalPixels > 7680 * 4320) {
+  if (width * height > 7680 * 4320) {
     return 'Resolution exceeds 8K limits.';
   }
   return null;
 }
 
-/** Wrap a promise with a timeout so it can't hang forever */
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -105,39 +127,153 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
-/* -------------------------------------------------------------------------- */
-/* FFmpeg LOADER — mobile-friendly with extended timeouts                     */
-/* -------------------------------------------------------------------------- */
+/* ========================================================================== */
+/* 5. PER-TOOL FILE SIZE VALIDATION                                           */
+/* ========================================================================== */
+
+/**
+ * Validates a single file against the tool's platform-specific limit.
+ * Throws a friendly error with app-install advice if the file is too big.
+ */
+function validateFileForTool(file: File, toolSlug: string): Tool {
+  const tool = getToolBySlug(toolSlug);
+
+  // If the tool isn't registered yet, allow it with a safe fallback limit.
+  if (!tool) {
+    const maxMB = PLATFORM.maxMB || 200;
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB > maxMB) {
+      throw new Error(
+        `File too large (${sizeMB.toFixed(1)}MB). Limit for ${PLATFORM.label} is ${maxMB}MB.`,
+      );
+    }
+    return {
+      slug: toolSlug, name: toolSlug, category: 'video-utility',
+      description: '', metaTitle: '', metaDescription: '', icon: '',
+      faq: [], howTo: [], relatedTools: [],
+      webMaxMB: maxMB,
+    } as Tool;
+  }
+
+  const sizeMB = file.size / (1024 * 1024);
+  const native = isNativeActive();
+
+  if (!isFileSafeForTool(tool, sizeMB, native)) {
+    const limit = native ? 5000 : (tool.webMaxMB ?? 250);
+    const appAdvice = native
+      ? 'This file exceeds even the app limit — try splitting it into parts.'
+      : `For files up to 5 GB, install the Dayront ${
+          PLATFORM.type === 'mobile-web' ? 'Mobile' : 'Desktop'
+        } App.`;
+
+    throw new Error(
+      `${tool.name}: file too large (${sizeMB.toFixed(1)} MB). ` +
+      `${PLATFORM.label} limit is ${limit} MB. ${appAdvice}`,
+    );
+  }
+
+  return tool;
+}
+
+/**
+ * Validates the combined size of multiple files (for merge operations).
+ * Merges need room for inputs + output, so we enforce a tighter total.
+ */
+function validateFilesForTool(files: File[], toolSlug: string): Tool {
+  if (files.length === 0) throw new Error('No files provided.');
+
+  // Check each file individually first
+  const tool = validateFileForTool(files[0], toolSlug);
+  for (let i = 1; i < files.length; i++) {
+    validateFileForTool(files[i], toolSlug);
+  }
+
+  // Then check the combined total against 1.5× the single-file limit
+  const native = isNativeActive();
+  const singleLimit = native ? 5000 : (tool.webMaxMB ?? 250);
+  const totalLimit = singleLimit * 1.5;
+  const totalMB = files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
+
+  if (totalMB > totalLimit) {
+    throw new Error(
+      `Combined size too large (${totalMB.toFixed(1)} MB). ` +
+      `${tool.name} needs a total under ${Math.round(totalLimit)} MB on ${PLATFORM.label}.`,
+    );
+  }
+
+  return tool;
+}
+
+/* ========================================================================== */
+/* 6. FRIENDLY ERROR TRANSLATION                                              */
+/* ========================================================================== */
+
+function translateFFmpegError(error: unknown, toolSlug?: string): Error {
+  const msg = error instanceof Error ? error.message : String(error);
+  const lower = msg.toLowerCase();
+  const tool = toolSlug ? getToolBySlug(toolSlug) : undefined;
+  const toolName = tool?.name ?? 'This tool';
+
+  // Memory / FS errors — the main cause of mobile crashes
+  if (
+    lower.includes('fs error') ||
+    lower.includes('enomem') ||
+    lower.includes('out of memory') ||
+    lower.includes('cannot allocate') ||
+    lower.includes('memory access out of bounds') ||
+    lower.includes('array buffer allocation failed')
+  ) {
+    const advice =
+      PLATFORM.type === 'mobile-web'
+        ? 'Mobile browsers have strict memory limits. Close other tabs, try a smaller file, or install the Dayront Mobile App for unlimited processing.'
+        : 'Your device ran out of memory. Try a smaller file, reduce resolution, or restart your browser.';
+    return new Error(`${toolName}: not enough memory. ${advice}`);
+  }
+
+  // Timeouts
+  if (lower.includes('timed out') || lower.includes('aborted')) {
+    return new Error(
+      `${toolName}: processing took too long. Try a smaller file or a faster connection.`,
+    );
+  }
+
+  // Unsupported codec / bad input
+  if (
+    lower.includes('invalid data') ||
+    lower.includes('decoder not found') ||
+    lower.includes('unknown codec') ||
+    lower.includes('codec not supported')
+  ) {
+    return new Error(
+      `${toolName}: this file uses a codec we cannot process in the browser. Try converting it with a desktop tool first.`,
+    );
+  }
+
+  return error instanceof Error ? error : new Error(msg);
+}
+
+/* ========================================================================== */
+/* 7. FFmpeg LOADER — multi-CDN, mobile-friendly                              */
+/* ========================================================================== */
 
 const CORE_VERSION = '0.12.6';
 
-/**
- * Multiple CDN bases to try in order. If one fails (blocked, slow, 404),
- * we fall back to the next. This dramatically improves reliability on
- * mobile networks where some CDNs may be blocked or rate-limited.
- */
 const CDN_BASES: string[] = [
   `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
   `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
   `https://esm.sh/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
 ];
 
-/** Detect mobile devices — phones need longer timeouts for WASM init */
 function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent || '';
   return /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
 }
 
-/**
- * Timeouts are intentionally generous on mobile. Phones on 4G can take
- * 60-180 seconds to download + compile 30MB of WASM.
- * Desktop connections are much faster but we still allow headroom.
- */
 const TIMEOUTS = {
-  coreJs: 60_000,                                              // 1 min
-  wasm: isMobileDevice() ? 300_000 : 180_000,                  // 5 min mobile / 3 min desktop
-  init: isMobileDevice() ? 180_000 : 90_000,                   // 3 min mobile / 90s desktop
+  coreJs: 60_000,
+  wasm: isMobileDevice() ? 300_000 : 180_000,
+  init: isMobileDevice() ? 180_000 : 90_000,
 };
 
 async function loadFromCDN(baseUrl: string, instance: FFmpeg): Promise<void> {
@@ -176,7 +312,6 @@ async function getFFmpeg(): Promise<FFmpeg> {
   loadingPromise = (async () => {
     const instance = new FFmpeg();
 
-    // Detailed log output for debugging
     instance.on('log', ({ message }) => {
       console.log('[FFmpeg]', message);
     });
@@ -191,23 +326,21 @@ async function getFFmpeg(): Promise<FFmpeg> {
       } catch (error: unknown) {
         lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(`[FFmpeg] ❌ CDN failed (${baseUrl}):`, lastError.message);
-        // Continue to next CDN
       }
     }
 
     ffmpeg = null;
 
-    // ★ Mobile-friendly error message
     if (isMobileDevice()) {
       throw new Error(
-        `FFmpeg couldn't load on this device. Mobile browsers often struggle with the 30MB WASM download needed for in-browser video processing. ` +
-        `Try a Wi-Fi connection, keep the tab open, or use a desktop computer for large files.`
+        `FFmpeg couldn't load on this device. Mobile browsers often struggle with the ~30MB WASM download needed for in-browser video processing. ` +
+        `Try a Wi-Fi connection, keep the tab open, or use the Dayront Mobile App for offline, unlimited processing.`,
       );
     }
 
     throw new Error(
       `FFmpeg failed to load from all CDNs. Last error: ${lastError?.message || 'Unknown'}. ` +
-      `Please check your internet connection and try again.`
+      `Please check your internet connection and try again.`,
     );
   })().finally(() => {
     loadingPromise = null;
@@ -216,13 +349,14 @@ async function getFFmpeg(): Promise<FFmpeg> {
   return loadingPromise;
 }
 
-/* -------------------------------------------------------------------------- */
-/* SERIALIZED EXECUTION                                                       */
-/* -------------------------------------------------------------------------- */
+/* ========================================================================== */
+/* 8. SERIALIZED EXECUTION                                                    */
+/* ========================================================================== */
 
 async function execute(
   args: string[],
   onProgress?: (percent: number) => void,
+  toolSlug?: string,
 ): Promise<FFmpeg> {
   let result: FFmpeg | null = null;
   let failure: unknown = null;
@@ -239,7 +373,7 @@ async function execute(
       onProgress?.(100);
       result = ff;
     } catch (error) {
-      failure = error;
+      failure = translateFFmpegError(error, toolSlug);
     } finally {
       if (onProgress) ff.off('progress', progressHandler);
     }
@@ -254,11 +388,12 @@ async function execute(
 
 async function readBlob(ff: FFmpeg, filename: string, format: string): Promise<Blob> {
   const data = await ff.readFile(filename);
-  return new Blob([data], { type: getMimeType(format) });
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  return new Blob([bytes as BlobPart], { type: getMimeType(format) });
 }
 
 /* ========================================================================== */
-/* CONVERTER FUNCTIONS                                                        */
+/* 9. AUDIO FUNCTIONS                                                         */
 /* ========================================================================== */
 
 export async function convertFile(
@@ -266,11 +401,17 @@ export async function convertFile(
   outputFormat: string,
   cleanMetadata: boolean = false,
   onProgress?: (p: number) => void,
-  bitrate?: string
+  bitrate?: string,
+  toolSlug?: string,
 ): Promise<Blob> {
   if (!inputFile || inputFile.size === 0) throw new Error('Please select a valid media file.');
   const format = normalizeFormat(outputFormat);
   if (!format) throw new Error('Output format is required.');
+
+  // Infer tool slug from in/out extensions if not given
+  const inferredSlug = toolSlug ?? `${getExtension(inputFile.name)}-to-${format}`;
+  validateFileForTool(inputFile, inferredSlug);
+
   const ff = await getFFmpeg();
   const inName = makeName('input', getExtension(inputFile.name));
   const outName = makeName('output', format);
@@ -282,7 +423,7 @@ export async function convertFile(
     }
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, inferredSlug);
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -296,10 +437,12 @@ export async function cutAudio(
   durationSec: number,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
   if (!Number.isFinite(startSec) || startSec < 0) throw new Error('Start time cannot be negative.');
   if (!Number.isFinite(durationSec) || durationSec <= 0) throw new Error('Duration must be greater than zero.');
+  validateFileForTool(file, 'audio-cutter');
+
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('cut-input', getExtension(file.name));
@@ -309,7 +452,7 @@ export async function cutAudio(
     const args = ['-ss', String(startSec), '-i', inName, '-t', String(durationSec), '-c', 'copy'];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'audio-cutter');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -321,9 +464,11 @@ export async function mergeAudio(
   files: File[],
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
   if (!files.length) throw new Error('No audio files were provided.');
+  validateFilesForTool(files, 'audio-merger');
+
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inputs: string[] = [];
@@ -340,7 +485,7 @@ export async function mergeAudio(
     const args = [...inputs.flatMap(n => ['-i', n]), '-filter_complex', concatFilter, '-map', '[out]'];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'audio-merger');
     return await readBlob(ff, outName, format);
   } finally {
     for (const inp of inputs) await deleteFile(ff, inp);
@@ -352,8 +497,9 @@ export async function compressAudio(
   quality = 3,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'audio-compressor');
   const format = normalizeFormat(outputFormat);
   const safeQuality = Math.max(0, Math.min(9, Math.round(quality)));
   const ff = await getFFmpeg();
@@ -364,7 +510,7 @@ export async function compressAudio(
     const args = ['-i', inName, '-c:a', 'libmp3lame', '-q:a', String(safeQuality)];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'audio-compressor');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -377,9 +523,11 @@ export async function boostVolume(
   gainDb = 6,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
   if (!Number.isFinite(gainDb)) throw new Error('Volume gain must be a valid number.');
+  validateFileForTool(file, 'volume-booster');
+
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('volume-input', getExtension(file.name));
@@ -389,7 +537,7 @@ export async function boostVolume(
     const args = ['-i', inName, '-af', `volume=${gainDb}dB`];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'volume-booster');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -402,9 +550,11 @@ export async function changeSpeed(
   factor = 1.5,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
   if (!Number.isFinite(factor) || factor <= 0) throw new Error('Speed factor must be greater than zero.');
+  validateFileForTool(file, 'speed-changer');
+
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('speed-input', getExtension(file.name));
@@ -419,7 +569,7 @@ export async function changeSpeed(
     const args = ['-i', inName, '-filter:a', filters.join(',')];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'speed-changer');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -431,8 +581,9 @@ export async function reverseAudio(
   file: File,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'reverse-audio');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('reverse-input', getExtension(file.name));
@@ -442,7 +593,7 @@ export async function reverseAudio(
     const args = ['-i', inName, '-af', 'areverse'];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'reverse-audio');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -454,8 +605,9 @@ export async function stereoToMono(
   file: File,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'stereo-to-mono');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('mono-input', getExtension(file.name));
@@ -465,7 +617,7 @@ export async function stereoToMono(
     const args = ['-i', inName, '-ac', '1'];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'stereo-to-mono');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -474,7 +626,7 @@ export async function stereoToMono(
 }
 
 /* ========================================================================== */
-/* VIDEO PROCESSING FUNCTIONS                                                 */
+/* 10. VIDEO FUNCTIONS                                                        */
 /* ========================================================================== */
 
 export async function compressVideo(
@@ -483,8 +635,9 @@ export async function compressVideo(
   preset = 'medium',
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'video-compressor');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('vcompress-in', getExtension(file.name));
@@ -503,7 +656,7 @@ export async function compressVideo(
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'video-compressor');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -517,23 +670,19 @@ export async function cutVideo(
   durationSec: number,
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'video-cutter');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('vcut-in', getExtension(file.name));
   const outName = makeName('vcut-out', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    const args = [
-      '-ss', String(startSec),
-      '-i', inName,
-      '-t', String(durationSec),
-      '-c', 'copy'
-    ];
+    const args = ['-ss', String(startSec), '-i', inName, '-t', String(durationSec), '-c', 'copy'];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'video-cutter');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -545,11 +694,12 @@ export async function mergeVideos(
   files: File[],
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
-  const format = normalizeFormat(outputFormat);
   if (files.length < 2) throw new Error('Need at least 2 videos to merge.');
+  validateFilesForTool(files, 'video-merger');
 
+  const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const ts = Date.now();
   const inputNames: string[] = [];
@@ -588,8 +738,7 @@ export async function mergeVideos(
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
 
-    await execute(args, onProgress);
-
+    await execute(args, onProgress, 'video-merger');
     return await readBlob(ff, outName, format);
   } finally {
     for (const inp of inputNames) await deleteFile(ff, inp);
@@ -601,8 +750,9 @@ export async function videoToGif(
   fps = 10,
   width = 320,
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'video-to-gif');
   const ff = await getFFmpeg();
   const inName = makeName('vgif-in', getExtension(file.name));
   const paletteName = makeName('palette', 'png');
@@ -612,16 +762,16 @@ export async function videoToGif(
     await execute([
       '-i', inName,
       '-vf', `fps=${fps},scale=${width}:-1:flags=lanczos,palettegen`,
-      '-y', paletteName
-    ]);
+      '-y', paletteName,
+    ], undefined, 'video-to-gif');
     const args = [
       '-i', inName,
       '-i', paletteName,
-      '-lavfi', `fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse`
+      '-lavfi', `fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse`,
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'video-to-gif');
     return await readBlob(ff, outName, 'gif');
   } finally {
     await deleteFile(ff, inName);
@@ -633,8 +783,9 @@ export async function videoToGif(
 export async function gifToMp4(
   file: File,
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'gif-to-video');
   const ff = await getFFmpeg();
   const inName = makeName('gif-in', 'gif');
   const outName = makeName('gif-out', 'mp4');
@@ -644,11 +795,11 @@ export async function gifToMp4(
       '-i', inName,
       '-movflags', 'faststart',
       '-pix_fmt', 'yuv420p',
-      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2'
+      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'gif-to-video');
     return await readBlob(ff, outName, 'mp4');
   } finally {
     await deleteFile(ff, inName);
@@ -668,6 +819,7 @@ export async function resizeVideo(
 ): Promise<Blob> {
   const validationError = validateResolution(width, height);
   if (validationError) throw new Error(validationError);
+  validateFileForTool(file, 'resize-video');
 
   const safeWidth = ensureEven(width);
   const safeHeight = ensureEven(height);
@@ -679,9 +831,7 @@ export async function resizeVideo(
 
   try {
     await ff.writeFile(inName, await fetchFile(file));
-
     const scaleFilter = `scale=${safeWidth}:${safeHeight}`;
-
     const args = [
       '-i', inName,
       '-vf', scaleFilter,
@@ -695,7 +845,7 @@ export async function resizeVideo(
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'resize-video');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -715,15 +865,13 @@ export async function resolutionConvert(
   const preset = isLarge ? 'ultrafast' : 'veryfast';
   const crf = isLarge ? 23 : 20;
 
+  // Resolution converters share the 'resolution-convert' entry for limits.
+  // The specific slug (e.g. '1080p-to-4k') has its own limits in the registry,
+  // but we don't know the source/target keys here — so use the generic entry.
+  validateFileForTool(file, 'resolution-convert');
+
   return resizeVideo(
-    file,
-    width,
-    height,
-    outputFormat,
-    cleanMetadata,
-    onProgress,
-    preset,
-    crf,
+    file, width, height, outputFormat, cleanMetadata, onProgress, preset, crf,
   );
 }
 
@@ -732,8 +880,9 @@ export async function cropVideo(
   x: number, y: number, w: number, h: number,
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'crop-video');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('crop-in', getExtension(file.name));
@@ -759,7 +908,7 @@ export async function cropVideo(
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'crop-video');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -772,8 +921,9 @@ export async function changeFPS(
   fps: number,
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'change-fps');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('fps-in', getExtension(file.name));
@@ -793,7 +943,7 @@ export async function changeFPS(
     ];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'change-fps');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -805,22 +955,19 @@ export async function muteVideo(
   file: File,
   outputFormat = 'mp4',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'mute-video');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('mute-in', getExtension(file.name));
   const outName = makeName('muted', format);
   try {
     await ff.writeFile(inName, await fetchFile(file));
-    const args = [
-      '-i', inName,
-      '-an',
-      '-c:v', 'copy'
-    ];
+    const args = ['-i', inName, '-an', '-c:v', 'copy'];
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'mute-video');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
@@ -832,8 +979,9 @@ export async function extractAudio(
   file: File,
   outputFormat = 'mp3',
   cleanMetadata: boolean = false,
-  onProgress?: (p: number) => void
+  onProgress?: (p: number) => void,
 ): Promise<Blob> {
+  validateFileForTool(file, 'extract-audio');
   const format = normalizeFormat(outputFormat);
   const ff = await getFFmpeg();
   const inName = makeName('extract-in', getExtension(file.name));
@@ -854,10 +1002,58 @@ export async function extractAudio(
     }
     if (cleanMetadata) args.push('-map_metadata', '-1');
     args.push('-y', outName);
-    await execute(args, onProgress);
+    await execute(args, onProgress, 'extract-audio');
     return await readBlob(ff, outName, format);
   } finally {
     await deleteFile(ff, inName);
     await deleteFile(ff, outName);
   }
+}
+
+/* ========================================================================== */
+/* 11. PUBLIC UTILITIES                                                       */
+/* ========================================================================== */
+
+/**
+ * Preload FFmpeg proactively — call this when a tool page mounts so the
+ * ~30MB WASM is downloaded in the background before the user picks a file.
+ */
+export async function preloadFFmpeg(): Promise<void> {
+  try {
+    await getFFmpeg();
+  } catch (err) {
+    console.warn('[FFmpeg] Preload failed:', err);
+  }
+}
+
+/** Check whether FFmpeg is already loaded (for UI indicators). */
+export function isFFmpegReady(): boolean {
+  return ffmpeg !== null;
+}
+
+/** Manually reset the FFmpeg instance (useful for debugging). */
+export async function resetFFmpeg(): Promise<void> {
+  if (ffmpeg) {
+    try { (ffmpeg as any).terminate?.(); } catch { /* ignore */ }
+  }
+  ffmpeg = null;
+  loadingPromise = null;
+  operationQueue = Promise.resolve();
+}
+
+/**
+ * Return the currently active platform + the tool's effective web limit,
+ * handy for UI hints like "Max file size on Web: 300MB".
+ */
+export function getToolLimitInfo(toolSlug: string) {
+  const tool = getToolBySlug(toolSlug);
+  const native = isNativeActive();
+  return {
+    platform: PLATFORM,
+    toolName: tool?.name ?? toolSlug,
+    tier: tool?.tier ?? 'medium',
+    limitMB: native ? 5000 : (tool?.webMaxMB ?? 250),
+    recommendApp: !native && (tool?.recommendApp ?? false),
+    webNote: tool?.webNote,
+  };
 }

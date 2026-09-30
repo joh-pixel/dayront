@@ -1,0 +1,96 @@
+---
+// src/pages/offline.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Offline — Dayront"
+  description="You are currently offline. Some features are still available."
+>
+  <main class="offline-page">
+    <div class="offline-card">
+      <div class="offline-icon" aria-hidden="true">📡</div>
+      <h1>You're offline</h1>
+      <p>
+        No internet connection detected. Many Dayront tools still work
+        offline — once the page has loaded, file processing happens locally
+        on your device.
+      </p>
+      <div class="offline-actions">
+        <button type="button" class="btn btn--primary" onclick="location.reload()">
+          Try again
+        </button>
+        <a href="/tools" class="btn btn--ghost">Browse tools</a>
+      </div>
+      <p class="offline-note">
+        Tip: install Dayront as an app for full offline support.
+      </p>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .offline-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: 2rem 1.25rem;
+  }
+  .offline-card {
+    text-align: center;
+    max-width: 28rem;
+  }
+  .offline-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  .offline-card h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 0.75rem;
+  }
+  .offline-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.8;
+    margin: 0 0 1.5rem;
+  }
+  .offline-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .offline-note {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin: 0 !important;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.125rem;
+    min-height: 44px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+  .btn--primary {
+    background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(44, 181, 240, 0.3);
+  }
+  .btn--ghost {
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    opacity: 0.7;
+  }
+    </style>

@@ -1,0 +1,257 @@
+---
+// src/components/ui/PlatformGate.astro
+import { getToolBySlug } from '../../lib/tools';
+
+interface Props {
+  toolSlug: string;
+  variant?: 'banner' | 'inline' | 'blocker';
+  downloadUrl?: string;
+}
+
+const { toolSlug, variant = 'banner', downloadUrl = 'https://download.dayront.com' } = Astro.props;
+const tool = getToolBySlug(toolSlug);
+
+if (!tool || !tool.recommendApp) return null;
+
+const defaultMessages: Record<typeof variant, string> = {
+  banner:  tool.webNote ?? 'This tool runs best in the Dayront desktop or mobile app.',
+  inline:  tool.webNote ?? 'For larger files, use the Dayront app.',
+  blocker: tool.webNote ?? 'This tool requires the Dayront app for best results.',
+};
+const message = defaultMessages[variant];
+
+const limitMB = tool.webMaxMB ?? 250;
+const isBlocker = variant === 'blocker';
+---
+
+<div
+  class={`platform-gate platform-gate--${variant}`}
+  data-tool={tool.slug}
+  data-dismissible={isBlocker ? 'false' : 'true'}
+  role={isBlocker ? 'alert' : 'note'}
+>
+  <div class="platform-gate__icon" aria-hidden="true">
+    {isBlocker ? '⚠️' : '📱'}
+  </div>
+
+  <div class="platform-gate__body">
+    <div class="platform-gate__title">
+      {isBlocker ? 'App Recommended' : 'Faster in the Dayront App'}
+    </div>
+
+    <p class="platform-gate__message">{message}</p>
+
+    <div class="platform-gate__meta">
+      <span class="platform-gate__limit">
+        Web limit: <strong>{limitMB} MB</strong>
+      </span>
+      <span class="platform-gate__app-limit">
+        App limit: <strong>5 GB</strong>
+      </span>
+    </div>
+
+    <div class="platform-gate__actions">
+      <a href={downloadUrl} class="pg-btn pg-btn--primary">
+        Get the App
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+      {!isBlocker && (
+        <button type="button" class="pg-btn pg-btn--ghost" data-dismiss-gate>
+          Continue on web
+        </button>
+      )}
+    </div>
+  </div>
+</div>
+
+<style>
+  .platform-gate {
+    display: flex;
+    gap: 0.875rem;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    border: 1px solid;
+    margin: 1rem 0;
+    font-family: inherit;
+    line-height: 1.45;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Variant: banner ────────────────────────────────── */
+  .platform-gate--banner {
+    background: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
+    border-color: #8FD6F8;
+    color: #0C4A6E;
+  }
+  .platform-gate--banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #2CB5F0, #0EA5E9);
+  }
+
+  /* ── Variant: inline ────────────────────────────────── */
+  .platform-gate--inline {
+    padding: 0.75rem 1rem;
+    background: #E5F7FE;
+    border-color: #C7EBFC;
+    color: #0C4A6E;
+    border-radius: 10px;
+  }
+  .platform-gate--inline .platform-gate__icon { font-size: 1.25rem; }
+  .platform-gate--inline .platform-gate__meta { display: none; }
+  .platform-gate--inline .platform-gate__message { font-size: 0.875rem; margin-bottom: 0.5rem; }
+  .platform-gate--inline::before { display: none; }
+
+  /* ── Variant: blocker ───────────────────────────────── */
+  .platform-gate--blocker {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    border-color: #F59E0B;
+    color: #78350F;
+  }
+  .platform-gate--blocker::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: #F59E0B;
+  }
+
+  .platform-gate__icon {
+    font-size: 1.75rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .platform-gate__body { flex: 1; min-width: 0; }
+
+  .platform-gate__title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    color: #075985;
+  }
+  .platform-gate--blocker .platform-gate__title { color: #92400E; }
+
+  .platform-gate__message {
+    margin: 0 0 0.625rem;
+    font-size: 0.875rem;
+    opacity: 0.85;
+  }
+
+  .platform-gate__meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .platform-gate__meta strong { font-weight: 700; }
+  .platform-gate__limit { opacity: 0.8; }
+  .platform-gate__app-limit { opacity: 0.8; }
+
+  .platform-gate__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .pg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.55rem 1.1rem;
+    min-height: 42px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+  .pg-btn:active { transform: scale(0.98); }
+
+  .pg-btn--primary {
+    background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(44, 181, 240, 0.3);
+  }
+  .pg-btn--primary:hover {
+    box-shadow: 0 6px 20px rgba(44, 181, 240, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .pg-btn--ghost {
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    opacity: 0.7;
+  }
+  .pg-btn--ghost:hover { opacity: 1; }
+
+  /* ── Dark mode ─────────────────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    .platform-gate--banner {
+      background: linear-gradient(135deg, #0C2A42 0%, #0C4A6E 100%);
+      border-color: #0369A1;
+      color: #C7EBFC;
+    }
+    .platform-gate--banner .platform-gate__title { color: #8FD6F8; }
+
+    .platform-gate--inline {
+      background: #0C2A42;
+      border-color: #075985;
+      color: #C7EBFC;
+    }
+
+    .platform-gate--blocker {
+      background: linear-gradient(135deg, #451A03 0%, #78350F 100%);
+      border-color: #B45309;
+      color: #FDE68A;
+    }
+    .platform-gate--blocker .platform-gate__title { color: #FCD34D; }
+
+    .pg-btn--primary {
+      background: linear-gradient(135deg, #2CB5F0 0%, #38BDF8 100%);
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const gates = document.querySelectorAll<HTMLElement>('.platform-gate');
+    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+    gates.forEach((gate) => {
+      const slug = gate.getAttribute('data-tool');
+      const dismissible = gate.getAttribute('data-dismissible') !== 'false';
+      if (!slug || !dismissible) return;
+
+      const storageKey = `dg:${slug}`;
+      const dismissedAt = localStorage.getItem(storageKey);
+      if (dismissedAt) {
+        const age = Date.now() - parseInt(dismissedAt, 10);
+        if (age < SEVEN_DAYS) {
+          gate.style.display = 'none';
+          return;
+        }
+      }
+
+      const btn = gate.querySelector('[data-dismiss-gate]');
+      btn?.addEventListener('click', () => {
+        localStorage.setItem(storageKey, Date.now().toString());
+        gate.style.display = 'none';
+      });
+    });
+  })();
+</script>

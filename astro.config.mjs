@@ -1,10 +1,21 @@
-import { defineConfig } from "astro/config";
+import { defineConfig, passthroughImageService } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import robotsTxt from "astro-robots-txt";
 import preact from "@astrojs/preact";
 import tailwind from "@astrojs/tailwind";
 import vercel from "@astrojs/vercel";
+
+/**
+ * ★ AI packages that must NOT be bundled by Vite/Rollup.
+ * They are loaded at runtime from CDN via the import map
+ * declared in src/layouts/BaseLayout.astro.
+ */
+const AI_EXTERNALS = [
+  "@huggingface/transformers",
+  "onnxruntime-web",
+  "@imgly/background-removal",
+];
 
 export default defineConfig({
   site: "https://dayront.com",
@@ -13,7 +24,10 @@ export default defineConfig({
     edgeMiddleware: false,
   }),
 
-  // ★ REMOVED: The redirects block has been completely deleted since we reverted the file names. ★
+  // ★ Skip sharp image optimization (native binary not available on Android/Termux)
+  image: {
+    service: passthroughImageService(),
+  },
 
   integrations: [
     tailwind(),
@@ -21,20 +35,19 @@ export default defineConfig({
     mdx(),
     sitemap({
       filter: (page) =>
-        !page.includes('?lang=') &&
-        !page.includes('/tag/') &&
-        !page.includes('/category/'),
+        !page.includes("?lang=") &&
+        !page.includes("/tag/") &&
+        !page.includes("/category/"),
       i18n: {
         defaultLocale: "en",
         locales: { en: "en", es: "es", pt: "pt", de: "de", fr: "fr", ja: "ja" },
       },
     }),
     robotsTxt({
-      policy: [
-        { userAgent: "*", allow: "/" } // UPDATED: Removed disallow to allow crawling
-      ]
+      policy: [{ userAgent: "*", allow: "/" }],
     }),
   ],
+
   i18n: {
     defaultLocale: "en",
     locales: ["en", "es", "pt", "de", "fr", "ja"],
@@ -42,6 +55,7 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
+
   vite: {
     resolve: {
       alias: {
@@ -50,44 +64,54 @@ export default defineConfig({
         "react/jsx-runtime": "preact/jsx-runtime",
       },
     },
+
     worker: {
-      format: 'es',
+      format: "es",
+      rollupOptions: {
+        external: AI_EXTERNALS,
+      },
     },
+
+    ssr: {
+      external: AI_EXTERNALS,
+    },
+
     plugins: [
       {
-        name: 'configure-response-headers',
+        name: "configure-response-headers",
         configureServer: (server) => {
           server.middlewares.use((_req, res, next) => {
-            res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-            res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
-            if (_req.url?.startsWith('/ffmpeg/')) {
-              if (_req.url.endsWith('.js')) res.setHeader('Content-Type', 'text/javascript');
-              else if (_req.url.endsWith('.wasm')) res.setHeader('Content-Type', 'application/wasm');
+            res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+            res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+            if (_req.url?.startsWith("/ffmpeg/")) {
+              if (_req.url.endsWith(".js")) res.setHeader("Content-Type", "text/javascript");
+              else if (_req.url.endsWith(".wasm")) res.setHeader("Content-Type", "application/wasm");
             }
             next();
           });
         },
         configurePreviewServer: (server) => {
           server.middlewares.use((_req, res, next) => {
-            res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-            res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
-            if (_req.url?.startsWith('/ffmpeg/')) {
-              if (_req.url.endsWith('.js')) res.setHeader('Content-Type', 'text/javascript');
-              else if (_req.url.endsWith('.wasm')) res.setHeader('Content-Type', 'application/wasm');
+            res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+            res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+            if (_req.url?.startsWith("/ffmpeg/")) {
+              if (_req.url.endsWith(".js")) res.setHeader("Content-Type", "text/javascript");
+              else if (_req.url.endsWith(".wasm")) res.setHeader("Content-Type", "application/wasm");
             }
             next();
           });
         },
       },
     ],
+
     optimizeDeps: {
       exclude: [
-        '@ffmpeg/ffmpeg',
-        '@ffmpeg/util',
-        '@ffmpeg/core',
-        '@huggingface/transformers',
-        'onnxruntime-web',
-        '@imgly/background-removal',
+        "@ffmpeg/ffmpeg",
+        "@ffmpeg/util",
+        "@ffmpeg/core",
+        "@huggingface/transformers",
+        "onnxruntime-web",
+        "@imgly/background-removal",
       ],
     },
   },

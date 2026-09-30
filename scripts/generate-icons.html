@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dayront — Icon Generator</title>
+<style>
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; color: #2CB5F0; }
+  p  { opacity: 0.8; font-size: 0.9rem; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .preview {
+    background:
+      linear-gradient(45deg, #334155 25%, transparent 25%),
+      linear-gradient(-45deg, #334155 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #334155 75%),
+      linear-gradient(-45deg, transparent 75%, #334155 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    margin-bottom: 0.5rem;
+  }
+  .preview canvas { max-width: 100%; height: auto; display: block; }
+  .label { font-size: 0.75rem; opacity: 0.7; margin-bottom: 0.5rem; }
+  .size  { font-size: 0.7rem; opacity: 0.5; }
+  button {
+    width: 100%;
+    padding: 0.6rem;
+    background: #2CB5F0;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+  button:hover { background: #0EA5E9; }
+  button:active { transform: scale(0.98); }
+  .actions { margin-top: 2rem; }
+  .btn-primary {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+    box-shadow: 0 6px 20px rgba(44,181,240,0.35);
+  }
+  .instructions {
+    background: #1e293b;
+    border-left: 4px solid #2CB5F0;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin: 1.5rem 0;
+  }
+  code {
+    background: #0f172a;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #2CB5F0;
+  }
+  .status { margin-top: 1rem; font-size: 0.85rem; color: #86efac; min-height: 1.5rem; }
+</style>
+</head>
+<body>
+
+<h1>Dayront PWA Icon Generator</h1>
+<p>Click <strong>Download All</strong> to save the 4 PNG files. Then move them into <code>public/icons/</code>.</p>
+
+<div class="instructions">
+  <strong>What each file is for:</strong><br>
+  <code>icon-192.png</code> — Home screen icon (standard)<br>
+  <code>icon-512.png</code> — Splash screen + install prompt<br>
+  <code>icon-maskable-192.png</code> — Android adaptive icon (safe crop)<br>
+  <code>icon-maskable-512.png</code> — Android adaptive icon hi-res
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="actions">
+  <button class="btn-primary" id="download-all">⬇ Download All 4 Icons</button>
+</div>
+
+<div class="status" id="status"></div>
+
+<script>
+  // ── Icon configuration ─────────────────────────────────
+  const BRAND_BLUE = '#2CB5F0';
+  const ICONS = [
+    { name: 'icon-192.png',           size: 192, padding: 0    },
+    { name: 'icon-512.png',           size: 512, padding: 0    },
+    { name: 'icon-maskable-192.png',  size: 192, padding: 0.20 },
+    { name: 'icon-maskable-512.png',  size: 512, padding: 0.20 },
+  ];
+
+  // ── Draw the logo at any size with optional padding ────
+  // `padding` is a fraction of the canvas — the extra space
+  // around the logo is filled with the brand background so
+  // Android's circle-crop never clips the camera graphic.
+  function drawIcon(canvas, size, paddingFraction) {
+    const dpr = 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+
+    const ctx = canvas.getContext('2d');
+    const S = size;
+
+    // 1. Background — full canvas is brand blue
+    ctx.fillStyle = BRAND_BLUE;
+    ctx.fillRect(0, 0, S, S);
+
+    // 2. Compute the inner content area (with padding)
+    const pad = S * paddingFraction;
+    const inner = S - pad * 2;
+
+    // 3. The camera body scales with the inner area
+    //    Match the SVG proportions: body is 256/512 = 0.5 of width
+    //    Radius is 115/512 ≈ 0.225
+    const bodyW = inner * 0.5;
+    const bodyH = inner * 0.25;
+    const bodyX = pad + (inner - bodyW) / 2;
+    const bodyY = pad + (inner - bodyH) / 2;
+    const bodyR = inner * 0.024;
+
+    ctx.fillStyle = '#FFFFFF';
+    roundRect(ctx, bodyX, bodyY, bodyW, bodyH, bodyR);
+    ctx.fill();
+
+    // 4. The lens — brand-colored circle centered in body
+    const lensR = inner * 0.078;
+    ctx.fillStyle = BRAND_BLUE;
+    ctx.beginPath();
+    ctx.arc(bodyX + bodyW / 2, bodyY + bodyH / 2, lensR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Helper for rounded rectangles
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // ── Build the preview grid ─────────────────────────────
+  const grid = document.getElementById('grid');
+
+  ICONS.forEach((icon) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const preview = document.createElement('div');
+    preview.className = 'preview';
+
+    // Preview at 128px max for consistent layout
+    const previewCanvas = document.createElement('canvas');
+    const previewSize = icon.size > 256 ? 128 : icon.size;
+    drawIcon(previewCanvas, previewSize, icon.padding);
+    preview.appendChild(previewCanvas);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = icon.name;
+
+    const sizeLabel = document.createElement('div');
+    sizeLabel.className = 'size';
+    sizeLabel.textContent = `${icon.size}×${icon.size}px` +
+      (icon.padding ? ` · ${Math.round(icon.padding * 100)}% padding` : '');
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Download';
+    btn.addEventListener('click', () => downloadIcon(icon));
+
+    card.appendChild(preview);
+    card.appendChild(label);
+    card.appendChild(sizeLabel);
+    card.appendChild(btn);
+    grid.appendChild(card);
+  });
+
+  // ── Download helpers ───────────────────────────────────
+  function downloadIcon(icon) {
+    const canvas = document.createElement('canvas');
+    drawIcon(canvas, icon.size, icon.padding);
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = icon.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus(`✅ Downloaded ${icon.name}`);
+    }, 'image/png');
+  }
+
+  document.getElementById('download-all').addEventListener('click', () => {
+    ICONS.forEach((icon, i) => {
+      // Space out downloads — browsers throttle rapid-fire downloads
+      setTimeout(() => downloadIcon(icon), i * 350);
+    });
+    setStatus('Downloading all 4 icons…');
+  });
+
+  function setStatus(msg) {
+    document.getElementById('status').textContent = msg;
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,850 @@
+---
+// src/pages/download.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getTierCounts, getAppRecommendedTools } from '../lib/tools';
+
+const tierCounts = getTierCounts();
+const appTools = getAppRecommendedTools();
+
+// ── Installer metadata ────────────────────────────────────
+// Flip `status` from 'coming-soon' → 'available' when the build is live.
+type ReleaseStatus = 'available' | 'coming-soon' | 'beta';
+
+interface Release {
+  label: string;
+  icon: string;
+  url: string;
+  store: string;
+  note: string;
+  status: ReleaseStatus;
+}
+
+const RELEASES: Record<string, Release> = {
+  android: {
+    label: 'Android',
+    icon: '🤖',
+    url: '',
+    store: 'Play Store + Direct APK',
+    note: 'Play Store listing in review. Direct APK on request.',
+    status: 'coming-soon',
+  },
+  ios: {
+    label: 'iOS',
+    icon: '🍎',
+    url: '',
+    store: 'App Store',
+    note: 'Currently in TestFlight. Public release soon.',
+    status: 'coming-soon',
+  },
+  windows: {
+    label: 'Windows',
+    icon: '🪟',
+    url: '',
+    store: 'Windows 10/11 · x64',
+    note: 'Signed installer with bundled native FFmpeg.',
+    status: 'coming-soon',
+  },
+  macos: {
+    label: 'macOS',
+    icon: '🍏',
+    url: '',
+    store: 'Universal · Intel + Apple Silicon',
+    note: 'Signed and notarized.',
+    status: 'coming-soon',
+  },
+  linux: {
+    label: 'Linux',
+    icon: '🐧',
+    url: '',
+    store: 'AppImage · x86_64',
+    note: 'Also available as .deb and .rpm.',
+    status: 'coming-soon',
+  },
+};
+---
+
+<BaseLayout
+  title="Download Dayront — Desktop & Mobile Apps"
+  description="Get Dayront for Windows, macOS, Linux, Android, or iOS. Process 5GB+ files with native FFmpeg, no memory limits, no uploads."
+>
+  <main class="download-page">
+    <header class="download-hero">
+      <div class="hero-brand">
+        <div class="hero-logo">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <rect width="40" height="40" rx="10" fill="#2CB5F0"/>
+            <rect x="12" y="16" width="16" height="8" rx="1" fill="white"/>
+            <circle cx="20" cy="20" r="3" fill="#2CB5F0"/>
+          </svg>
+        </div>
+        <h1>Get the Dayront App</h1>
+      </div>
+      <p class="lead">
+        Process files up to <strong>5 GB</strong> with native FFmpeg.
+        No memory limits, no uploads, no waiting.
+      </p>
+      <div class="hero-badges">
+        <span class="badge badge--primary">⚡ 10× faster</span>
+        <span class="badge">📁 5 GB file limit</span>
+        <span class="badge">🔒 100% offline</span>
+      </div>
+    </header>
+
+    <!-- Detected platform banner -->
+    <div id="detected-platform" class="detected" hidden>
+      <span class="detected__icon" id="detected-icon">💻</span>
+      <div class="detected__body">
+        <div class="detected__title">
+          We detected <strong id="detected-name">your platform</strong>
+        </div>
+        <div class="detected__sub" id="detected-sub">Recommended download below.</div>
+      </div>
+      <a
+        href="mailto:hello@dayront.com?subject=Notify%20me%20when%20Dayront%20App%20is%20ready"
+        class="btn btn--primary"
+        id="detected-cta"
+      >Notify me</a>
+    </div>
+
+    <!-- Download options -->
+    <section class="section">
+      <h2>Choose your platform</h2>
+      <div class="download-grid">
+        {Object.entries(RELEASES).map(([key, info]) => {
+          const isAvailable = info.status === 'available' || info.status === 'beta';
+          const Tag = isAvailable ? 'a' : 'div';
+          return (
+            <Tag
+              {...(isAvailable ? { href: info.url, rel: 'noopener' } : {})}
+              class={`download-card ${!isAvailable ? 'download-card--soon' : ''}`}
+              data-platform={key}
+              data-status={info.status}
+            >
+              <div class="download-card__icon" aria-hidden="true">{info.icon}</div>
+              <div class="download-card__body">
+                <div class="download-card__title">
+                  {info.label}
+                  {info.status === 'coming-soon' && (
+                    <span class="status-pill status-pill--soon">Coming soon</span>
+                  )}
+                  {info.status === 'beta' && (
+                    <span class="status-pill status-pill--beta">Beta</span>
+                  )}
+                </div>
+                <div class="download-card__meta">{info.store}</div>
+                <div class="download-card__note">{info.note}</div>
+              </div>
+              <div class="download-card__arrow" aria-hidden="true">
+                {isAvailable ? '↓' : '⏳'}
+              </div>
+            </Tag>
+          );
+        })}
+      </div>
+    </section>
+
+    <!-- PWA fallback -->
+    <section class="section">
+      <div class="pwa-card">
+        <div class="pwa-card__icon">🌐</div>
+        <div class="pwa-card__body">
+          <h3>Can't install? Use the PWA</h3>
+          <p>
+            Dayront works as a Progressive Web App — install it from your
+            browser and get an app-like experience with offline support.
+            No app store needed.
+          </p>
+          <button type="button" class="btn btn--secondary" id="pwa-install-btn" hidden>
+            Install PWA
+          </button>
+          <details class="pwa-instructions">
+            <summary>Manual install instructions</summary>
+            <div class="pwa-steps">
+              <div class="pwa-step">
+                <strong>iOS Safari</strong>
+                <span>Share → Add to Home Screen</span>
+              </div>
+              <div class="pwa-step">
+                <strong>Android Chrome</strong>
+                <span>Menu (⋮) → Install app</span>
+              </div>
+              <div class="pwa-step">
+                <strong>Desktop Chrome / Edge</strong>
+                <span>Install icon in the address bar</span>
+              </div>
+              <div class="pwa-step">
+                <strong>Desktop Safari</strong>
+                <span>File → Add to Dock</span>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison table -->
+    <section class="section">
+      <h2>Web vs App</h2>
+      <div class="comparison-wrap">
+        <table class="comparison">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Web</th>
+              <th class="comparison__highlight">App</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Max file size</td>
+              <td>100–350 MB</td>
+              <td class="comparison__highlight"><strong>5 GB</strong></td>
+            </tr>
+            <tr>
+              <td>Processing speed</td>
+              <td>1×</td>
+              <td class="comparison__highlight"><strong>Up to 10× faster</strong></td>
+            </tr>
+            <tr>
+              <td>Works offline</td>
+              <td>Partial (after first load)</td>
+              <td class="comparison__highlight"><strong>Fully offline</strong></td>
+            </tr>
+            <tr>
+              <td>8K conversions</td>
+              <td>❌ Not recommended</td>
+              <td class="comparison__highlight"><strong>✅ Supported</strong></td>
+            </tr>
+            <tr>
+              <td>AI tools (captions, background removal)</td>
+              <td>⚠️ Small files only</td>
+              <td class="comparison__highlight"><strong>✅ Full-size</strong></td>
+            </tr>
+            <tr>
+              <td>Batch processing</td>
+              <td>❌</td>
+              <td class="comparison__highlight"><strong>✅ Coming soon</strong></td>
+            </tr>
+            <tr>
+              <td>Ads</td>
+              <td>Small banner</td>
+              <td class="comparison__highlight"><strong>None</strong></td>
+            </tr>
+            <tr>
+              <td>Data collection</td>
+              <td>None</td>
+              <td class="comparison__highlight"><strong>None</strong></td>
+            </tr>
+            <tr>
+              <td>Price</td>
+              <td>Free</td>
+              <td class="comparison__highlight"><strong>Free</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tools benefit list -->
+    <section class="section">
+      <h2>What you unlock with the app</h2>
+      <p class="section__lead">
+        These {appTools.length} tools run best in the app — some require it.
+      </p>
+      <ul class="tools-list">
+        {appTools.map((tool) => (
+          <li class="tools-list__item">
+            <span class="tools-list__icon">{tool.icon}</span>
+            <div class="tools-list__body">
+              <a href={`/tools/${tool.slug}`} class="tools-list__link">{tool.name}</a>
+              {tool.webNote && (
+                <span class="tools-list__note">{tool.webNote}</span>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <h2>Frequently asked questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Is the app really free?</summary>
+          <p>Yes. The app is free, with no ads and no sign-up. It's built on the same privacy-first promise as the web version.</p>
+        </details>
+        <details>
+          <summary>Why is the app faster than the browser?</summary>
+          <p>The browser version runs FFmpeg compiled to WebAssembly, which is limited to about 300 MB of memory per tab. The app runs native FFmpeg directly on your device — 10× faster and no memory limit.</p>
+        </details>
+        <details>
+          <summary>Does the app upload my files?</summary>
+          <p>No. Everything happens locally on your device, exactly like the web version. The app never connects to a server for processing.</p>
+        </details>
+        <details>
+          <summary>Will my settings and preferences carry over?</summary>
+          <p>Yes. Your theme, language, and recent tool history sync between web and app (stored locally — no accounts required).</p>
+        </details>
+        <details>
+          <summary>When is the Play Store / App Store release?</summary>
+          <p>Android APK and iOS TestFlight are coming first. Store listings are in review and will go live soon. Leave your email in the "Notify me" box to be the first to know.</p>
+        </details>
+      </div>
+    </section>
+
+    <footer class="download-footer">
+      <p>
+        Built with <strong>native FFmpeg</strong> and <strong>zero telemetry</strong>.
+        Your files never leave your device.
+      </p>
+      <a href="/tools" class="btn btn--ghost">Browse all tools →</a>
+    </footer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* ── Layout ──────────────────────────────────────────── */
+  .download-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  /* ── Hero ────────────────────────────────────────────── */
+  .download-hero {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+  }
+  .hero-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .hero-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 16px rgba(44, 181, 240, 0.35));
+  }
+  .download-hero h1 {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.15;
+    background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lead {
+    font-size: 1.05rem;
+    opacity: 0.8;
+    max-width: 34rem;
+    margin: 0 auto 1.25rem;
+    line-height: 1.55;
+  }
+  .hero-badges {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #F1F5F9;
+    color: #334155;
+    border: 1px solid #E2E8F0;
+  }
+  .badge--primary {
+    background: linear-gradient(135deg, #E5F7FE, #C7EBFC);
+    color: #0369A1;
+    border-color: #8FD6F8;
+  }
+
+  /* ── Detected platform banner ────────────────────────── */
+  .detected {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 2rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
+    border: 1px solid #8FD6F8;
+    position: relative;
+    overflow: hidden;
+  }
+  .detected::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #2CB5F0, #0EA5E9);
+  }
+  .detected__icon { font-size: 2rem; }
+  .detected__body { flex: 1; min-width: 0; color: #0C4A6E; }
+  .detected__title { font-size: 0.95rem; }
+  .detected__sub {
+    font-size: 0.8rem;
+    opacity: 0.75;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Sections ────────────────────────────────────────── */
+  .section { margin-top: 3rem; }
+  .section h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+  }
+  .section__lead {
+    font-size: 0.95rem;
+    opacity: 0.7;
+    margin: -0.5rem 0 1rem;
+  }
+
+  /* ── Download grid ───────────────────────────────────── */
+  .download-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  @media (min-width: 640px) {
+    .download-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .download-card {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.125rem;
+    border-radius: 14px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  }
+  .download-card:hover,
+  .download-card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(44, 181, 240, 0.15);
+    border-color: #57C0F3;
+    outline: none;
+  }
+  .download-card--recommended {
+    border-color: #2CB5F0;
+    background: linear-gradient(135deg, #E5F7FE, #C7EBFC);
+    box-shadow: 0 8px 24px rgba(44, 181, 240, 0.2);
+  }
+  .download-card__icon { font-size: 1.75rem; flex-shrink: 0; }
+  .download-card__body { flex: 1; min-width: 0; }
+  .download-card__title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .download-card__meta {
+    font-size: 0.8rem;
+    opacity: 0.75;
+    margin-bottom: 0.15rem;
+  }
+  .download-card__note {
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+  .download-card__arrow {
+    font-size: 1.25rem;
+    opacity: 0.4;
+    flex-shrink: 0;
+  }
+
+  /* Status pills */
+  .status-pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    margin-left: 0.5rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+  }
+  .status-pill--soon {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+  }
+  .status-pill--beta {
+    background: #E5F7FE;
+    color: #0369A1;
+    border: 1px solid #8FD6F8;
+  }
+
+  .download-card--soon {
+    opacity: 0.75;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .download-card--soon .download-card__arrow { opacity: 0.4; }
+
+  /* ── PWA card ────────────────────────────────────────── */
+  .pwa-card {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-radius: 14px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+  }
+  .pwa-card__icon { font-size: 1.75rem; flex-shrink: 0; }
+  .pwa-card__body { flex: 1; }
+  .pwa-card h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  .pwa-card p {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    line-height: 1.55;
+  }
+  .pwa-instructions {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .pwa-instructions summary {
+    cursor: pointer;
+    padding: 0.35rem 0;
+    font-weight: 600;
+    opacity: 0.75;
+  }
+  .pwa-steps {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem 0 0;
+  }
+  .pwa-step {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .pwa-step strong { font-size: 0.85rem; }
+  .pwa-step span { font-size: 0.8rem; opacity: 0.7; }
+
+  /* ── Comparison table ────────────────────────────────── */
+  .comparison-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid #E2E8F0;
+  }
+  .comparison {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .comparison th,
+  .comparison td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #E2E8F0;
+  }
+  .comparison thead th {
+    background: #F8FAFC;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #475569;
+  }
+  .comparison tbody tr:last-child td { border-bottom: none; }
+  .comparison__highlight {
+    background: linear-gradient(135deg, #E5F7FE, #C7EBFC);
+  }
+  .comparison thead .comparison__highlight {
+    background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+    color: white;
+  }
+
+  /* ── Tools list ──────────────────────────────────────── */
+  .tools-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .tools-list__item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    transition: border-color 0.15s ease;
+  }
+  .tools-list__item:hover {
+    border-color: #8FD6F8;
+  }
+  .tools-list__icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .tools-list__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .tools-list__link {
+    font-weight: 600;
+    color: #0284C7;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .tools-list__link:hover { text-decoration: underline; }
+  .tools-list__note {
+    font-size: 0.78rem;
+    opacity: 0.7;
+    line-height: 1.45;
+  }
+
+  /* ── FAQ ─────────────────────────────────────────────── */
+  .faq details {
+    border-bottom: 1px solid #E2E8F0;
+    padding: 0.75rem 0;
+  }
+  .faq details:last-child { border-bottom: none; }
+  .faq summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.25rem 0;
+  }
+  .faq p {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    line-height: 1.55;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.625rem 1.125rem;
+    min-height: 44px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn--primary {
+    background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(44, 181, 240, 0.3);
+  }
+  .btn--primary:hover {
+    box-shadow: 0 6px 20px rgba(44, 181, 240, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn--secondary {
+    background: #0C4A6E;
+    color: white;
+  }
+  .btn--ghost {
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    opacity: 0.7;
+  }
+  .btn--ghost:hover { opacity: 1; }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  .download-footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+  .download-footer p { margin: 0 0 0.75rem; }
+
+  /* ── Dark mode ───────────────────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    .download-hero h1 {
+      background: linear-gradient(135deg, #57C0F3, #38BDF8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .badge {
+      background: #1E293B;
+      color: #CBD5E1;
+      border-color: #334155;
+    }
+    .badge--primary {
+      background: linear-gradient(135deg, #0C2A42, #0C4A6E);
+      color: #8FD6F8;
+      border-color: #0369A1;
+    }
+    .detected {
+      background: linear-gradient(135deg, #0C2A42 0%, #0C4A6E 100%);
+      border-color: #0369A1;
+      color: #C7EBFC;
+    }
+    .detected__body { color: #C7EBFC; }
+    .download-card {
+      background: #0F172A;
+      border-color: #1E293B;
+      color: #E2E8F0;
+    }
+    .download-card:hover {
+      border-color: #2CB5F0;
+      box-shadow: 0 12px 28px rgba(44, 181, 240, 0.2);
+    }
+    .download-card--recommended {
+      background: linear-gradient(135deg, #0C2A42, #0C4A6E);
+      border-color: #2CB5F0;
+    }
+    .status-pill--soon {
+      background: #451A03;
+      color: #FCD34D;
+      border-color: #92400E;
+    }
+    .status-pill--beta {
+      background: #0C2A42;
+      color: #8FD6F8;
+      border-color: #0369A1;
+    }
+    .pwa-card {
+      background: #0F172A;
+      border-color: #1E293B;
+    }
+    .comparison-wrap { border-color: #1E293B; }
+    .comparison th,
+    .comparison td { border-color: #1E293B; }
+    .comparison thead th {
+      background: #0F172A;
+      color: #94A3B8;
+    }
+    .comparison__highlight {
+      background: linear-gradient(135deg, #0C2A42, #0C4A6E);
+    }
+    .comparison thead .comparison__highlight {
+      background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+      color: white;
+    }
+    .tools-list__item {
+      background: #0F172A;
+      border-color: #1E293B;
+    }
+    .tools-list__link { color: #57C0F3; }
+    .faq details { border-color: #1E293B; }
+    .btn--secondary { background: #1E293B; }
+  }
+</style>
+
+<!-- ══════════════════════════════════════════════════════════
+     Client-side: OS detection + PWA install prompt
+     ══════════════════════════════════════════════════════════ -->
+<script>
+  (() => {
+    /* ── 1. Detect OS ─────────────────────────────────── */
+    type PlatformKey = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
+
+    function detectOS(): { key: PlatformKey; name: string; icon: string } | null {
+      const ua = navigator.userAgent || '';
+      const platform = (navigator as any).userAgentData?.platform || navigator.platform || '';
+      const s = (ua + ' ' + platform).toLowerCase();
+
+      if (/android/.test(s))            return { key: 'android', name: 'Android',  icon: '🤖' };
+      if (/iphone|ipad|ipod/.test(s))   return { key: 'ios',     name: 'iPhone',   icon: '🍎' };
+      if (/mac os x|macintosh/.test(s)) return { key: 'macos',   name: 'macOS',    icon: '🍏' };
+      if (/windows/.test(s))            return { key: 'windows', name: 'Windows',  icon: '🪟' };
+      if (/linux|x11|cros/.test(s))     return { key: 'linux',   name: 'Linux',    icon: '🐧' };
+      return null;
+    }
+
+    const os = detectOS();
+    const banner = document.getElementById('detected-platform');
+
+    if (os && banner) {
+      const card = document.querySelector<HTMLElement>(`[data-platform="${os.key}"]`);
+
+      const iconEl = document.getElementById('detected-icon');
+      const nameEl = document.getElementById('detected-name');
+      const subEl  = document.getElementById('detected-sub');
+      const ctaEl  = document.getElementById('detected-cta') as HTMLAnchorElement | null;
+
+      if (iconEl) iconEl.textContent = os.icon;
+      if (nameEl) nameEl.textContent = os.name;
+
+      if (card && ctaEl) {
+        const status = card.getAttribute('data-status');
+        const isAvailable = status === 'available' || status === 'beta';
+        const url = card.getAttribute('href');
+        const storeText = card.querySelector('.download-card__meta')?.textContent || '';
+
+        if (isAvailable && url) {
+          ctaEl.href = url;
+          ctaEl.textContent = 'Download';
+          card.classList.add('download-card--recommended');
+        } else {
+          ctaEl.href = 'mailto:hello@dayront.com?subject=Notify%20me%20when%20Dayront%20App%20is%20ready';
+          ctaEl.textContent = 'Notify me';
+        }
+
+        if (subEl) subEl.textContent = storeText;
+      } else if (subEl) {
+        subEl.textContent = 'Pick the installer for your platform below.';
+      }
+
+      banner.hidden = false;
+    }
+
+    /* ── 2. PWA install prompt ───────────────────────── */
+    let deferredPrompt: any = null;
+    const pwaBtn = document.getElementById('pwa-install-btn') as HTMLButtonElement | null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (pwaBtn) pwaBtn.hidden = false;
+    });
+
+    pwaBtn?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[PWA] Install outcome:', outcome);
+      deferredPrompt = null;
+      pwaBtn.hidden = true;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      if (pwaBtn) pwaBtn.hidden = true;
+    });
+  })();
+</script>

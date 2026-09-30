@@ -18,10 +18,38 @@ export interface SettingDef {
   default: string | number;
 }
 
+/* --------------------------------------------------------------------------
+   ★ NEW: PLATFORM TYPES
+-------------------------------------------------------------------------- */
+
+export type ToolTier = 'light' | 'medium' | 'heavy';
+export type ToolEngine = 'wasm' | 'native' | 'ai';
+
+export type PlatformType =
+  | 'web'
+  | 'mobile-web'
+  | 'mobile-native'
+  | 'desktop-native'
+  | 'extension'
+  | 'server';
+
+export interface PlatformInfo {
+  type: PlatformType;
+  label: string;
+  engine: 'wasm' | 'native';
+  maxMB: number;
+}
+
 export interface Tool {
   slug: string;
   name: string;
-  category: 'audio-utility' | 'audio-conversion' | 'video-to-audio' | 'video-utility' | 'video-conversion' | 'ai';
+  category:
+    | 'audio-utility'
+    | 'audio-conversion'
+    | 'video-to-audio'
+    | 'video-utility'
+    | 'video-conversion'
+    | 'ai';
   from?: string;
   to?: string;
   description: string;
@@ -38,6 +66,13 @@ export interface Tool {
   faq: FAQ[];
   howTo: HowToStep[];
   relatedTools: string[];
+
+  // ★ Platform intelligence (optional — auto-filled by defaults/overrides)
+  tier?: ToolTier;
+  engine?: ToolEngine;
+  webMaxMB?: number;
+  recommendApp?: boolean;
+  webNote?: string;
 }
 
 /* --------------------------------------------------------------------------
@@ -1063,6 +1098,12 @@ for (const from of RESOLUTION_PRESETS) {
     const requiresDesktop =
       from.key === '8k' || to.key === '8k' || (isUpscale && to.tier >= 5);
     const is8k = to.key === '8k';
+    const is4kPlus = to.tier >= 5;
+
+    // ★ Platform tier: 8K and 4K+ outputs are heavy, upscales are medium, downscales are light.
+    const tier: ToolTier = is4kPlus ? 'heavy' : isUpscale ? 'medium' : 'light';
+    const webMaxMB = is8k ? 100 : is4kPlus ? 150 : isUpscale ? 200 : 250;
+    const recommendApp = is8k || is4kPlus;
 
     resolutionTools.push({
       slug: `${from.key}-to-${to.key}`,
@@ -1079,6 +1120,16 @@ for (const from of RESOLUTION_PRESETS) {
       presetWidth: to.w,
       presetHeight: to.h,
       requiresDesktop,
+      // ★ Platform fields
+      tier,
+      engine: 'wasm',
+      webMaxMB,
+      recommendApp,
+      webNote: is8k
+        ? '8K conversion needs a powerful desktop. The Dayront Desktop app is highly recommended.'
+        : is4kPlus
+          ? '4K output is memory-intensive. The Dayront app is 10× faster.'
+          : undefined,
       settings: [],
       faq: is8k
         ? [
@@ -1136,8 +1187,237 @@ for (const from of RESOLUTION_PRESETS) {
   }
 }
 
-/* --------------------------------------------------------------------------
-   FINAL EXPORT: base tools + 30 resolution converters
--------------------------------------------------------------------------- */
+/* ==========================================================================
+ * ★ PLATFORM DEFAULTS
+ * --------------------------------------------------------------------------
+ * Applied to every tool by `type` (preferred) or `category` (fallback).
+ * Individual tools can override any of these via PLATFORM_OVERRIDES below.
+ * ========================================================================== */
 
-export const tools: Tool[] = [...baseTools, ...resolutionTools];
+const DEFAULT_LIMITS = {
+  audioLight: 150,
+  audioMedium: 250,
+  videoLight: 200,
+  videoMedium: 300,
+  videoHeavy: 350,
+  ai: 20,
+} as const;
+
+/** Defaults keyed by `type` (falls back to `category`). */
+const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
+  // ── Audio utility ────────────────────────
+  cut:              { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  merge:            { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  compress:         { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  boost:            { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  speed:            { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  reverse:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  'stereo-to-mono': { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+
+  // ── Format conversion ────────────────────
+  convert:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
+  'convert-video':  { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
+
+  // ── Video utility ────────────────────────
+  'video-cut':      { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: false },
+  'video-merge':    { tier: 'heavy',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoHeavy,  recommendApp: true },
+  'video-compress': { tier: 'heavy',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoHeavy,  recommendApp: true },
+  'video-to-gif':   { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: true },
+  'gif-to-video':   { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: false },
+  'resize-video':   { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
+  'crop-video':     { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
+  'change-fps':     { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
+  'mute-video':     { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: false },
+  'extract-audio':  { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
+  'resolution-convert': { tier: 'medium', engine: 'wasm', webMaxMB: 200, recommendApp: true },
+
+  // ── AI ────────────────────────────────────
+  'ai-captions':     { tier: 'heavy',  engine: 'ai',     webMaxMB: DEFAULT_LIMITS.ai, recommendApp: true },
+  'ai-remove-bg':    { tier: 'heavy',  engine: 'ai',     webMaxMB: DEFAULT_LIMITS.ai, recommendApp: true },
+  'ai-photo-editor': { tier: 'heavy',  engine: 'ai',     webMaxMB: DEFAULT_LIMITS.ai, recommendApp: true },
+  'burn-subtitles':  { tier: 'heavy',  engine: 'native', webMaxMB: 50,               recommendApp: true },
+
+  // ── Fallback by category ─────────────────
+  'audio-utility':     { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  'audio-conversion':  { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  'video-to-audio':    { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
+  'video-utility':     { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
+  'video-conversion':  { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
+  ai:                  { tier: 'heavy',  engine: 'ai',   webMaxMB: DEFAULT_LIMITS.ai,          recommendApp: true },
+};
+
+/* ==========================================================================
+ * ★ PLATFORM OVERRIDES — hand-tuned settings for the most demanding tools
+ * ========================================================================== */
+
+const PLATFORM_OVERRIDES: Record<string, Partial<Tool>> = {
+  'video-merger': {
+    tier: 'heavy',
+    webMaxMB: 300,
+    recommendApp: true,
+    webNote: 'Merging re-encodes video. For files over 300MB, the Dayront app is much faster.',
+  },
+  'video-compressor': {
+    tier: 'heavy',
+    webMaxMB: 350,
+    recommendApp: true,
+    webNote: 'Compression is CPU-intensive. The Dayront app uses native FFmpeg — up to 10× faster.',
+  },
+  'video-to-gif': {
+    tier: 'medium',
+    webMaxMB: 150,
+    recommendApp: true,
+    webNote: 'GIF conversion is memory-heavy. Keep clips short for best results.',
+  },
+  'ai-video-captions': {
+    tier: 'heavy',
+    engine: 'ai',
+    webMaxMB: 20,
+    recommendApp: true,
+    webNote: 'AI captioning needs ~1GB free RAM. For longer videos, use the Dayront app.',
+  },
+  'ai-background-remover': {
+    tier: 'heavy',
+    engine: 'ai',
+    webMaxMB: 20,
+    recommendApp: true,
+    webNote: 'First run downloads a ~40MB AI model. The app comes pre-bundled.',
+  },
+  'ai-photo-editor': {
+    tier: 'heavy',
+    engine: 'ai',
+    webMaxMB: 20,
+    recommendApp: true,
+  },
+  'burn-subtitles': {
+    tier: 'heavy',
+    engine: 'native',
+    webMaxMB: 50,
+    recommendApp: true,
+    webNote: 'Burning subtitles re-encodes the whole video. The Dayront app is 10× faster.',
+  },
+  'flv-to-webm': {
+    tier: 'medium',
+    webMaxMB: 250,
+    recommendApp: true,
+    webNote: 'WebM encoding via libvpx is slow in-browser. Try the Dayront app.',
+  },
+};
+
+/* ==========================================================================
+ * ★ ENRICH + EXPORT
+ * ========================================================================== */
+
+function enrichTool(tool: Tool): Tool {
+  const byType = tool.type ? PLATFORM_DEFAULTS[tool.type] : undefined;
+  const byCategory = PLATFORM_DEFAULTS[tool.category];
+  const override = PLATFORM_OVERRIDES[tool.slug];
+
+  return {
+    ...byCategory,
+    ...byType,
+    ...tool,
+    ...override,
+  };
+}
+
+export const tools: Tool[] = [...baseTools, ...resolutionTools].map(enrichTool);
+
+/* ==========================================================================
+ * ★ PUBLIC HELPERS
+ * ========================================================================== */
+
+/** Look up a tool by its URL slug. */
+export function getToolBySlug(slug: string): Tool | undefined {
+  return tools.find((t) => t.slug === slug);
+}
+
+/**
+ * Check whether a file is safe for a given tool on the current platform.
+ * Native apps get a much larger allowance (5GB vs web limits).
+ */
+export function isFileSafeForTool(
+  tool: Tool,
+  fileSizeMB: number,
+  isNative: boolean,
+): boolean {
+  const limit = isNative ? 5000 : (tool.webMaxMB ?? 250);
+  return fileSizeMB <= limit;
+}
+
+/** Group tools by category, useful for listings and dashboards. */
+export function getToolsByCategory(): Record<Tool['category'], Tool[]> {
+  return tools.reduce(
+    (acc, tool) => {
+      (acc[tool.category] ??= []).push(tool);
+      return acc;
+    },
+    {} as Record<Tool['category'], Tool[]>,
+  );
+}
+
+/** Filter to only tools recommended for app-first / app-only usage. */
+export function getAppRecommendedTools(): Tool[] {
+  return tools.filter((t) => t.recommendApp);
+}
+
+/** Count tools by tier — useful for a dashboard/status page. */
+export function getTierCounts(): Record<ToolTier, number> {
+  return tools.reduce(
+    (acc, t) => {
+      const tier = t.tier ?? 'medium';
+      acc[tier] = (acc[tier] ?? 0) + 1;
+      return acc;
+    },
+    { light: 0, medium: 0, heavy: 0 } as Record<ToolTier, number>,
+  );
+}
+
+/** Get all tools with a specific tier (light / medium / heavy). */
+export function getToolsByTier(tier: ToolTier): Tool[] {
+  return tools.filter((t) => (t.tier ?? 'medium') === tier);
+}
+
+/** Get all tools that use a specific engine (wasm / native / ai). */
+export function getToolsByEngine(engine: ToolEngine): Tool[] {
+  return tools.filter((t) => (t.engine ?? 'wasm') === engine);
+}
+
+/* ==========================================================================
+ * ★ PLATFORM DETECTION (client-side runtime)
+ * ========================================================================== */
+
+/**
+ * Detects the current runtime environment. Call this from the browser
+ * (returns 'server' if run during SSR/build).
+ */
+export function detectPlatform(): PlatformInfo {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { type: 'server', label: 'Server', engine: 'wasm', maxMB: 0 };
+  }
+
+  const w = window as any;
+  const isTauri = w.__TAURI__ !== undefined || w.__TAURI_INTERNALS__ !== undefined;
+  const isCapacitor = w.Capacitor !== undefined;
+  const isExtension =
+    typeof chrome !== 'undefined' &&
+    chrome.runtime !== undefined &&
+    chrome.runtime.id !== undefined;
+
+  const ua = navigator.userAgent || '';
+  const isMobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+
+  if (isTauri) {
+    return { type: 'desktop-native', label: 'Desktop App', engine: 'native', maxMB: 5000 };
+  }
+  if (isCapacitor) {
+    return { type: 'mobile-native', label: 'Mobile App', engine: 'native', maxMB: 2000 };
+  }
+  if (isExtension) {
+    return { type: 'extension', label: 'Browser Extension', engine: 'wasm', maxMB: 50 };
+  }
+  if (isMobileUA) {
+    return { type: 'mobile-web', label: 'Mobile Web', engine: 'wasm', maxMB: 100 };
+  }
+  return { type: 'web', label: 'Web', engine: 'wasm', maxMB: 500 };
+}

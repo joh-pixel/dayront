@@ -263,3 +263,18 @@
     background-position: 200% 0;
   }
 }
+:root {
+  --brand-50:  #E5F7FE;
+  --brand-100: #C7EBFC;
+  --brand-200: #8FD6F8;
+  --brand-300: #57C0F3;
+  --brand-400: #2CB5F0;
+  --brand-500: #0EA5E9;
+  --brand-600: #0284C7;
+  --brand-700: #0369A1;
+  --brand-800: #075985;
+  --brand-900: #0C4A6E;
+
+  --brand-gradient: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
+}

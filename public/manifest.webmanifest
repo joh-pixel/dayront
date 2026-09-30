@@ -1,0 +1,76 @@
+{
+  "name": "Dayront — Private Media Tools",
+  "short_name": "Dayront",
+  "description": "40+ free media tools that run entirely in your browser. No uploads, 100% private.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#E5F7FE",
+  "theme_color": "#2CB5F0",
+  "categories": ["utilities", "productivity", "multimedia"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Video Merger",
+      "short_name": "Merge",
+      "description": "Combine multiple videos into one file",
+      "url": "/tools/video-merger",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Video Compressor",
+      "short_name": "Compress",
+      "description": "Reduce video file size",
+      "url": "/tools/video-compressor",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Video Captions",
+      "short_name": "Captions",
+      "description": "Auto-generate subtitles",
+      "url": "/tools/ai-video-captions",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        { "name": "media", "accept": ["video/*", "audio/*", "image/*"] }
+      ]
+    }
+  }
+}
