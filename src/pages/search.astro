@@ -1,139 +1,679 @@
 ---
+// src/pages/search.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getLangFromAstroUrl } from '../lib/i18n';
-import { tools } from '../lib/tools';
 import { getCollection } from 'astro:content';
+import { buildSearchIndex } from '../lib/searchIndex';
 
-const lang = getLangFromAstroUrl(Astro.url);
+const lang = 'en';
 
-// Load translations
-let toolsTrans: Record<string, any> = {};
-let commonTrans: Record<string, any> = {};
+// Load blog posts
+let blogPosts: any[] = [];
 try {
-  const [toolsRes, commonRes] = await Promise.all([
-    fetch(new URL(`/locales/${lang}/tools.json`, Astro.url.origin)),
-    fetch(new URL(`/locales/${lang}/common.json`, Astro.url.origin)),
-  ]);
-  if (toolsRes.ok) toolsTrans = await toolsRes.json();
-  if (commonRes.ok) commonTrans = await commonRes.json();
-} catch {}
-
-// Helper for common translations
-const t = (key: string, fallback: string) => commonTrans[key] || fallback;
-
-// Translate a tool entry
-function translateTool(tool: typeof tools[0]) {
-  const tt = toolsTrans[tool.slug] || {};
-  return {
-    title: tt.title || tool.name,
-    description: tt.description || tool.description,
-    url: tool.from && tool.to ? `/convert/${tool.slug}?lang=${lang}` : `/tools/${tool.slug}?lang=${lang}`,
-    type: 'tool',
-    icon: tt.icon || tool.icon,
-  };
+  blogPosts = await getCollection('blog', (entry) => entry.id.startsWith(`${lang}/`));
+} catch {
+  blogPosts = [];
 }
 
-// Fetch blog posts (titles remain in English for now, or could be translated via blog language folders)
-let blogPosts: { title: string; description: string; slug: string; date: string }[] = [];
-try {
-  const posts = await getCollection('blog');
-  blogPosts = posts.map(post => ({
-    title: post.data.title,
-    description: post.data.description || '',
-    slug: post.id.replace(/\.mdx$/, '').replace(/^en\//, ''),
-    date: post.data.date?.toISOString() || '',
-  }));
-} catch {}
+// Build the search index at build time
+const searchIndex = buildSearchIndex({ lang, blogPosts });
 
-const searchData = {
-  tools: tools.map(translateTool),
-  blog: blogPosts.map(post => ({
-    title: post.title,
-    description: post.description,
-    url: `/blog/${post.slug}?lang=${lang}`,
-    type: 'blog',
-    icon: '📝',
-  })),
+// Stats for the hero
+const stats = {
+  total: searchIndex.length,
+  tools: searchIndex.filter((i) => i.category !== 'page' && i.category !== 'blog' && i.category !== 'faq').length,
+  blog: searchIndex.filter((i) => i.category === 'blog').length,
+  faq: searchIndex.filter((i) => i.category === 'faq').length,
 };
-
-const allItems = [...searchData.tools, ...searchData.blog];
 ---
 
-<BaseLayout lang={lang}
-  title=<span data-i18n="search_page_title">Search – Dayront</span>
-  description=<span data-i18n="search_page_desc">Search across all media tools, blog articles, and FAQs.</span>
+<BaseLayout
+  title="Search — Dayront"
+  description="Search across all media tools, blog articles, and answers on Dayront."
 >
-  <section class="max-w-4xl mx-auto px-4 py-12">
-    <h1 class="text-4xl font-extrabold text-black dark:text-white mb-4">
-      <span data-i18n="search_heading">Search</span>
-    </h1>
-    <p class="text-gray-500 dark:text-white/70 mb-8 text-lg">
-      <span data-i18n="search_subtitle">Find tools, articles, and answers instantly.</span>
-    </p>
+  <main class="search-page" data-search-index={JSON.stringify(searchIndex)}>
+    <header class="search-header">
+      <h1>Search</h1>
+      <p class="search-sub">
+        Find tools, articles, and answers instantly.
+        <span class="search-stats">
+          {stats.total} items indexed · {stats.tools} tools · {stats.blog} articles · {stats.faq} FAQ answers
+        </span>
+      </p>
+    </header>
 
-    <div class="relative mb-8">
+    <!-- Search bar -->
+    <div class="search-bar" role="search">
+      <div class="search-bar__icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+      </div>
+
       <input
         id="search-input"
-        type="text"
-        placeholder=<span data-i18n="search_placeholder">Type to search…</span>
-        class="w-full px-5 py-3 text-lg rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky"
+        type="search"
+        placeholder="Try 'mp4 to mp3', 'video merger', 'privacy', 'captions'…"
         autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Search Dayront"
+        aria-controls="search-results"
+        aria-expanded="false"
       />
-      <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+
+      <button
+        id="search-clear"
+        type="button"
+        class="search-bar__clear"
+        aria-label="Clear search"
+        hidden
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
-    <div id="search-results" class="space-y-4"></div>
+    <!-- Category filter chips -->
+    <nav class="search-filters" aria-label="Filter by category">
+      <button type="button" class="chip chip--active" data-filter="all">All</button>
+      <button type="button" class="chip" data-filter="conversion">Conversions</button>
+      <button type="button" class="chip" data-filter="utility">Utilities</button>
+      <button type="button" class="chip" data-filter="ai">AI</button>
+      <button type="button" class="chip" data-filter="blog">Blog</button>
+      <button type="button" class="chip" data-filter="page">Pages</button>
+      <button type="button" class="chip" data-filter="faq">FAQ</button>
+    </nav>
 
-    <div id="no-results" class="text-center py-10 hidden">
-      <p class="text-gray-400 dark:text-gray-500">
-        <span data-i18n="no_results">No results found. Try a different keyword.</span>
+    <!-- Empty state -->
+    <div id="search-empty" class="search-empty">
+      <div class="search-empty__icon">🔍</div>
+      <p class="search-empty__title">Start typing to search</p>
+      <p class="search-empty__sub">
+        Search across {stats.tools} tools, {stats.blog} blog posts, and {stats.faq} FAQ answers.
       </p>
     </div>
-  </section>
+
+    <!-- Results -->
+    <ul id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></ul>
+
+    <!-- No results -->
+    <div id="search-noresults" class="search-noresults" hidden>
+      <div class="search-noresults__icon">😕</div>
+      <p class="search-noresults__title">No matches found</p>
+      <p class="search-noresults__sub">
+        Try shorter keywords or browse <a href="/tools">all tools →</a>
+      </p>
+    </div>
+  </main>
 </BaseLayout>
 
-<script define:vars={{ allItems }}>
-  const searchInput = document.getElementById('search-input');
-  const resultsContainer = document.getElementById('search-results');
-  const noResults = document.getElementById('no-results');
-
-  function renderResults(query) {
-    const q = query.toLowerCase().trim();
-    if (!q) {
-      resultsContainer.innerHTML = '';
-      noResults.classList.add('hidden');
-      return;
-    }
-
-    const filtered = allItems.filter(item =>
-      item.title.toLowerCase().includes(q) ||
-      item.description.toLowerCase().includes(q)
-    );
-
-    if (filtered.length === 0) {
-      resultsContainer.innerHTML = '';
-      noResults.classList.remove('hidden');
-      return;
-    }
-    noResults.classList.add('hidden');
-
-    resultsContainer.innerHTML = filtered.map(item => `
-      <a href="${item.url}" class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:shadow-md transition">
-        <span class="text-2xl flex-shrink-0">${item.icon || (item.type === 'blog' ? '📝' : '🔧')}</span>
-        <div>
-          <div class="font-semibold text-black dark:text-white">${item.title}</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">${item.description}</div>
-          <div class="text-xs text-gray-400 mt-1 capitalize">${item.type}</div>
-        </div>
-      </a>
-    `).join('');
+<style>
+  .search-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
   }
 
-  let timeout;
-  searchInput.addEventListener('input', (e) => {
-    clearTimeout(timeout);
-    timeout = window.setTimeout(() => {
-      renderResults(e.target.value);
-    }, 200);
-  });
+  .search-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .search-header h1 {
+    font-size: clamp(1.75rem, 5vw, 2.25rem);
+    font-weight: 800;
+    margin: 0 0 0.5rem;
+  }
+  .search-sub {
+    font-size: 0.95rem;
+    opacity: 0.75;
+    margin: 0;
+    line-height: 1.55;
+  }
+  .search-stats {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+
+  /* ── Search bar ────────────────────────────────────────── */
+  .search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    margin-bottom: 1rem;
+  }
+  .search-bar:focus-within {
+    border-color: #2CB5F0;
+    box-shadow: 0 0 0 4px rgba(44, 181, 240, 0.12);
+  }
+  .search-bar__icon {
+    padding: 0 0.75rem 0 1rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .search-bar input {
+    flex: 1;
+    min-width: 0;
+    padding: 1rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+  }
+  .search-bar input::placeholder {
+    color: #94a3b8;
+  }
+  .search-bar__clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-right: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+  }
+  .search-bar__clear:hover {
+    background: #e2e8f0;
+  }
+
+  /* ── Filter chips ──────────────────────────────────────── */
+  .search-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.75rem;
+  }
+  .chip {
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .chip:hover {
+    border-color: #8FD6F8;
+    background: #E5F7FE;
+    color: #0369A1;
+  }
+  .chip--active {
+    background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 3px 10px rgba(44, 181, 240, 0.28);
+  }
+
+  /* ── Empty / No results ────────────────────────────────── */
+  .search-empty,
+  .search-noresults {
+    text-align: center;
+    padding: 3rem 1rem;
+    opacity: 0.75;
+  }
+  .search-empty__icon,
+  .search-noresults__icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .search-empty__title,
+  .search-noresults__title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.35rem;
+  }
+  .search-empty__sub,
+  .search-noresults__sub {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    margin: 0;
+  }
+  .search-noresults__sub a {
+    color: #0284C7;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .search-noresults__sub a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Results list ──────────────────────────────────────── */
+  .search-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+    cursor: pointer;
+  }
+  .result-item:hover,
+  .result-item:focus-visible,
+  .result-item.is-active {
+    border-color: #2CB5F0;
+    background: #E5F7FE;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(44, 181, 240, 0.14);
+    outline: none;
+  }
+  .result-item__icon {
+    font-size: 1.4rem;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+  .result-item__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .result-item__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .result-item__badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+  }
+  .result-item__badge--blog { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+  .result-item__badge--ai { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+  .result-item__badge--page { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+  .result-item__badge--faq { background: #dcfce7; color: #166534; border-color: #86efac; }
+  .result-item__desc {
+    font-size: 0.82rem;
+    opacity: 0.72;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .result-item__desc mark,
+  .result-item__title mark {
+    background: #fef08a;
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  /* ── Dark mode ─────────────────────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    .search-bar {
+      background: #0f172a;
+      border-color: #1e293b;
+    }
+    .search-bar:focus-within {
+      border-color: #2CB5F0;
+      box-shadow: 0 0 0 4px rgba(44, 181, 240, 0.2);
+    }
+    .search-bar__clear {
+      background: #1e293b;
+      color: #cbd5e1;
+    }
+    .search-bar__clear:hover {
+      background: #334155;
+    }
+    .chip {
+      background: #0f172a;
+      border-color: #1e293b;
+      color: #cbd5e1;
+    }
+    .chip:hover {
+      background: #0c2a42;
+      border-color: #0369a1;
+      color: #8FD6F8;
+    }
+    .chip--active {
+      background: linear-gradient(135deg, #2CB5F0, #38BDF8);
+      color: #ffffff;
+    }
+    .result-item {
+      background: #0f172a;
+      border-color: #1e293b;
+      color: #e2e8f0;
+    }
+    .result-item:hover,
+    .result-item:focus-visible,
+    .result-item.is-active {
+      background: #0c2a42;
+      border-color: #2CB5F0;
+    }
+    .result-item__icon {
+      background: #1e293b;
+    }
+    .result-item__badge { background: #0c2a42; color: #8FD6F8; border-color: #0369a1; }
+    .result-item__badge--blog { background: #451a03; color: #FCD34D; border-color: #92400e; }
+    .result-item__badge--ai { background: #2e1065; color: #c4b5fd; border-color: #6d28d9; }
+    .result-item__badge--page { background: #1e293b; color: #cbd5e1; border-color: #334155; }
+    .result-item__badge--faq { background: #052e16; color: #86efac; border-color: #166534; }
+    .result-item__desc mark,
+    .result-item__title mark {
+      background: #a16207;
+      color: #fef3c7;
+    }
+  }
+</style>
+
+<script>
+  /* ══════════════════════════════════════════════════════════
+     Client-side search engine
+     - Uses the JSON index embedded in data-search-index
+     - Substring + word-boundary matching
+     - Weighted ranking
+     - Keyboard navigation (↑ ↓ Enter Esc)
+     ══════════════════════════════════════════════════════════ */
+  (() => {
+    interface Item {
+      id: string;
+      title: string;
+      description: string;
+      url: string;
+      category: string;
+      icon: string;
+      keywords?: string[];
+      weight?: number;
+    }
+
+    const root = document.querySelector<HTMLElement>('.search-page');
+    if (!root) return;
+
+    const raw = root.getAttribute('data-search-index');
+    if (!raw) return;
+
+    let INDEX: Item[] = [];
+    try {
+      INDEX = JSON.parse(raw);
+    } catch (e) {
+      console.warn('[search] Failed to parse index:', e);
+      return;
+    }
+
+    const input    = document.getElementById('search-input') as HTMLInputElement | null;
+    const clearBtn = document.getElementById('search-clear') as HTMLButtonElement | null;
+    const listEl   = document.getElementById('search-results') as HTMLUListElement | null;
+    const emptyEl  = document.getElementById('search-empty') as HTMLElement | null;
+    const noResEl  = document.getElementById('search-noresults') as HTMLElement | null;
+    const chips    = Array.from(document.querySelectorAll<HTMLButtonElement>('.chip'));
+
+    if (!input || !listEl) return;
+
+    let activeFilter = 'all';
+    let activeIndex = -1;
+    let currentResults: Item[] = [];
+
+    /* ── Text normalization ──────────────────────────────── */
+    function normalize(s: string): string {
+      return s.toLowerCase().trim();
+    }
+
+    /* ── Score a single item against a query ─────────────── */
+    function scoreItem(item: Item, q: string): number {
+      const title = normalize(item.title);
+      const desc  = normalize(item.description);
+      const kw    = (item.keywords || []).map(normalize).join(' ');
+      const weight = item.weight ?? 1;
+
+      let score = 0;
+
+      // Title exact match — biggest boost
+      if (title === q) score += 1000;
+
+      // Title starts with query
+      if (title.startsWith(q)) score += 300;
+
+      // Title contains query as whole word
+      if (new RegExp(`\\b${escapeRegex(q)}\\b`).test(title)) score += 200;
+
+      // Title contains query anywhere
+      if (title.includes(q)) score += 100;
+
+      // All query words appear in title
+      const words = q.split(/\s+/).filter(Boolean);
+      if (words.length > 1 && words.every((w) => title.includes(w))) score += 150;
+
+      // Description contains query
+      if (desc.includes(q)) score += 30;
+
+      // Keywords contain query
+      if (kw.includes(q)) score += 40;
+
+      // URL contains query
+      if (item.url.toLowerCase().includes(q)) score += 20;
+
+      // Apply item weight multiplier
+      score *= weight;
+
+      return score;
+    }
+
+    function escapeRegex(s: string): string {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /* ── Highlight query in text ─────────────────────────── */
+    function highlight(text: string, q: string): string {
+      if (!q) return escapeHtml(text);
+      const safe = escapeHtml(text);
+      const safeQ = escapeHtml(q);
+      try {
+        const re = new RegExp(`(${escapeRegex(safeQ)})`, 'gi');
+        return safe.replace(re, '<mark>$1</mark>');
+      } catch {
+        return safe;
+      }
+    }
+
+    function escapeHtml(s: string): string {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ── Category badge label ────────────────────────────── */
+    function badgeLabel(cat: string): string {
+      switch (cat) {
+        case 'conversion': return 'Conversion';
+        case 'utility':    return 'Tool';
+        case 'tool':       return 'Tool';
+        case 'ai':         return 'AI';
+        case 'blog':       return 'Blog';
+        case 'page':       return 'Page';
+        case 'faq':        return 'FAQ';
+        default:           return cat;
+      }
+    }
+
+    /* ── Render results ──────────────────────────────────── */
+    function render(query: string) {
+      const q = normalize(query);
+
+      if (!q) {
+        listEl.hidden = true;
+        listEl.innerHTML = '';
+        emptyEl && (emptyEl.hidden = false);
+        noResEl && (noResEl.hidden = true);
+        clearBtn && (clearBtn.hidden = true);
+        input.setAttribute('aria-expanded', 'false');
+        activeIndex = -1;
+        currentResults = [];
+        return;
+      }
+
+      clearBtn && (clearBtn.hidden = false);
+      emptyEl && (emptyEl.hidden = true);
+      input.setAttribute('aria-expanded', 'true');
+
+      // Filter by category
+      const pool = activeFilter === 'all'
+        ? INDEX
+        : INDEX.filter((item) => item.category === activeFilter);
+
+      // Score and rank
+      const scored = pool
+        .map((item) => ({ item, score: scoreItem(item, q) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 40);
+
+      currentResults = scored.map((s) => s.item);
+      activeIndex = -1;
+
+      if (currentResults.length === 0) {
+        listEl.hidden = true;
+        listEl.innerHTML = '';
+        noResEl && (noResEl.hidden = false);
+        return;
+      }
+
+      noResEl && (noResEl.hidden = true);
+      listEl.hidden = false;
+
+      listEl.innerHTML = currentResults
+        .map((item, i) => `
+          <li role="option" aria-selected="false">
+            <a class="result-item" href="${escapeHtml(item.url)}" data-index="${i}">
+              <div class="result-item__icon" aria-hidden="true">${item.icon}</div>
+              <div class="result-item__body">
+                <div class="result-item__title">
+                  ${highlight(item.title, q)}
+                  <span class="result-item__badge result-item__badge--${item.category}">
+                    ${badgeLabel(item.category)}
+                  </span>
+                </div>
+                <p class="result-item__desc">${highlight(item.description, q)}</p>
+              </div>
+            </a>
+          </li>
+        `)
+        .join('');
+    }
+
+    /* ── Keyboard navigation ─────────────────────────────── */
+    function setActive(i: number) {
+      const items = Array.from(listEl.querySelectorAll<HTMLElement>('.result-item'));
+      items.forEach((el) => el.classList.remove('is-active'));
+      if (i >= 0 && i < items.length) {
+        items[i].classList.add('is-active');
+        items[i].scrollIntoView({ block: 'nearest' });
+        activeIndex = i;
+      } else {
+        activeIndex = -1;
+      }
+    }
+
+    input.addEventListener('input', () => {
+      render(input.value);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const items = listEl.querySelectorAll<HTMLElement>('.result-item');
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (items.length === 0) return;
+        setActive(Math.min(activeIndex + 1, items.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (items.length === 0) return;
+        setActive(Math.max(activeIndex - 1, 0));
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0 && items[activeIndex]) {
+          e.preventDefault();
+          items[activeIndex].click();
+        } else if (items.length > 0) {
+          // Navigate to the top result
+          e.preventDefault();
+          items[0].click();
+        }
+      } else if (e.key === 'Escape') {
+        input.value = '';
+        render('');
+        input.blur();
+      }
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      input.value = '';
+      render('');
+      input.focus();
+    });
+
+    /* ── Filter chips ────────────────────────────────────── */
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => c.classList.remove('chip--active'));
+        chip.classList.add('chip--active');
+        activeFilter = chip.getAttribute('data-filter') || 'all';
+        render(input.value);
+      });
+    });
+
+    /* ── URL prefill: /search?q=... ──────────────────────── */
+    const params = new URLSearchParams(location.search);
+    const initialQ = params.get('q');
+    if (initialQ) {
+      input.value = initialQ;
+      render(initialQ);
+      input.focus();
+    }
+
+    /* ── Auto-focus if page loads empty on desktop ───────── */
+    if (!initialQ && window.matchMedia('(min-width: 768px)').matches) {
+      setTimeout(() => input.focus(), 200);
+    }
+  })();
 </script>

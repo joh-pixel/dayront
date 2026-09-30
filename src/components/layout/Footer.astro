@@ -1,7 +1,13 @@
 ---
 const year = new Date().getFullYear();
-// Accept locale from BaseLayout. Default to 'en' because other languages aren't built yet.
 const lang = Astro.props.lang || 'en';
+
+// With `prefixDefaultLocale: false`, English routes have NO prefix.
+// All other locales DO have a prefix.
+function localePath(path: string): string {
+  const clean = path.startsWith('/') ? path : `/${path}`;
+  return lang === 'en' ? clean : `/${lang}${clean}`;
+}
 
 const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="32" height="32" rx="8" fill="#38bdf8"/>
@@ -15,7 +21,7 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
       <!-- Brand -->
       <div class="col-span-2 md:col-span-1">
-        <a href={lang === 'en' ? '/' : `/${lang}`} class="flex items-center gap-2 text-xl font-bold text-black dark:text-white mb-3 hover:opacity-80 transition-opacity">
+        <a href={localePath('/')} class="flex items-center gap-2 text-xl font-bold text-black dark:text-white mb-3 hover:opacity-80 transition-opacity">
           <span class="w-8 h-8" set:html={logoSvg}></span>
           <span>Dayront</span>
         </a>
@@ -33,7 +39,7 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
           <li><a href="/tools/audio-cutter" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Audio Cutter</a></li>
           <li><a href="/convert/mp3-to-wav" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">MP3 to WAV</a></li>
           <li><a href="/tools/audio-merger" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Audio Merger</a></li>
-          <li><a href={`/${lang}/tools`} class="text-sky font-medium hover:underline">All Tools →</a></li>
+          <li><a href={localePath('/tools')} class="text-sky font-medium hover:underline">All Tools →</a></li>
         </ul>
       </div>
 
@@ -41,11 +47,10 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
       <div>
         <h4 class="font-semibold text-sm text-black dark:text-white mb-4">Company</h4>
         <ul class="space-y-2.5 text-sm">
-          <li><a href="/about" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">About</a></li>
-          <!-- Updated Blog Link to use locale -->
-          <li><a href={`/blog/${lang}`} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Blog</a></li>
-          <li><a href="/search" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Search</a></li>
-          <li><a href="/advertise" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Advertise</a></li>
+          <li><a href={localePath('/about')} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">About</a></li>
+          <li><a href={localePath('/blog/en')} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Blog</a></li>
+          <li><a href={localePath('/search')} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Search</a></li>
+          <li><a href={localePath('/advertise')} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Advertise</a></li>
           <li><a href="mailto:hello@dayront.com" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Contact</a></li>
         </ul>
       </div>
@@ -54,8 +59,8 @@ const logoSvg = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xml
       <div>
         <h4 class="font-semibold text-sm text-black dark:text-white mb-4">Legal</h4>
         <ul class="space-y-2.5 text-sm">
-          <li><a href="/privacy" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Privacy Policy</a></li>
-          <li><a href="/terms" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Terms of Service</a></li>
+          <li><a href={localePath('/privacy')} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Privacy Policy</a></li>
+          <li><a href={localePath('/terms')} class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">Terms of Service</a></li>
           <li><a href="/rss.xml" class="text-gray-600 dark:text-gray-400 hover:text-sky transition-colors">RSS Feed</a></li>
         </ul>
       </div>
