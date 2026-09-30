@@ -1,26 +1,10 @@
 {
   "redirects": [
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "download.dayront.com" }],
-      "destination": "/download",
-      "permanent": false
-    },
-    {
-      "source": "/:path(.*)",
-      "has": [{ "type": "host", "value": "download.dayront.com" }],
-      "destination": "/download",
-      "permanent": false
-    },
-    {
-      "source": "/en/:path*",
-      "destination": "/:path*",
-      "permanent": true
-    },
-    { "source": "/convert", "destination": "/tools", "permanent": true },
-    { "source": "/blog",    "destination": "/blog/en", "permanent": true },
-    { "source": "/get",     "destination": "/download", "permanent": true },
-    { "source": "/app",     "destination": "/download", "permanent": true }
+    { "source": "/en/:path*", "destination": "/:path*", "permanent": true },
+    { "source": "/convert",   "destination": "/tools",   "permanent": true },
+    { "source": "/blog",      "destination": "/blog/en", "permanent": true },
+    { "source": "/get",       "destination": "/download", "permanent": true },
+    { "source": "/app",       "destination": "/download", "permanent": true }
   ],
   "headers": [
     {
