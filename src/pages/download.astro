@@ -1,6 +1,7 @@
 ---
 // src/pages/download.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
+import NotifyForm from '../components/ui/NotifyForm.tsx';
 import { getTierCounts, getAppRecommendedTools } from '../lib/tools';
 
 const tierCounts = getTierCounts();
@@ -90,23 +91,33 @@ const RELEASES: Record<string, Release> = {
       </div>
     </header>
 
-    <!-- Detected platform banner -->
-    <div id="detected-platform" class="detected" hidden>
-      <span class="detected__icon" id="detected-icon">💻</span>
-      <div class="detected__body">
-        <div class="detected__title">
-          We detected <strong id="detected-name">your platform</strong>
+    <!-- ════════════════════════════════════════════════════════
+         NOTIFY HERO — email capture
+         ════════════════════════════════════════════════════════ -->
+    <section class="notify-hero">
+      <div class="notify-hero__inner">
+        <div class="notify-hero__badge">
+          <span class="notify-hero__dot" aria-hidden="true"></span>
+          Launching soon
         </div>
-        <div class="detected__sub" id="detected-sub">Recommended download below.</div>
-      </div>
-      <a
-        href="mailto:hello@dayront.com?subject=Notify%20me%20when%20Dayront%20App%20is%20ready"
-        class="btn btn--primary"
-        id="detected-cta"
-      >Notify me</a>
-    </div>
 
-    <!-- Download options -->
+        <h2 class="notify-hero__title">Be first to get the app</h2>
+        <p class="notify-hero__sub" id="notify-hero-sub">
+          Enter your email and we'll let you know the moment Dayront is available.
+        </p>
+
+        <NotifyForm
+          client:load
+          platform="web"
+          source="download-hero"
+          ctaLabel="Notify me"
+        />
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         DOWNLOAD GRID
+         ════════════════════════════════════════════════════════ -->
     <section class="section">
       <h2>Choose your platform</h2>
       <div class="download-grid">
@@ -369,34 +380,67 @@ const RELEASES: Record<string, Release> = {
     border-color: #8FD6F8;
   }
 
-  /* ── Detected platform banner ────────────────────────── */
-  .detected {
-    display: flex;
-    align-items: center;
-    gap: 0.875rem;
-    padding: 1rem 1.25rem;
-    margin: 1rem 0 2rem;
-    border-radius: 14px;
+  /* ── Notify Hero ─────────────────────────────────────── */
+  .notify-hero {
+    margin: 1rem 0 2.5rem;
+    border-radius: 18px;
     background: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
     border: 1px solid #8FD6F8;
+    padding: 2rem 1.5rem;
     position: relative;
     overflow: hidden;
   }
-  .detected::before {
+  .notify-hero::before {
     content: '';
     position: absolute;
     top: 0; left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(180deg, #2CB5F0, #0EA5E9);
+    width: 100%; height: 4px;
+    background: linear-gradient(90deg, #2CB5F0, #0EA5E9);
   }
-  .detected__icon { font-size: 2rem; }
-  .detected__body { flex: 1; min-width: 0; color: #0C4A6E; }
-  .detected__title { font-size: 0.95rem; }
-  .detected__sub {
-    font-size: 0.8rem;
-    opacity: 0.75;
-    margin-top: 0.15rem;
+  .notify-hero__inner {
+    max-width: 560px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .notify-hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #0369A1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid #8FD6F8;
+    margin-bottom: 1rem;
+  }
+  .notify-hero__dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2CB5F0;
+    box-shadow: 0 0 0 4px rgba(44, 181, 240, 0.25);
+    animation: notify-pulse 2s ease-in-out infinite;
+  }
+  @keyframes notify-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.6; transform: scale(0.85); }
+  }
+  .notify-hero__title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0C4A6E;
+    margin: 0 0 0.5rem;
+    line-height: 1.25;
+  }
+  .notify-hero__sub {
+    font-size: 0.95rem;
+    color: #0C4A6E;
+    opacity: 0.85;
+    margin: 0 0 1.5rem;
+    line-height: 1.55;
   }
 
   /* ── Sections ────────────────────────────────────────── */
@@ -445,6 +489,7 @@ const RELEASES: Record<string, Release> = {
     border-color: #2CB5F0;
     background: linear-gradient(135deg, #E5F7FE, #C7EBFC);
     box-shadow: 0 8px 24px rgba(44, 181, 240, 0.2);
+    transform: translateY(-2px);
   }
   .download-card__icon { font-size: 1.75rem; flex-shrink: 0; }
   .download-card__body { flex: 1; min-width: 0; }
@@ -471,7 +516,6 @@ const RELEASES: Record<string, Release> = {
     flex-shrink: 0;
   }
 
-  /* Status pills */
   .status-pill {
     display: inline-block;
     padding: 0.1rem 0.5rem;
@@ -597,13 +641,8 @@ const RELEASES: Record<string, Release> = {
     border: 1px solid #E2E8F0;
     transition: border-color 0.15s ease;
   }
-  .tools-list__item:hover {
-    border-color: #8FD6F8;
-  }
-  .tools-list__icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
+  .tools-list__item:hover { border-color: #8FD6F8; }
+  .tools-list__icon { font-size: 1.25rem; flex-shrink: 0; }
   .tools-list__body {
     display: flex;
     flex-direction: column;
@@ -669,10 +708,7 @@ const RELEASES: Record<string, Release> = {
     box-shadow: 0 6px 20px rgba(44, 181, 240, 0.45);
     transform: translateY(-1px);
   }
-  .btn--secondary {
-    background: #0C4A6E;
-    color: white;
-  }
+  .btn--secondary { background: #0C4A6E; color: white; }
   .btn--ghost {
     background: transparent;
     color: inherit;
@@ -708,12 +744,17 @@ const RELEASES: Record<string, Release> = {
       color: #8FD6F8;
       border-color: #0369A1;
     }
-    .detected {
+    .notify-hero {
       background: linear-gradient(135deg, #0C2A42 0%, #0C4A6E 100%);
       border-color: #0369A1;
-      color: #C7EBFC;
     }
-    .detected__body { color: #C7EBFC; }
+    .notify-hero__badge {
+      background: #0C2A42;
+      color: #8FD6F8;
+      border-color: #0369A1;
+    }
+    .notify-hero__title { color: #C7EBFC; }
+    .notify-hero__sub   { color: #C7EBFC; }
     .download-card {
       background: #0F172A;
       border-color: #1E293B;
@@ -765,12 +806,12 @@ const RELEASES: Record<string, Release> = {
   }
 </style>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ════════════════════════════════════════════════════════════
      Client-side: OS detection + PWA install prompt
-     ══════════════════════════════════════════════════════════ -->
+     ════════════════════════════════════════════════════════════ -->
 <script>
   (() => {
-    /* ── 1. Detect OS ─────────────────────────────────── */
+    /* ── 1. Detect OS and highlight matching download card ── */
     type PlatformKey = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
 
     function detectOS(): { key: PlatformKey; name: string; icon: string } | null {
@@ -787,43 +828,19 @@ const RELEASES: Record<string, Release> = {
     }
 
     const os = detectOS();
-    const banner = document.getElementById('detected-platform');
-
-    if (os && banner) {
-      const card = document.querySelector<HTMLElement>(`[data-platform="${os.key}"]`);
-
-      const iconEl = document.getElementById('detected-icon');
-      const nameEl = document.getElementById('detected-name');
-      const subEl  = document.getElementById('detected-sub');
-      const ctaEl  = document.getElementById('detected-cta') as HTMLAnchorElement | null;
-
-      if (iconEl) iconEl.textContent = os.icon;
-      if (nameEl) nameEl.textContent = os.name;
-
-      if (card && ctaEl) {
-        const status = card.getAttribute('data-status');
-        const isAvailable = status === 'available' || status === 'beta';
-        const url = card.getAttribute('href');
-        const storeText = card.querySelector('.download-card__meta')?.textContent || '';
-
-        if (isAvailable && url) {
-          ctaEl.href = url;
-          ctaEl.textContent = 'Download';
-          card.classList.add('download-card--recommended');
-        } else {
-          ctaEl.href = 'mailto:hello@dayront.com?subject=Notify%20me%20when%20Dayront%20App%20is%20ready';
-          ctaEl.textContent = 'Notify me';
-        }
-
-        if (subEl) subEl.textContent = storeText;
-      } else if (subEl) {
-        subEl.textContent = 'Pick the installer for your platform below.';
+    if (os) {
+      const subEl = document.getElementById('notify-hero-sub');
+      if (subEl) {
+        subEl.textContent = `We detected you're on ${os.name}. Enter your email and we'll let you know when it's ready.`;
       }
 
-      banner.hidden = false;
+      const card = document.querySelector<HTMLElement>(`[data-platform="${os.key}"]`);
+      if (card) {
+        card.classList.add('download-card--recommended');
+      }
     }
 
-    /* ── 2. PWA install prompt ───────────────────────── */
+    /* ── 2. PWA install prompt ─────────────────────────── */
     let deferredPrompt: any = null;
     const pwaBtn = document.getElementById('pwa-install-btn') as HTMLButtonElement | null;
 
