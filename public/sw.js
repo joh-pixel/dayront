@@ -1,6 +1,6 @@
 /*
  * Dayront Service Worker
- * Version: 2026.09.30.1
+ * Version: 1.0.1
  *
  * Strategy:
  * - HTML/navigation: NETWORK FIRST
@@ -13,10 +13,10 @@
  * while still providing useful offline support for static assets.
  */
 
-const VERSION = '2026.09.30.1';
+const VERSION = '1.0.1';
 
-const STATIC_CACHE = `dayront-static-${VERSION}`;
-const OFFLINE_CACHE = `dayront-offline-${VERSION}`;
+const STATIC_CACHE = `dayront-static-v${VERSION}`;
+const OFFLINE_CACHE = `dayront-offline-v${VERSION}`;
 
 const OFFLINE_URL = '/';
 
