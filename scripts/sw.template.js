@@ -1,6 +1,15 @@
 /*
- * Dayront Service Worker
- * Version: 1.0.1
+ * Dayront Service Worker — TEMPLATE
+ * --------------------------------------------------------------------------
+ * This file is NOT served directly.
+ *
+ * `scripts/generate-sw.mjs` reads this file, replaces __VERSION__ with a
+ * version derived from package.json + today's date, and writes the result
+ * to public/sw.js before every build.
+ *
+ * DO NOT EDIT public/sw.js — it's generated and gitignored.
+ * Always edit this template instead.
+ * --------------------------------------------------------------------------
  *
  * Strategy:
  * - HTML/navigation: NETWORK FIRST
@@ -8,12 +17,9 @@
  * - Media files: NEVER cache
  * - External requests: NEVER cache
  * - Old caches: automatically removed
- *
- * This prevents an old homepage from remaining stuck in the browser
- * while still providing useful offline support for static assets.
  */
 
-const VERSION = '1.0.1';
+const VERSION = '__VERSION__';
 
 const STATIC_CACHE = `dayront-static-v${VERSION}`;
 const OFFLINE_CACHE = `dayront-offline-v${VERSION}`;
@@ -130,14 +136,6 @@ function isStaticAsset(request) {
 
 async function handleNavigation(request) {
   try {
-    /*
-     * Always try the network first.
-     *
-     * This is the most important part for Dayront:
-     * new deployments are immediately visible instead of
-     * being hidden behind an old cached index page.
-     */
-
     const response = await fetch(request, {
       cache: 'no-cache',
     });
@@ -148,11 +146,6 @@ async function handleNavigation(request) {
 
     throw new Error('Navigation request failed');
   } catch (error) {
-    /*
-     * Only use the cached homepage when the network
-     * is genuinely unavailable.
-     */
-
     const cached = await caches.match(OFFLINE_URL);
 
     if (cached) {
@@ -249,11 +242,6 @@ async function handleStaticAsset(request) {
     })
     .catch(() => null);
 
-  /*
-   * Return cached asset immediately when available.
-   * Update it in the background.
-   */
-
   if (cached) {
     return cached;
   }
@@ -277,49 +265,28 @@ async function handleStaticAsset(request) {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
 
-  /*
-   * Only handle GET.
-   */
   if (request.method !== 'GET') {
     return;
   }
 
-  /*
-   * Never interfere with media processing files.
-   */
   if (isMediaRequest(request)) {
     return;
   }
 
-  /*
-   * Never cache external resources.
-   */
   if (!isSameOrigin(request)) {
     return;
   }
 
-  /*
-   * HTML pages:
-   * ALWAYS NETWORK FIRST.
-   */
   if (isNavigationRequest(request)) {
     event.respondWith(handleNavigation(request));
     return;
   }
 
-  /*
-   * CSS, JS, fonts and images:
-   * cache and revalidate.
-   */
   if (isStaticAsset(request)) {
     event.respondWith(handleStaticAsset(request));
     return;
   }
 
-  /*
-   * Everything else:
-   * network first, cache only successful same-origin responses.
-   */
   event.respondWith(
     fetch(request)
       .then((response) => {
@@ -342,17 +309,10 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (!event.data) return;
 
-  /*
-   * Allows the page to force an update when necessary.
-   */
   if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 
-  /*
-   * Allows the website to completely clear
-   * Dayront's own caches.
-   */
   if (event.data.type === 'CLEAR_CACHE') {
     event.waitUntil(
       caches
