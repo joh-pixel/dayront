@@ -63,9 +63,33 @@ export function isMultiFileTool(tool: RunnerTool): boolean {
   return MULTI_FILE_TYPES.has(tool.type ?? '');
 }
 
+/* ── Settings helpers ────────────────────────────────────── */
+
+function num(
+  settings: Record<string, string | number>,
+  key: string,
+  fallback: number,
+): number {
+  const v = settings[key];
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function str(
+  settings: Record<string, string | number>,
+  key: string,
+  fallback: string,
+): string {
+  const v = settings[key];
+  return v === undefined || v === null ? fallback : String(v);
+}
+
 /* ── Main dispatcher ─────────────────────────────────────── */
 
-export async function runTool(tool: RunnerTool, opts: RunnerOptions): Promise<Blob> {
+export async function runTool(
+  tool: RunnerTool,
+  opts: RunnerOptions,
+): Promise<Blob> {
   const { files, settings, onProgress } = opts;
   const format = tool.outputFormat ?? 'mp3';
 
@@ -96,34 +120,36 @@ export async function runTool(tool: RunnerTool, opts: RunnerOptions): Promise<Bl
 
   /* ── WASM fallback (web) ─────────────────────────────── */
 
-  const file = files[0];
+  return runWasm(tool, files, settings, format, onProgress);
+}
 
-  const num = (k: string, fallback: number): number => {
-    const v = settings[k];
-    const n = typeof v === 'number' ? v : parseFloat(String(v));
-    return Number.isFinite(n) ? n : fallback;
-  };
-  const str = (k: string, fallback: string): string => {
-    const v = settings[k];
-    return v === undefined || v === null ? fallback : String(v);
-  };
+/* ── WASM implementation ─────────────────────────────────── */
+
+async function runWasm(
+  tool: RunnerTool,
+  files: File[],
+  settings: Record<string, string | number>,
+  format: string,
+  onProgress?: (percent: number) => void,
+): Promise<Blob> {
+  const file = files[0];
 
   switch (tool.type) {
     /* ── Audio utilities ─────────────────────────── */
     case 'cut':
-      return cutAudio(file, num('start', 0), num('duration', 30), format, false, onProgress);
+      return cutAudio(file, num(settings, 'start', 0), num(settings, 'duration', 30), format, false, onProgress);
 
     case 'merge':
       return mergeAudio(files, format, false, onProgress);
 
     case 'compress':
-      return compressAudio(file, num('quality', 3), format, false, onProgress);
+      return compressAudio(file, num(settings, 'quality', 3), format, false, onProgress);
 
     case 'boost':
-      return boostVolume(file, num('gain', 6), format, false, onProgress);
+      return boostVolume(file, num(settings, 'gain', 6), format, false, onProgress);
 
     case 'speed':
-      return changeSpeed(file, num('factor', 1.5), format, false, onProgress);
+      return changeSpeed(file, num(settings, 'factor', 1.5), format, false, onProgress);
 
     case 'reverse':
       return reverseAudio(file, format, false, onProgress);
@@ -133,55 +159,55 @@ export async function runTool(tool: RunnerTool, opts: RunnerOptions): Promise<Bl
 
     /* ── Format conversion ───────────────────────── */
     case 'convert':
-      return convertFile(file, format, false, onProgress, str('bitrate', '192k'));
+      return convertFile(file, format, false, onProgress, str(settings, 'bitrate', '192k'));
 
     case 'convert-video':
       return convertFile(file, format, false, onProgress);
 
     /* ── Video utilities ─────────────────────────── */
     case 'video-cut':
-      return cutVideo(file, num('start', 0), num('duration', 30), format, false, onProgress);
+      return cutVideo(file, num(settings, 'start', 0), num(settings, 'duration', 30), format, false, onProgress);
 
     case 'video-merge':
       return mergeVideos(files, format, false, onProgress);
 
     case 'video-compress':
-      return compressVideo(file, num('crf', 23), str('preset', 'medium'), format, false, onProgress);
+      return compressVideo(file, num(settings, 'crf', 23), str(settings, 'preset', 'medium'), format, false, onProgress);
 
     case 'video-to-gif':
-      return videoToGif(file, num('fps', 10), num('width', 320), false, onProgress);
+      return videoToGif(file, num(settings, 'fps', 10), num(settings, 'width', 320), false, onProgress);
 
     case 'gif-to-video':
       return gifToMp4(file, false, onProgress);
 
     case 'resize-video':
-      return resizeVideo(file, num('width', 1280), num('height', 720), format, false, onProgress);
+      return resizeVideo(file, num(settings, 'width', 1280), num(settings, 'height', 720), format, false, onProgress);
 
     case 'crop-video':
       return cropVideo(
         file,
-        num('x', 0),
-        num('y', 0),
-        num('w', 640),
-        num('h', 480),
+        num(settings, 'x', 0),
+        num(settings, 'y', 0),
+        num(settings, 'w', 640),
+        num(settings, 'h', 480),
         format,
         false,
         onProgress,
       );
 
     case 'change-fps':
-      return changeFPS(file, num('fps', 30), format, false, onProgress);
+      return changeFPS(file, num(settings, 'fps', 30), format, false, onProgress);
 
     case 'mute-video':
       return muteVideo(file, format, false, onProgress);
 
     case 'extract-audio':
-      return extractAudio(file, str('format', 'mp3'), false, onProgress);
+      return extractAudio(file, str(settings, 'format', 'mp3'), false, onProgress);
 
     /* ── Resolution conversion ───────────────────── */
     case 'resolution-convert': {
-      const w = tool.presetWidth ?? num('width', 1920);
-      const h = tool.presetHeight ?? num('height', 1080);
+      const w = tool.presetWidth ?? num(settings, 'width', 1920);
+      const h = tool.presetHeight ?? num(settings, 'height', 1080);
       return resolutionConvert(file, w, h, format, false, onProgress);
     }
 
@@ -217,11 +243,12 @@ export function mimeForFormat(format: string): string {
 /**
  * Build the FFmpeg argument array for the native bridge.
  *
- * Mirrors the WASM operations in src/core/ffmpeg.ts, but uses placeholder
- * input/output filenames — the native layer rewrites them to real paths
- * before invoking the FFmpeg binary.
+ * Uses the input files' names as placeholders — `buildNativeArgs` in
+ * `ffmpeg-native.ts` replaces each `-i <name>` with the real native path,
+ * and the final argument (the output filename) with the real output path.
  *
- * Always ends with `-y output.<format>`.
+ * IMPORTANT: `-f lavfi -i anullsrc=...` is a **virtual** input — its
+ * placeholder is passed through untouched because it isn't a real file.
  */
 export function buildNativeArgsFor(
   tool: RunnerTool,
@@ -231,23 +258,13 @@ export function buildNativeArgsFor(
 ): string[] {
   const input = files[0];
 
-  const num = (k: string, fallback: number): number => {
-    const v = settings[k];
-    const n = typeof v === 'number' ? v : parseFloat(String(v));
-    return Number.isFinite(n) ? n : fallback;
-  };
-  const str = (k: string, fallback: string): string => {
-    const v = settings[k];
-    return v === undefined || v === null ? fallback : String(v);
-  };
-
   switch (tool.type) {
     /* ── Audio utilities ─────────────────────── */
     case 'cut':
       return [
-        '-ss', String(num('start', 0)),
+        '-ss', String(num(settings, 'start', 0)),
         '-i', input.name,
-        '-t', String(num('duration', 30)),
+        '-t', String(num(settings, 'duration', 30)),
         '-c', 'copy',
         '-y', `output.${format}`,
       ];
@@ -265,21 +282,21 @@ export function buildNativeArgsFor(
       return [
         '-i', input.name,
         '-c:a', 'libmp3lame',
-        '-q:a', String(num('quality', 3)),
+        '-q:a', String(num(settings, 'quality', 3)),
         '-y', `output.${format}`,
       ];
 
     case 'boost':
       return [
         '-i', input.name,
-        '-af', `volume=${num('gain', 6)}dB`,
+        '-af', `volume=${num(settings, 'gain', 6)}dB`,
         '-y', `output.${format}`,
       ];
 
     case 'speed':
       return [
         '-i', input.name,
-        '-filter:a', `atempo=${num('factor', 1.5)}`,
+        '-filter:a', `atempo=${num(settings, 'factor', 1.5)}`,
         '-y', `output.${format}`,
       ];
 
@@ -300,7 +317,7 @@ export function buildNativeArgsFor(
     /* ── Format conversion ───────────────────── */
     case 'convert': {
       const args = ['-i', input.name];
-      const bitrate = str('bitrate', '');
+      const bitrate = str(settings, 'bitrate', '');
       if (bitrate && (format === 'mp3' || format === 'aac')) {
         args.push('-b:a', bitrate);
       }
@@ -314,39 +331,49 @@ export function buildNativeArgsFor(
     /* ── Video utilities ─────────────────────── */
     case 'video-cut':
       return [
-        '-ss', String(num('start', 0)),
+        '-ss', String(num(settings, 'start', 0)),
         '-i', input.name,
-        '-t', String(num('duration', 30)),
+        '-t', String(num(settings, 'duration', 30)),
         '-c', 'copy',
         '-y', `output.${format}`,
       ];
 
-    case 'video-merge':
+    /* ── Video merge ────────────────────────────
+       Concat all videos into one video-only stream, then merge in a
+       silent audio track. Uses `anullsrc` as a lavfi virtual input so
+       every output has valid audio (needed for playback on most players).
+
+       The anullsrc input index is `files.length` (after all real videos). */
+    case 'video-merge': {
+      const n = files.length;
+      const filterParts = files.map((_, i) => `[${i}:v:0]`).join('');
+      const filterComplex = `${filterParts}concat=n=${n}:v=1:a=0[outv]`;
+
       return [
         ...files.flatMap((f) => ['-i', f.name]),
-        '-filter_complex',
-        `${files.map((_, i) => `[${i}:v:0]`).join('')}concat=n=${files.length}:v=1:a=0[outv]`,
-        '-map', '[outv]',
         '-f', 'lavfi',
         '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
+        '-filter_complex', filterComplex,
+        '-map', '[outv]',
+        '-map', `${n}:a`,
         '-c:v', 'libx264',
         '-preset', 'ultrafast',
         '-crf', '23',
         '-pix_fmt', 'yuv420p',
         '-c:a', 'aac',
         '-b:a', '128k',
-        '-map', '1:a',
         '-shortest',
         '-movflags', '+faststart',
         '-y', `output.${format}`,
       ];
+    }
 
     case 'video-compress':
       return [
         '-i', input.name,
         '-c:v', 'libx264',
-        '-crf', String(num('crf', 23)),
-        '-preset', str('preset', 'medium'),
+        '-crf', String(num(settings, 'crf', 23)),
+        '-preset', str(settings, 'preset', 'medium'),
         '-pix_fmt', 'yuv420p',
         '-c:a', 'aac',
         '-b:a', '128k',
@@ -357,7 +384,7 @@ export function buildNativeArgsFor(
     case 'video-to-gif':
       return [
         '-i', input.name,
-        '-vf', `fps=${num('fps', 10)},scale=${num('width', 320)}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
+        '-vf', `fps=${num(settings, 'fps', 10)},scale=${num(settings, 'width', 320)}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
         '-y', `output.${format}`,
       ];
 
@@ -373,7 +400,7 @@ export function buildNativeArgsFor(
     case 'resize-video':
       return [
         '-i', input.name,
-        '-vf', `scale=${num('width', 1280)}:${num('height', 720)}`,
+        '-vf', `scale=${num(settings, 'width', 1280)}:${num(settings, 'height', 720)}`,
         '-c:v', 'libx264',
         '-preset', 'ultrafast',
         '-crf', '23',
@@ -387,7 +414,7 @@ export function buildNativeArgsFor(
     case 'crop-video':
       return [
         '-i', input.name,
-        '-vf', `crop=${num('w', 640)}:${num('h', 480)}:${num('x', 0)}:${num('y', 0)}`,
+        '-vf', `crop=${num(settings, 'w', 640)}:${num(settings, 'h', 480)}:${num(settings, 'x', 0)}:${num(settings, 'y', 0)}`,
         '-c:v', 'libx264',
         '-preset', 'veryfast',
         '-crf', '23',
@@ -401,7 +428,7 @@ export function buildNativeArgsFor(
     case 'change-fps':
       return [
         '-i', input.name,
-        '-filter:v', `fps=${num('fps', 30)}`,
+        '-filter:v', `fps=${num(settings, 'fps', 30)}`,
         '-c:v', 'libx264',
         '-preset', 'veryfast',
         '-crf', '23',
@@ -421,7 +448,7 @@ export function buildNativeArgsFor(
       ];
 
     case 'extract-audio': {
-      const outFormat = str('format', 'mp3');
+      const outFormat = str(settings, 'format', 'mp3');
       const args = ['-i', input.name, '-vn'];
       if (outFormat === 'mp3') args.push('-c:a', 'libmp3lame');
       else if (outFormat === 'aac' || outFormat === 'm4a') args.push('-c:a', 'aac');
@@ -434,8 +461,8 @@ export function buildNativeArgsFor(
 
     /* ── Resolution conversion ───────────────── */
     case 'resolution-convert': {
-      const w = tool.presetWidth ?? num('width', 1920);
-      const h = tool.presetHeight ?? num('height', 1080);
+      const w = tool.presetWidth ?? num(settings, 'width', 1920);
+      const h = tool.presetHeight ?? num(settings, 'height', 1080);
       const isLarge = w >= 2560 || h >= 1440;
       return [
         '-i', input.name,
