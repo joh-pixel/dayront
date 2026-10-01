@@ -27,7 +27,9 @@ pnpm-debug.log*
 Thumbs.db
 *.swp
 *.swo
-# Capacitor / Android (regenerated in CI)
+
+# ── Capacitor / Android (regenerated in CI) ──────────────
 android/
 ios/
-dayront.bak*
+capacitor.config.ts.bak.nomedia
+.nomedia
