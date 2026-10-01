@@ -75,6 +75,126 @@
   border-color: #8FD6F8;
 }
 
+/* ══════════════════════════════════════════════════════════
+   ANDROID LIVE — Hero download section
+   ══════════════════════════════════════════════════════════ */
+
+.android-live {
+  margin: 1rem 0 3rem;
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,0.15) 0%, transparent 60%),
+    linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+  padding: 2.5rem 1.75rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 50px -12px rgba(44, 181, 240, 0.35);
+}
+
+.android-live::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.android-live__inner {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.android-live__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.android-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35);
+  animation: android-pulse 2s ease-in-out infinite;
+}
+
+@keyframes android-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+.android-live__title {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.android-live__sub {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 1.75rem;
+  line-height: 1.55;
+}
+
+.android-live__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  min-height: 52px;
+  background: #ffffff;
+  color: #0C4A6E;
+  font-size: 1rem;
+  font-weight: 800;
+  text-decoration: none;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 24px rgba(12, 74, 110, 0.25),
+    0 2px 6px rgba(12, 74, 110, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.android-live__btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 32px rgba(12, 74, 110, 0.32),
+    0 4px 10px rgba(12, 74, 110, 0.18);
+}
+
+.android-live__btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.android-live__note {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 1rem 0 0;
+  line-height: 1.5;
+}
+
 /* ── Notify Hero ─────────────────────────────────────────── */
 .notify-hero {
   margin: 1rem 0 2.5rem;
@@ -195,11 +315,26 @@
   outline: none;
 }
 
-.download-card--recommended {
+/* ── AVAILABLE card — highlighted ───────────────────────── */
+.download-card--available {
   border-color: #2CB5F0;
-  background: linear-gradient(135deg, #E5F7FE, #C7EBFC);
+  background: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
   box-shadow: 0 8px 24px rgba(44, 181, 240, 0.2);
-  transform: translateY(-2px);
+  cursor: pointer;
+}
+
+.download-card--available:hover,
+.download-card--available:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(44, 181, 240, 0.28);
+  border-color: #0EA5E9;
+}
+
+.download-card--available .download-card__arrow {
+  color: #0EA5E9;
+  opacity: 1;
+  font-weight: 700;
+  font-size: 1.5rem;
 }
 
 .download-card__icon {
@@ -214,13 +349,18 @@
   padding: 8px;
 }
 
+.download-card--available .download-card__icon {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(44, 181, 240, 0.18);
+}
+
 .download-card__icon svg {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-/* Per-platform icon sizing — Apple & Android need more breathing room */
+/* Per-platform icon sizing */
 .download-card[data-platform="ios"] .download-card__icon svg,
 .download-card[data-platform="macos"] .download-card__icon svg {
   transform: scale(0.92);
@@ -241,6 +381,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
 .download-card__meta {
@@ -258,6 +399,22 @@
   font-size: 1.25rem;
   opacity: 0.4;
   flex-shrink: 0;
+}
+
+/* Size badge for available releases */
+.download-card__size {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  margin-left: 0.4rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(44, 181, 240, 0.35);
 }
 
 /* Status pills */
@@ -346,6 +503,12 @@
 
 .pwa-step strong { font-size: 0.85rem; }
 .pwa-step span { font-size: 0.8rem; opacity: 0.7; }
+.pwa-step code {
+  background: #E2E8F0;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
 
 /* ── Comparison table ────────────────────────────────────── */
 .comparison-wrap {
@@ -505,7 +668,9 @@
 
 .download-footer p { margin: 0 0 0.75rem; }
 
-/* ── Dark mode ───────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
   .download-hero h1 {
     background: linear-gradient(135deg, #57C0F3, #38BDF8);
@@ -524,6 +689,11 @@
     background: linear-gradient(135deg, #0C2A42, #0C4A6E);
     color: #8FD6F8;
     border-color: #0369A1;
+  }
+
+  /* Android live section — same gradient, adapt shadow */
+  .android-live {
+    box-shadow: 0 20px 50px -12px rgba(44, 181, 240, 0.45);
   }
 
   .notify-hero {
@@ -551,9 +721,21 @@
     box-shadow: 0 12px 28px rgba(44, 181, 240, 0.2);
   }
 
-  .download-card--recommended {
+  .download-card--available {
     background: linear-gradient(135deg, #0C2A42, #0C4A6E);
     border-color: #2CB5F0;
+    box-shadow: 0 8px 24px rgba(44, 181, 240, 0.25);
+  }
+
+  .download-card--available:hover,
+  .download-card--available:focus-visible {
+    box-shadow: 0 14px 36px rgba(44, 181, 240, 0.35);
+    border-color: #38BDF8;
+  }
+
+  .download-card--available .download-card__icon {
+    background: #0F172A;
+    box-shadow: 0 2px 8px rgba(44, 181, 240, 0.25);
   }
 
   .download-card__icon {
@@ -583,6 +765,11 @@
   .pwa-card {
     background: #0F172A;
     border-color: #1E293B;
+  }
+
+  .pwa-step code {
+    background: #1E293B;
+    color: #CBD5E1;
   }
 
   .comparison-wrap { border-color: #1E293B; }
