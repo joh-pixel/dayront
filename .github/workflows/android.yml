@@ -32,6 +32,14 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Verify file-picker plugin is installed
+        run: |
+          if [ ! -d "node_modules/@capawesome/capacitor-file-picker" ]; then
+            echo "❌ @capawesome/capacitor-file-picker missing"
+            exit 1
+          fi
+          echo "✅ File picker plugin present"
+
       - name: Build web assets
         run: npm run build
 
@@ -47,6 +55,16 @@ jobs:
           packages: 'platform-tools'
           cmdline-tools-version: 11076708
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
@@ -59,6 +77,22 @@ jobs:
 
       - name: Sync Capacitor
         run: node ./node_modules/@capacitor/cli/bin/capacitor sync android
+
+      - name: Verify plugins are registered
+        run: |
+          PLUGINS_FILE="android/app/src/main/assets/capacitor.plugins.json"
+          if [ ! -f "$PLUGINS_FILE" ]; then
+            echo "⚠️ No capacitor.plugins.json — no plugins registered"
+            exit 0
+          fi
+          echo "── Registered Capacitor plugins ──"
+          cat "$PLUGINS_FILE"
+          echo ""
+          if grep -q "FilePicker" "$PLUGINS_FILE"; then
+            echo "✅ FilePicker registered"
+          else
+            echo "⚠️ FilePicker not found in plugins list"
+          fi
 
       - name: Setup local.properties
         working-directory: android
