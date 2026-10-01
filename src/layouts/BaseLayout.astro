@@ -15,9 +15,25 @@ export interface Props {
   ogImage?: string;
   canonicalURL?: string;
   lang?: string;
+  // ★ Added in Step 6A — SEO pass-through
+  toolSlug?: string;
+  publishedAt?: string;
+  author?: string;
+  noindex?: boolean;
 }
 
-const { title, description, ogImage, canonicalURL, lang: propLang } = Astro.props;
+const {
+  title,
+  description,
+  ogImage,
+  canonicalURL,
+  lang: propLang,
+  toolSlug,
+  publishedAt,
+  author,
+  noindex,
+} = Astro.props;
+
 const lang = propLang || Astro.params.locale || 'en';
 
 let blogItems: any[] = [];
@@ -51,11 +67,16 @@ const allSearchItems = [...toolItems, ...blogItems];
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- ★ Updated in Step 6A — pass through SEO props -->
     <SeoHead
       title={title}
       description={description}
       ogImage={ogImage}
       canonicalURL={canonicalURL}
+      toolSlug={toolSlug}
+      publishedAt={publishedAt}
+      author={author}
+      noindex={noindex}
     />
 
     <!-- ★ IMPORT MAP — resolves bare module specifiers for CDN-loaded libs ★ -->

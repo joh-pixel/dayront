@@ -34,10 +34,14 @@ export default defineConfig({
     preact({ compat: true }),
     mdx(),
     sitemap({
+      // ★ Updated for Step 6A: exclude noise + duplicated download URL
       filter: (page) =>
         !page.includes("?lang=") &&
         !page.includes("/tag/") &&
-        !page.includes("/category/"),
+        !page.includes("/category/") &&
+        !page.includes("/download") &&
+        !page.includes("/status") &&
+        !page.includes("/404"),
       i18n: {
         defaultLocale: "en",
         locales: { en: "en", es: "es", pt: "pt", de: "de", fr: "fr", ja: "ja" },
