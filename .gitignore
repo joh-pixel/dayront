@@ -31,4 +31,4 @@ Thumbs.db
 # ── Capacitor / Android (regenerated in CI) ──────────────
 android/
 ios/
-capacitor.config.ts.bak
+capacitor.config.ts.bak.nomedia
