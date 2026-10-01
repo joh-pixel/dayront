@@ -41,5 +41,5 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
-    implementation 'com.arthenica:ffmpeg-kit-full-gpl:6.0-2'
+    implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-full-gpl:8.1.7'
 }
