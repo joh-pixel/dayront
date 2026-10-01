@@ -40,7 +40,6 @@ jobs:
           fi
           echo "✅ File picker plugin present"
 
-      # ── Local FFmpeg plugin ─────────────────────────────────
       - name: Install local FFmpeg plugin
         run: |
           if [ ! -d "plugins/ffmpeg" ]; then
@@ -83,16 +82,35 @@ jobs:
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
       # ── CRITICAL: FFmpegKit requires minSdkVersion 24 ───────
-      - name: Set minSdkVersion 24 for FFmpegKit
+      - name: Force minSdkVersion 24 everywhere for FFmpegKit
         run: |
-          if [ -f android/variables.gradle ]; then
-            sed -i 's|minSdkVersion = .*|minSdkVersion = 24|' android/variables.gradle
-            echo "── android/variables.gradle ──"
-            cat android/variables.gradle
-          else
-            echo "⚠️ android/variables.gradle not found"
-            exit 1
+          echo "── Before ──"
+          grep -rn "minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
+
+          # 1. Capacitor's central config
+          sed -i 's|minSdkVersion = .*|minSdkVersion = 24|' android/variables.gradle
+
+          # 2. App-level build.gradle — force literal value
+          sed -i 's|minSdkVersion rootProject.ext.minSdkVersion|minSdkVersion 24|' android/app/build.gradle
+          sed -i 's|minSdkVersion .*|minSdkVersion 24|' android/app/build.gradle
+
+          # 3. Manifest override — tell merger to ignore FFmpegKit's minSdk
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ]; then
+            if ! grep -q 'xmlns:tools' "$MANIFEST"; then
+              sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |' "$MANIFEST"
+            fi
+            if ! grep -q 'overrideLibrary' "$MANIFEST"; then
+              sed -i 's|<application |<application tools:overrideLibrary="com.arthenica.ffmpegkit" |' "$MANIFEST"
+            fi
           fi
+
+          echo ""
+          echo "── After ──"
+          grep -rn "minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
+          echo ""
+          echo "── Manifest (first 20 lines) ──"
+          head -20 "$MANIFEST"
 
       - name: Install capacitor-assets
         run: npm install --no-save @capacitor/assets
@@ -131,13 +149,56 @@ jobs:
         working-directory: android
         run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
+      # ── Build APK — full log captured to file ──────────────
       - name: Build Debug APK
+        id: build_apk
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          set +e
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-full.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "gradle_exit=$EXIT_CODE" >> $GITHUB_OUTPUT
+          exit $EXIT_CODE
+
+      # ── Extract the real error to the log bottom ───────────
+      - name: Extract real Gradle error
+        if: failure() || steps.build_apk.outputs.gradle_exit != '0'
+        working-directory: android
+        run: |
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "  REAL GRADLE ERROR (What went wrong)"
+          echo "════════════════════════════════════════════"
+          grep -B 2 -A 20 "What went wrong" gradle-full.log || echo "(no 'What went wrong' found)"
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "  ALL 'error:' LINES"
+          echo "════════════════════════════════════════════"
+          grep -i "error:" gradle-full.log | head -20 || echo "(no error: lines)"
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "  'FAILED' TASK LINES"
+          echo "════════════════════════════════════════════"
+          grep -E "FAILED|failed" gradle-full.log | grep "Task" | head -10 || echo "(no failed tasks)"
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "  LAST 30 LINES OF LOG"
+          echo "════════════════════════════════════════════"
+          tail -30 gradle-full.log
+
+      # ── Upload log artifact for offline inspection ─────────
+      - name: Upload Gradle failure log
+        if: failure() || steps.build_apk.outputs.gradle_exit != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-failure-log
+          path: android/gradle-full.log
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload APK artifact
+        if: success() && steps.build_apk.outputs.gradle_exit == '0'
         uses: actions/upload-artifact@v4
         with:
           name: dayront-debug-apk
