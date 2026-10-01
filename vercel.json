@@ -49,6 +49,12 @@
       ]
     },
     {
+      "source": "/og/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
       "source": "/ai-models/(.*\\.onnx)",
       "headers": [
         { "key": "Content-Type", "value": "application/octet-stream" },

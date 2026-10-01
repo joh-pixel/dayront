@@ -1,145 +1,282 @@
 ---
 // src/pages/status.astro
-// Fully standalone page - matches Dayront brand colors
+// Fully standalone page — no BaseLayout, no ads, no analytics.
+// Rationale: a status page should work even if the rest of the site is down.
 ---
 
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" style="color-scheme: light dark;">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>System Status | Dayront</title>
   <meta name="description" content="Dayront system status. Learn about our 100% client-side architecture and reliability." />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#2CB5F0" />
+
+  <!-- Preconnect for fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 </head>
 <body>
   <div class="page-wrapper">
     <main class="status-card">
-      
-      <!-- Brand Header with Your Official Logo -->
-      <div class="brand-header">
-        <div class="brand-logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="32" height="32" rx="8" fill="#38bdf8"/>
-            <path d="M8 12h16v8H8z" fill="#fff"/>
-            <circle cx="16" cy="16" r="3" fill="#38bdf8"/>
-          </svg>
-          <span>Dayront</span>
-        </div>
-      </div>
+
+      <!-- Brand header -->
+      <a href="/" class="brand-header" aria-label="Back to Dayront home">
+        <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="10" fill="#2CB5F0"/>
+          <rect x="12" y="16" width="16" height="8" rx="1" fill="white"/>
+          <circle cx="20" cy="20" r="3" fill="#2CB5F0"/>
+        </svg>
+        <span>Dayront</span>
+      </a>
 
       <!-- Header -->
       <header class="header">
         <h1>System Status</h1>
-        <p class="subtitle">Last updated: Always real-time</p>
+        <p class="subtitle">Updated in real-time on every visit</p>
       </header>
 
-      <!-- Main Status Indicator -->
-      <div class="status-indicator">
-        <span class="pulse-container">
+      <!-- Main status indicator -->
+      <div class="status-indicator" role="status" aria-live="polite">
+        <span class="pulse-container" aria-hidden="true">
           <span class="pulse-ring"></span>
           <span class="pulse-dot"></span>
         </span>
         <span class="status-text">All Systems Operational</span>
       </div>
 
-      <!-- Explanation -->
-      <section class="explanation">
+      <!-- Services -->
+      <section class="section">
+        <h2>Services</h2>
+        <ul class="service-list">
+          <li class="service">
+            <span class="service-dot" aria-hidden="true"></span>
+            <div class="service-body">
+              <div class="service-name">Website &amp; Tools</div>
+              <div class="service-desc">Served via Vercel Edge (global CDN)</div>
+            </div>
+            <span class="service-status">Operational</span>
+          </li>
+          <li class="service">
+            <span class="service-dot" aria-hidden="true"></span>
+            <div class="service-body">
+              <div class="service-name">Media Processing</div>
+              <div class="service-desc">100% client-side (runs on your device)</div>
+            </div>
+            <span class="service-status">Operational</span>
+          </li>
+          <li class="service">
+            <span class="service-dot" aria-hidden="true"></span>
+            <div class="service-body">
+              <div class="service-name">AI Features</div>
+              <div class="service-desc">On-device WebAssembly models</div>
+            </div>
+            <span class="service-status">Operational</span>
+          </li>
+          <li class="service">
+            <span class="service-dot" aria-hidden="true"></span>
+            <div class="service-body">
+              <div class="service-name">Notify API</div>
+              <div class="service-desc">Launch notification signups</div>
+            </div>
+            <span class="service-status">Operational</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Architecture explanation -->
+      <section class="section">
         <h2>Architecture Overview</h2>
         <p>
-          Dayront is a <strong>100% client-side application</strong>. We use WebAssembly (FFmpeg) to process your audio and video files entirely within your browser.
+          Dayront is a <strong>100% client-side application</strong>. We use
+          WebAssembly (FFmpeg) to process your audio and video files entirely
+          within your browser.
         </p>
         <p>
-          This means <strong>there are no backend servers</strong> processing your media. There is no server-side downtime, no queue times, and your files never leave your device.
+          This means <strong>there are no backend servers</strong> processing your
+          media. No server-side downtime, no queue times, and your files never
+          leave your device.
         </p>
+      </section>
 
+      <!-- External dependencies -->
+      <section class="section">
         <h2>External Dependencies</h2>
         <p>
-          The only external service we rely on is Vercel's static Edge Network to serve the application files and the FFmpeg engine. You can view their live status below:
+          The only external service we rely on is Vercel's static Edge Network to
+          deliver the application files and the FFmpeg engine.
         </p>
-        <a href="https://www.vercel-status.com/" target="_blank" rel="noopener noreferrer" class="link">
-          View Vercel Status Page →
+        <a
+          href="https://www.vercel-status.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="link"
+        >
+          View Vercel Status
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17L17 7M7 7h10v10"/>
+          </svg>
         </a>
       </section>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="build-info">
+          <span>Build</span>
+          <code>v1.0.0</code>
+        </div>
+        <a href="/" class="back-link">← Back to Dayront</a>
+      </footer>
 
     </main>
   </div>
 </body>
+</html>
 
-<style>
-  /* Dayront Brand Variables */
+<style is:global>
+  /* ── Brand palette ─────────────────────────────────── */
   :root {
-    --brand-blue: #0ea5e9;
-    --brand-blue-hover: #0284c7;
-    --brand-bg: #f0f9ff;
-    --brand-text-dark: #0f172a;
-    --brand-text-body: #475569;
-    --brand-border: #e2e8f0;
-    --brand-success-bg: #f0fdf4;
-    --brand-success-text: #166534;
-    --brand-success-dot: #22c55e;
+    --brand-400: #2CB5F0;
+    --brand-500: #0EA5E9;
+    --brand-600: #0284C7;
+    --brand-700: #0369A1;
+    --brand-900: #0C4A6E;
+
+    --bg-page: #F0F9FF;
+    --bg-card: #FFFFFF;
+    --bg-soft: #F8FAFC;
+
+    --text-primary: #0F172A;
+    --text-body: #475569;
+    --text-muted: #94A3B8;
+
+    --border: #E2E8F0;
+
+    --success-bg: #F0FDF4;
+    --success-border: #DCFCE7;
+    --success-text: #166534;
+    --success-dot: #22C55E;
   }
 
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-page: #020617;
+      --bg-card: #0F172A;
+      --bg-soft: #1E293B;
+
+      --text-primary: #F1F5F9;
+      --text-body: #CBD5E1;
+      --text-muted: #64748B;
+
+      --border: #1E293B;
+
+      --success-bg: #052E16;
+      --success-border: #166534;
+      --success-text: #86EFAC;
+      --success-dot: #22C55E;
+    }
+  }
+
+  /* ── Reset & base ──────────────────────────────────── */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-page);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  /* ── Page wrapper ──────────────────────────────────── */
   .page-wrapper {
     min-height: 100vh;
-    background-color: var(--brand-bg);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
-    font-family: system-ui, -apple-system, sans-serif;
   }
 
   .status-card {
-    background: white;
-    max-width: 520px;
+    background: var(--bg-card);
+    max-width: 560px;
     width: 100%;
     padding: 2.5rem 2rem;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.08), 0 8px 10px -6px rgba(14, 165, 233, 0.04);
-    border: 1px solid var(--brand-border);
+    border-radius: 18px;
+    box-shadow:
+      0 10px 25px -5px rgba(14, 165, 233, 0.08),
+      0 8px 10px -6px rgba(14, 165, 233, 0.04);
+    border: 1px solid var(--border);
   }
 
+  @media (min-width: 480px) {
+    .status-card { padding: 3rem 2.5rem; }
+  }
+
+  /* ── Brand header ──────────────────────────────────── */
   .brand-header {
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: center;
-  }
-
-  .brand-logo {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 1.25rem;
-    color: var(--brand-text-dark);
+    color: var(--text-primary);
+    text-decoration: none;
+    margin-bottom: 2rem;
+    transition: opacity 0.15s ease;
   }
+  .brand-header:hover { opacity: 0.85; }
 
+  /* ── Header ────────────────────────────────────────── */
   .header {
     text-align: center;
     margin-bottom: 2rem;
   }
 
   .header h1 {
-    font-size: 1.875rem;
+    font-size: clamp(1.75rem, 6vw, 1.875rem);
     font-weight: 800;
-    color: var(--brand-text-dark);
+    color: var(--text-primary);
     margin: 0;
     letter-spacing: -0.025em;
+    background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .subtitle {
     font-size: 0.875rem;
-    color: var(--brand-text-body);
-    margin-top: 0.5rem;
+    color: var(--text-muted);
+    margin: 0.5rem 0 0;
   }
 
+  /* ── Status indicator ──────────────────────────────── */
   .status-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    background-color: var(--brand-success-bg);
-    border: 1px solid #dcfce7;
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
     padding: 1rem;
     border-radius: 12px;
     margin-bottom: 2rem;
@@ -147,29 +284,28 @@
 
   .pulse-container {
     position: relative;
-    display: flex;
+    display: inline-flex;
     height: 12px;
     width: 12px;
+    flex-shrink: 0;
   }
 
   .pulse-ring {
     position: absolute;
-    display: inline-flex;
-    height: 100%;
-    width: 100%;
+    inset: 0;
     border-radius: 50%;
-    background-color: var(--brand-success-dot);
+    background: var(--success-dot);
     opacity: 0.75;
     animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
 
   .pulse-dot {
     position: relative;
-    display: inline-flex;
     border-radius: 50%;
     height: 12px;
     width: 12px;
-    background-color: var(--brand-success-dot);
+    background: var(--success-dot);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
   }
 
   @keyframes ping {
@@ -179,39 +315,162 @@
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-ring { animation: none; }
+  }
+
   .status-text {
-    font-weight: 600;
-    color: var(--brand-success-text);
-  }
-
-  .explanation h2 {
-    font-size: 1rem;
     font-weight: 700;
-    color: var(--brand-text-dark);
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
+    color: var(--success-text);
+    font-size: 0.95rem;
   }
 
-  .explanation p {
+  /* ── Sections ──────────────────────────────────────── */
+  .section { margin-bottom: 2rem; }
+
+  .section h2 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 0.75rem;
+  }
+
+  .section p {
     font-size: 0.9375rem;
-    color: var(--brand-text-body);
+    color: var(--text-body);
     line-height: 1.6;
-    margin-bottom: 0.75rem;
+    margin: 0 0 0.75rem;
   }
 
+  .section p:last-child { margin-bottom: 0; }
+
+  .section strong {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  /* ── Services list ─────────────────────────────────── */
+  .service-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .service {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-soft);
+  }
+
+  .service:last-child { border-bottom: none; }
+
+  .service-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--success-dot);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  }
+
+  .service-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .service-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.1rem;
+  }
+
+  .service-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .service-status {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--success-text);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+
+  /* ── Link ──────────────────────────────────────────── */
   .link {
     display: inline-flex;
     align-items: center;
-    color: var(--brand-blue);
+    gap: 0.3rem;
+    color: var(--brand-500);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: 0.9rem;
     text-decoration: none;
-    margin-top: 0.5rem;
-    transition: color 0.2s;
+    margin-top: 0.25rem;
+    transition: color 0.15s ease;
   }
 
   .link:hover {
-    color: var(--brand-blue-hover);
+    color: var(--brand-600);
     text-decoration: underline;
+  }
+
+  /* ── Footer ────────────────────────────────────────── */
+  .footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .build-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .build-info code {
+    background: var(--bg-soft);
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+  }
+
+  .back-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--brand-500);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .back-link:hover {
+    color: var(--brand-600);
+    text-decoration: underline;
+  }
+
+  /* ── Dark mode link tweak ──────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    .link, .back-link { color: #57C0F3; }
+    .link:hover, .back-link:hover { color: #8FD6F8; }
   }
 </style>
