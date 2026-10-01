@@ -30,9 +30,30 @@ const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://dayront.co
 const currentPath = Astro.url.pathname;
 const canonical = canonicalURL ? canonicalURL : `${siteUrl}${currentPath}`;
 
+/* ★ Auto-pick category OG image based on current path */
+function pickCategoryOg(path: string): string {
+  if (path === '/' || path === '') return '/og/default.png';
+  if (path.startsWith('/download')) return '/og/download.png';
+  if (path.startsWith('/blog')) return '/og/blog.png';
+
+  if (path.startsWith('/tools') || path.startsWith('/convert')) {
+    const slugMatch = path.match(/^\/(?:tools|convert)\/([^/]+)/);
+    if (slugMatch) {
+      const tool = getToolBySlug(slugMatch[1]);
+      if (tool) {
+        if (tool.category === 'ai') return '/og/ai.png';
+        if (tool.category.startsWith('audio')) return '/og/audio.png';
+        if (tool.category.startsWith('video')) return '/og/video.png';
+      }
+    }
+    return '/og/tools.png';
+  }
+  return '/og/default.png';
+}
+
 const ogImageUrl = ogImage
   ? (ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`)
-  : `${siteUrl}/og/default.png`;
+  : `${siteUrl}${pickCategoryOg(currentPath)}`;
 
 let schemaType = type;
 if (!schemaType) {

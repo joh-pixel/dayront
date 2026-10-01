@@ -1,0 +1,57 @@
+---
+// src/pages/app/tool/[slug].astro
+import { tools } from '../../../core/tools';
+import MobileLayout from '../../../ui/mobile/layouts/MobileLayout';
+import ToolScreen from '../../../ui/mobile/screens/ToolScreen';
+import '../../../ui/mobile/mobile.css';
+
+export function getStaticPaths() {
+  return tools.map((tool) => ({
+    params: { slug: tool.slug },
+    props: { tool },
+  }));
+}
+
+const { tool } = Astro.props;
+
+if (!tool) {
+  return Astro.redirect('/app/tools');
+}
+
+const appTool = {
+  slug: tool.slug,
+  name: tool.name,
+  description: tool.description,
+  icon: tool.icon,
+  category: tool.category,
+  type: tool.type,
+  from: tool.from,
+  to: tool.to,
+  settings: tool.settings,
+  outputFormat: tool.outputFormat,
+  presetWidth: tool.presetWidth,
+  presetHeight: tool.presetHeight,
+  faq: tool.faq,
+};
+---
+
+<!doctype html>
+<html lang="en" style="color-scheme: light dark;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+    <meta name="theme-color" content="#2CB5F0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C4A6E" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{tool.name} — Dayront</title>
+  </head>
+  <body>
+    <MobileLayout current="tools" backTo="/app/tools" title={tool.name} hideNav={false}>
+      <ToolScreen client:load tool={appTool} />
+    </MobileLayout>
+  </body>
+</html>

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dayront — Asset Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 0 auto;
+         padding: 2rem 1.25rem; background: #0f172a; color: #e2e8f0; line-height: 1.5; }
+  h1 { color: #2CB5F0; margin: 0 0 0.5rem; font-size: 1.5rem; }
+  h2 { color: #8FD6F8; margin: 2rem 0 0.75rem; font-size: 1.05rem;
+       text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85; }
+  p { opacity: 0.8; font-size: 0.9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 0.75rem; margin: 1rem 0; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+          padding: 0.75rem; text-align: center; }
+  .preview { background: #334155; border-radius: 6px; padding: 0.5rem;
+             display: flex; align-items: center; justify-content: center;
+             min-height: 100px; margin-bottom: 0.5rem; overflow: hidden; }
+  .preview canvas, .preview img { max-width: 100%; max-height: 100px; display: block; }
+  .label { font-size: 0.7rem; opacity: 0.75; margin-bottom: 0.25rem;
+           word-break: break-all; }
+  .size { font-size: 0.65rem; opacity: 0.5; }
+  button { width: 100%; padding: 0.5rem; background: #2CB5F0; color: white;
+           border: none; border-radius: 6px; font-weight: 700; font-size: 0.75rem;
+           cursor: pointer; margin-top: 0.35rem; font-family: inherit; }
+  button:hover { background: #0EA5E9; }
+  .btn-primary { padding: 1rem 1.5rem; font-size: 1rem; margin-top: 1.5rem;
+                 background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+                 box-shadow: 0 6px 20px rgba(44,181,240,0.35); }
+  .instructions { background: #1e293b; border-left: 4px solid #2CB5F0;
+                  padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.85rem;
+                  margin: 1.5rem 0; }
+  code { background: #0f172a; padding: 0.15rem 0.4rem; border-radius: 4px;
+         font-size: 0.8rem; color: #2CB5F0; }
+  .status { margin-top: 1rem; font-size: 0.85rem; color: #86efac; min-height: 1.5rem; }
+  .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 4px;
+           background: #334155; font-size: 0.7rem; margin-left: 0.5rem; }
+</style>
+</head>
+<body>
+
+<h1>Dayront — Asset Generator</h1>
+<p>Generates all PWA icons, screenshots, and category OG images. Tap <strong>Download ZIP</strong> at the bottom.</p>
+
+<h2>Icons <span class="badge">10 files</span></h2>
+<div class="grid" id="icons-grid"></div>
+
+<h2>Screenshots <span class="badge">2 files</span></h2>
+<div class="grid" id="screenshots-grid"></div>
+
+<h2>OG Images <span class="badge">7 files</span></h2>
+<div class="grid" id="og-grid"></div>
+
+<button class="btn-primary" id="download-zip">⬇ Download All as ZIP</button>
+<div class="status" id="status"></div>
+
+<div class="instructions">
+  <strong>After download:</strong><br>
+  1. Extract <code>dayront-assets.zip</code> with your file manager<br>
+  2. The extracted folder has <code>icons/</code>, <code>screenshots/</code>, <code>og/</code><br>
+  3. Copy all three folders into <code>public/</code>, overwriting existing files<br>
+  4. Commit and push
+</div>
+
+<script>
+  /* ══════════════════════════════════════════════════════════
+     Shared drawing helpers
+     ══════════════════════════════════════════════════════════ */
+
+  const BRAND       = '#2CB5F0';
+  const BRAND_DARK  = '#0EA5E9';
+  const BRAND_DEEP  = '#0C4A6E';
+  const WHITE       = '#FFFFFF';
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  /**
+   * Draw the Dayront logo mark.
+   *
+   * @param {string} tileBg    — the rounded tile background (default: brand blue)
+   * @param {string} iconColor — the camera body color (default: white)
+   *
+   * ★ For OG images on blue gradients, pass (WHITE, BRAND_DEEP) so the
+   *   tile pops and the camera reads clearly.
+   * ★ For screenshots on light backgrounds, pass (BRAND, WHITE) — the
+   *   default — matching the site header.
+   */
+  function drawLogo(ctx, x, y, size, tileBg = BRAND, iconColor = WHITE) {
+    // Rounded tile
+    ctx.fillStyle = tileBg;
+    roundRect(ctx, x, y, size, size, size * 0.22);
+    ctx.fill();
+
+    // Camera body
+    const bodyW = size * 0.5;
+    const bodyH = size * 0.25;
+    const bodyX = x + (size - bodyW) / 2;
+    const bodyY = y + (size - bodyH) / 2;
+    ctx.fillStyle = iconColor;
+    roundRect(ctx, bodyX, bodyY, bodyW, bodyH, size * 0.024);
+    ctx.fill();
+
+    // Lens — cut out to the tile color
+    const lensR = size * 0.078;
+    ctx.fillStyle = tileBg;
+    ctx.beginPath();
+    ctx.arc(bodyX + bodyW / 2, bodyY + bodyH / 2, lensR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     Icon generation — brand blue tile + white camera
+     (these render as actual app icons, so brand blue is correct)
+     ══════════════════════════════════════════════════════════ */
+
+  const ICONS = [
+    { name: 'icon-48.png',           size: 48,  maskable: false },
+    { name: 'icon-72.png',           size: 72,  maskable: false },
+    { name: 'icon-96.png',           size: 96,  maskable: false },
+    { name: 'icon-144.png',          size: 144, maskable: false },
+    { name: 'icon-152.png',          size: 152, maskable: false },
+    { name: 'icon-180.png',          size: 180, maskable: false },
+    { name: 'icon-192.png',          size: 192, maskable: false },
+    { name: 'icon-512.png',          size: 512, maskable: false },
+    { name: 'icon-maskable-192.png', size: 192, maskable: true  },
+    { name: 'icon-maskable-512.png', size: 512, maskable: true  },
+  ];
+
+  function renderIcon({ size, maskable }) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const pad = maskable ? size * 0.2 : 0;
+    const inner = size - pad * 2;
+
+    // Brand blue background (maskable-safe)
+    ctx.fillStyle = BRAND;
+    ctx.fillRect(0, 0, size, size);
+
+    // Draw the camera centered, scaled to the inner area
+    const logoSize = inner * 0.7;
+    const lx = (size - logoSize) / 2;
+    const ly = (size - logoSize) / 2;
+
+    drawLogo(ctx, lx, ly, logoSize, BRAND, WHITE);
+
+    // drawLogo draws its own tile — but we want transparent tile here.
+    // Redraw as just the camera on the blue background:
+    // (Simpler: we already have blue background; only draw camera)
+    // Clear and redraw with brand-blue tile blending into the background
+    ctx.fillStyle = BRAND;
+    ctx.fillRect(0, 0, size, size);
+
+    const bodyW = logoSize * 0.6;
+    const bodyH = logoSize * 0.3;
+    const bodyX = lx + (logoSize - bodyW) / 2;
+    const bodyY = ly + (logoSize - bodyH) / 2;
+    ctx.fillStyle = WHITE;
+    roundRect(ctx, bodyX, bodyY, bodyW, bodyH, logoSize * 0.03);
+    ctx.fill();
+
+    const lensR = logoSize * 0.1;
+    ctx.fillStyle = BRAND;
+    ctx.beginPath();
+    ctx.arc(bodyX + bodyW / 2, bodyY + bodyH / 2, lensR, 0, Math.PI * 2);
+    ctx.fill();
+
+    return canvas;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     Screenshot generation — brand blue tile on light background
+     ══════════════════════════════════════════════════════════ */
+
+  const SCREENSHOTS = [
+    { name: 'mobile.png',  width: 1080, height: 1920, formFactor: 'narrow' },
+    { name: 'desktop.png', width: 1920, height: 1080, formFactor: 'wide'   },
+  ];
+
+  function renderScreenshot({ width, height, formFactor }) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Light background gradient
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#E5F7FE');
+    grad.addColorStop(1, '#C7EBFC');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    const isMobile = formFactor === 'narrow';
+    const scale = isMobile ? height / 1920 : height / 1080;
+
+    // Logo — brand blue tile (pops on light background)
+    const logoSize = 120 * scale * (isMobile ? 1.2 : 1);
+    drawLogo(
+      ctx,
+      (width - logoSize) / 2,
+      height * 0.18,
+      logoSize,
+      BRAND,   // tile
+      WHITE    // camera
+    );
+
+    // Wordmark
+    ctx.fillStyle = BRAND_DEEP;
+    ctx.font = `800 ${Math.round(56 * scale * (isMobile ? 1.4 : 1))}px system-ui, -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Dayront', width / 2, height * 0.18 + logoSize + 60 * scale);
+
+    // Headline
+    const headlineSize = Math.round(72 * scale * (isMobile ? 1.3 : 1));
+    ctx.font = `800 ${headlineSize}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = BRAND_DEEP;
+    ctx.fillText('Your media.', width / 2, height * 0.42);
+    ctx.fillText('Your device.', width / 2, height * 0.42 + headlineSize * 1.15);
+    ctx.fillText('Your control.', width / 2, height * 0.42 + headlineSize * 2.3);
+
+    // Subtext
+    const subSize = Math.round(30 * scale * (isMobile ? 1.2 : 1));
+    ctx.font = `500 ${subSize}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText('Private media tools, 100% in your browser.', width / 2, height * 0.72);
+
+    // CTA button
+    const btnW = isMobile ? 420 : 320;
+    const btnH = isMobile ? 96  : 72;
+    const btnX = (width - btnW) / 2;
+    const btnY = height * 0.78;
+    const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
+    btnGrad.addColorStop(0, BRAND);
+    btnGrad.addColorStop(1, BRAND_DARK);
+    ctx.fillStyle = btnGrad;
+    roundRect(ctx, btnX, btnY, btnW, btnH, btnH / 2);
+    ctx.fill();
+
+    ctx.fillStyle = WHITE;
+    ctx.font = `700 ${Math.round(subSize * 1.1)}px system-ui, -apple-system, sans-serif`;
+    ctx.fillText('Explore Tools', width / 2, btnY + btnH / 2 + 2);
+
+    return canvas;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     OG image generation — white tile + deep navy camera
+     ══════════════════════════════════════════════════════════ */
+
+  const OG_IMAGES = [
+    { name: 'default.png',  title: 'Your media. Your device. Your control.', subtitle: 'Private media tools, 100% in your browser', emoji: '🎬', grad: ['#2CB5F0', '#0EA5E9'] },
+    { name: 'tools.png',    title: 'All Tools',       subtitle: '40+ free media tools that run in your browser', emoji: '🧰', grad: ['#2CB5F0', '#0EA5E9'] },
+    { name: 'audio.png',    title: 'Audio Tools',     subtitle: 'Cut, merge, compress, convert — no uploads',    emoji: '🎵', grad: ['#2CB5F0', '#7C3AED'] },
+    { name: 'video.png',    title: 'Video Tools',     subtitle: 'Compress, merge, crop, convert — free and private', emoji: '🎬', grad: ['#2CB5F0', '#0891B2'] },
+    { name: 'ai.png',       title: 'AI Features',     subtitle: 'Captions, background removal, photo editing',  emoji: '🤖', grad: ['#2CB5F0', '#8B5CF6'] },
+    { name: 'blog.png',     title: 'Dayront Blog',    subtitle: 'Guides, tips, and privacy-first how-tos',      emoji: '📝', grad: ['#2CB5F0', '#10B981'] },
+    { name: 'download.png', title: 'Get the Dayront App', subtitle: 'Process 5 GB files with native FFmpeg',     emoji: '⬇️', grad: ['#2CB5F0', '#0EA5E9'] },
+  ];
+
+  function renderOG({ title, subtitle, emoji, grad }) {
+    const W = 1200, H = 630;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Background gradient
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, grad[0]);
+    g.addColorStop(1, grad[1]);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle radial glow top-right
+    const glow = ctx.createRadialGradient(W * 0.85, H * 0.15, 0, W * 0.85, H * 0.15, 500);
+    glow.addColorStop(0, 'rgba(255,255,255,0.25)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // ★ Top-left: logo with WHITE tile + DEEP NAVY camera
+    //   (was rgba(255,255,255,0.18) — nearly invisible on blue gradient)
+    drawLogo(ctx, 80, 80, 72, WHITE, BRAND_DEEP);
+
+    ctx.fillStyle = WHITE;
+    ctx.font = '700 40px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Dayront', 80 + 72 + 20, 80 + 36);
+
+    // Big emoji on the right side
+    ctx.font = '280px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(emoji, W - 80, H / 2);
+    ctx.globalAlpha = 1;
+
+    // Main title (wrapped to 2 lines if needed)
+    ctx.fillStyle = WHITE;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    const titleSize = title.length > 32 ? 72 : 88;
+    ctx.font = `800 ${titleSize}px system-ui, -apple-system, sans-serif`;
+    const maxWidth = W - 500;
+
+    const words = title.split(' ');
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+
+    const lineHeight = titleSize * 1.12;
+    const startY = 300 - (lines.length - 1) * lineHeight / 2;
+    lines.forEach((l, i) => {
+      ctx.fillText(l, 80, startY + i * lineHeight);
+    });
+
+    // Subtitle
+    if (subtitle) {
+      ctx.font = '500 28px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(subtitle, 80, startY + lines.length * lineHeight + 20);
+    }
+
+    // Bottom-right URL badge
+    const urlText = 'dayront.com';
+    ctx.font = '600 28px system-ui, -apple-system, sans-serif';
+    const urlWidth = ctx.measureText(urlText).width;
+    const badgePadX = 28, badgePadY = 16;
+    const badgeW = urlWidth + badgePadX * 2;
+    const badgeH = 32 + badgePadY * 2;
+    const badgeX = W - 80 - badgeW;
+    const badgeY = H - 80 - badgeH;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+    ctx.fill();
+
+    ctx.fillStyle = WHITE;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(urlText, badgeX + badgePadX, badgeY + badgeH / 2);
+
+    return canvas;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     UI: render preview grid
+     ══════════════════════════════════════════════════════════ */
+
+  function makePreviewCard(canvas, { name, extra }) {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const preview = document.createElement('div');
+    preview.className = 'preview';
+    const displayCanvas = document.createElement('canvas');
+    const maxDim = 100;
+    const scale = Math.min(maxDim / canvas.width, maxDim / canvas.height);
+    displayCanvas.width = canvas.width * scale;
+    displayCanvas.height = canvas.height * scale;
+    const dctx = displayCanvas.getContext('2d');
+    dctx.drawImage(canvas, 0, 0, displayCanvas.width, displayCanvas.height);
+    preview.appendChild(displayCanvas);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = name;
+
+    const size = document.createElement('div');
+    size.className = 'size';
+    size.textContent = extra;
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Download';
+    btn.onclick = () => downloadCanvas(canvas, name);
+
+    card.appendChild(preview);
+    card.appendChild(label);
+    card.appendChild(size);
+    card.appendChild(btn);
+    return card;
+  }
+
+  const iconsGrid = document.getElementById('icons-grid');
+  const iconsCanvases = {};
+  ICONS.forEach((icon) => {
+    const canvas = renderIcon(icon);
+    iconsCanvases[icon.name] = canvas;
+    iconsGrid.appendChild(makePreviewCard(canvas, {
+      name: icon.name,
+      extra: `${icon.size}×${icon.size}${icon.maskable ? ' · maskable' : ''}`,
+    }));
+  });
+
+  const screenshotsGrid = document.getElementById('screenshots-grid');
+  const screenshotsCanvases = {};
+  SCREENSHOTS.forEach((shot) => {
+    const canvas = renderScreenshot(shot);
+    screenshotsCanvases[shot.name] = canvas;
+    screenshotsGrid.appendChild(makePreviewCard(canvas, {
+      name: shot.name,
+      extra: `${shot.width}×${shot.height} · ${shot.formFactor}`,
+    }));
+  });
+
+  const ogGrid = document.getElementById('og-grid');
+  const ogCanvases = {};
+  OG_IMAGES.forEach((og) => {
+    const canvas = renderOG(og);
+    ogCanvases[og.name] = canvas;
+    ogGrid.appendChild(makePreviewCard(canvas, {
+      name: og.name,
+      extra: '1200×630',
+    }));
+  });
+
+  /* ══════════════════════════════════════════════════════════
+     Download helpers
+     ══════════════════════════════════════════════════════════ */
+
+  function canvasToBlob(canvas) {
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function downloadCanvas(canvas, filename) {
+    const blob = await canvasToBlob(canvas);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('download-zip').addEventListener('click', async () => {
+    const status = document.getElementById('status');
+    status.textContent = '📦 Building ZIP…';
+
+    const zip = new JSZip();
+    const iconsFolder = zip.folder('icons');
+    const screenshotsFolder = zip.folder('screenshots');
+    const ogFolder = zip.folder('og');
+
+    for (const [name, canvas] of Object.entries(iconsCanvases)) {
+      iconsFolder.file(name, await canvasToBlob(canvas));
+    }
+    for (const [name, canvas] of Object.entries(screenshotsCanvases)) {
+      screenshotsFolder.file(name, await canvasToBlob(canvas));
+    }
+    for (const [name, canvas] of Object.entries(ogCanvases)) {
+      ogFolder.file(name, await canvasToBlob(canvas));
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dayront-assets.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    status.textContent = '✅ Downloaded dayront-assets.zip (19 files)';
+  });
+</script>
+
+</body>
+</html>

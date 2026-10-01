@@ -1,0 +1,25 @@
+---
+// src/pages/app/recent.astro
+import MobileLayout from '../../ui/mobile/layouts/MobileLayout';
+import RecentScreen from '../../ui/mobile/screens/RecentScreen';
+import '../../ui/mobile/mobile.css';
+---
+
+<!doctype html>
+<html lang="en" style="color-scheme: light dark;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2CB5F0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C4A6E" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Recent — Dayront App</title>
+  </head>
+  <body>
+    <MobileLayout current="recent" title="Recent">
+      <RecentScreen client:load />
+    </MobileLayout>
+  </body>
+</html>

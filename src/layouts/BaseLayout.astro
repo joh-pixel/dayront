@@ -114,15 +114,31 @@ const allSearchItems = [...toolItems, ...blogItems];
     />
 
     <!-- ════════════════════════════════════════════════════
-         PWA — icons, manifest, meta
+         PWA — expanded icon set, manifest, theme colors
          ════════════════════════════════════════════════════ -->
+
+    <!-- SVG favicon (modern browsers) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- PNG favicons (multi-size fallback) -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96.png" />
+    <link rel="icon" type="image/png" sizes="144x144" href="/icons/icon-144.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Apple touch icons (iOS home screen) -->
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+
+    <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <meta name="theme-color" content="#2CB5F0" />
+    <!-- Theme color (adapts to system light/dark) -->
+    <meta name="theme-color" content="#2CB5F0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C4A6E" media="(prefers-color-scheme: dark)" />
+
+    <!-- Web app capability hints -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -179,7 +195,6 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <!-- ════════════════════════════════════════════════════
          FLOATING INSTALL BUTTON — links to download subdomain
-         Shown only when the browser supports PWA install
          ════════════════════════════════════════════════════ -->
     <a
       id="pwa-install-btn"
@@ -224,26 +239,21 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <!-- ════════════════════════════════════════════════════
          FLOATING BUTTON VISIBILITY
-         Shows on any device that has a download option.
-         Hides on the download subdomain itself to avoid self-links.
          ════════════════════════════════════════════════════ -->
     <script>
       (() => {
         const btn = document.getElementById('pwa-install-btn');
         if (!btn) return;
 
-        // Don't show on the download subdomain
         const host = location.hostname;
         if (host === 'download.dayront.com' || host === 'www.download.dayront.com') {
           return;
         }
 
-        // Don't show on /download (if user reached the old route)
         if (location.pathname === '/download') {
           return;
         }
 
-        // Reveal after a short delay so it doesn't block first paint
         setTimeout(() => {
           btn.classList.remove('hidden');
           btn.classList.add('pwa-float-btn--visible');
@@ -741,7 +751,6 @@ const allSearchItems = [...toolItems, ...blogItems];
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.classList.toggle('dark', isDark);
 
-    // Re-trigger floating button visibility check on page swap
     const btn = document.getElementById('pwa-install-btn');
     if (btn) {
       const host = location.hostname;

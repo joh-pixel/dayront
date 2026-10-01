@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dayront — OG Image Generator</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto;
+         padding: 2rem 1.25rem; background: #0f172a; color: #e2e8f0; line-height: 1.5; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; color: #2CB5F0; }
+  p { opacity: 0.8; font-size: 0.9rem; }
+  .preview { background: #334155; border-radius: 12px; padding: 1rem;
+             display: flex; align-items: center; justify-content: center;
+             margin: 1.5rem 0; }
+  .preview canvas { max-width: 100%; height: auto; border-radius: 8px; display: block; }
+  button { width: 100%; padding: 1rem; background: linear-gradient(135deg, #2CB5F0, #0EA5E9);
+           color: white; border: none; border-radius: 12px; font-weight: 700;
+           font-size: 1rem; cursor: pointer; }
+  button:hover { opacity: 0.9; }
+  .instructions { background: #1e293b; border-left: 4px solid #2CB5F0;
+                  padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.85rem;
+                  margin: 1.5rem 0; }
+  code { background: #0f172a; padding: 0.15rem 0.4rem; border-radius: 4px;
+         font-size: 0.8rem; color: #2CB5F0; }
+  .status { margin-top: 1rem; font-size: 0.85rem; color: #86efac; min-height: 1.5rem; }
+</style>
+</head>
+<body>
+
+<h1>Dayront OG Image Generator</h1>
+<p>Generates the 1200×630 social share image. Tap Download, move the PNG to <code>public/og/</code>.</p>
+
+<div class="preview">
+  <canvas id="og" width="1200" height="630"></canvas>
+</div>
+
+<button id="download">⬇ Download default.png</button>
+<div class="status" id="status"></div>
+
+<div class="instructions">
+  <strong>After download:</strong><br>
+  1. Move the PNG to <code>public/og/default.png</code><br>
+  2. Commit and push<br>
+  3. Every page will now show a rich preview when shared on Twitter, WhatsApp, LinkedIn, etc.
+</div>
+
+<script>
+  const BRAND_TOP    = '#2CB5F0';
+  const BRAND_BOTTOM = '#0EA5E9';
+  const BRAND_DEEP   = '#0C4A6E';
+  const WHITE        = '#FFFFFF';
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  /**
+   * Draw the Dayront logo mark.
+   * @param {string} tileBg    — background of the rounded tile (default: white)
+   * @param {string} iconColor — color of the camera body (default: deep navy)
+   */
+  function drawIcon(ctx, x, y, size, tileBg = WHITE, iconColor = BRAND_DEEP) {
+    // Rounded tile — solid color, not translucent
+    ctx.fillStyle = tileBg;
+    roundRect(ctx, x, y, size, size, size * 0.22);
+    ctx.fill();
+
+    // Camera body
+    const bodyW = size * 0.5;
+    const bodyH = size * 0.25;
+    const bodyX = x + (size - bodyW) / 2;
+    const bodyY = y + (size - bodyH) / 2;
+    ctx.fillStyle = iconColor;
+    roundRect(ctx, bodyX, bodyY, bodyW, bodyH, size * 0.024);
+    ctx.fill();
+
+    // Lens — cut out to the tile color (looks like a hole through the body)
+    const lensR = size * 0.078;
+    ctx.fillStyle = tileBg;
+    ctx.beginPath();
+    ctx.arc(bodyX + bodyW / 2, bodyY + bodyH / 2, lensR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawOG() {
+    const canvas = document.getElementById('og');
+    const ctx = canvas.getContext('2d');
+    const W = 1200;
+    const H = 630;
+
+    // 1. Gradient background
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, BRAND_TOP);
+    grad.addColorStop(1, BRAND_BOTTOM);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // 2. Subtle radial glow in top-right
+    const glow = ctx.createRadialGradient(W * 0.85, H * 0.15, 0, W * 0.85, H * 0.15, 400);
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+
+    // 3. Top-left: logo tile (solid white) + wordmark
+    //    ★ FIXED: white tile + deep navy camera — pops on the blue gradient
+    drawIcon(ctx, 80, 80, 72, WHITE, BRAND_DEEP);
+
+    ctx.fillStyle = WHITE;
+    ctx.font = '700 40px system-ui, -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText('Dayront', 80 + 72 + 20, 80 + 36);
+
+    // 4. Center: big headline
+    ctx.fillStyle = WHITE;
+    ctx.font = '800 88px system-ui, -apple-system, sans-serif';
+    ctx.textBaseline = 'alphabetic';
+
+    ctx.fillText('Your media.', 80, 320);
+    ctx.fillText('Your device.', 80, 420);
+    ctx.fillText('Your control.', 80, 520);
+
+    // 5. Bottom-right: URL badge
+    const urlText = 'dayront.com';
+    ctx.font = '600 28px system-ui, -apple-system, sans-serif';
+    const urlWidth = ctx.measureText(urlText).width;
+    const badgePadX = 28;
+    const badgePadY = 16;
+    const badgeW = urlWidth + badgePadX * 2;
+    const badgeH = 32 + badgePadY * 2;
+    const badgeX = W - 80 - badgeW;
+    const badgeY = H - 80 - badgeH;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+    ctx.fill();
+
+    ctx.fillStyle = WHITE;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(urlText, badgeX + badgePadX, badgeY + badgeH / 2);
+  }
+
+  drawOG();
+
+  document.getElementById('download').addEventListener('click', () => {
+    const canvas = document.getElementById('og');
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'default.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      document.getElementById('status').textContent = '✅ Downloaded default.png';
+    }, 'image/png');
+  });
+</script>
+
+</body>
+</html>

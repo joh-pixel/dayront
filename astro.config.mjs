@@ -17,6 +17,27 @@ const AI_EXTERNALS = [
   "@imgly/background-removal",
 ];
 
+/**
+ * ★ Capacitor packages that must NOT be bundled.
+ * They only exist inside the native mobile app, not on web.
+ * Loaded lazily at runtime only when running in the app shell
+ * (see src/core/storage.ts and src/core/ffmpeg-native.ts).
+ *
+ * The dynamic imports in those files use `/* @vite-ignore *\/` so Vite
+ * doesn't try to resolve them, and this externals list tells Rollup
+ * to skip them in the production build.
+ */
+const CAPACITOR_EXTERNALS = [
+  "@capacitor/core",
+  "@capacitor/preferences",
+  "@capacitor/filesystem",
+  "@capacitor/share",
+  "@capacitor-community/ffmpeg",
+];
+
+/** Merged list — used across build / worker / ssr / optimizeDeps. */
+const ALL_EXTERNALS = [...AI_EXTERNALS, ...CAPACITOR_EXTERNALS];
+
 export default defineConfig({
   site: "https://dayront.com",
   output: "static",
@@ -34,7 +55,7 @@ export default defineConfig({
     preact({ compat: true }),
     mdx(),
     sitemap({
-      // ★ Updated for Step 6A: exclude noise + duplicated download URL
+      // ★ Exclude noise + duplicated download URL
       filter: (page) =>
         !page.includes("?lang=") &&
         !page.includes("/tag/") &&
@@ -69,15 +90,26 @@ export default defineConfig({
       },
     },
 
-    worker: {
-      format: "es",
+    // ★ Client-side build — THIS was the missing piece.
+    // Without this, Rollup still tries to resolve @capacitor/* during
+    // the client bundle, even though ssr.external already lists them.
+    build: {
       rollupOptions: {
-        external: AI_EXTERNALS,
+        external: ALL_EXTERNALS,
       },
     },
 
+    // ★ Worker build (Web Workers spawned by Vite)
+    worker: {
+      format: "es",
+      rollupOptions: {
+        external: ALL_EXTERNALS,
+      },
+    },
+
+    // ★ Server-side render (Astro SSR pass)
     ssr: {
-      external: AI_EXTERNALS,
+      external: ALL_EXTERNALS,
     },
 
     plugins: [
@@ -108,14 +140,13 @@ export default defineConfig({
       },
     ],
 
+    // ★ Exclude the same packages from dep pre-bundling in dev mode
     optimizeDeps: {
       exclude: [
         "@ffmpeg/ffmpeg",
         "@ffmpeg/util",
         "@ffmpeg/core",
-        "@huggingface/transformers",
-        "onnxruntime-web",
-        "@imgly/background-removal",
+        ...ALL_EXTERNALS,
       ],
     },
   },
