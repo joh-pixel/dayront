@@ -1,0 +1,19 @@
+{
+  "name": "@dayront/capacitor-ffmpeg",
+  "version": "1.0.0",
+  "description": "Native FFmpeg bridge for Dayront Android",
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "files": [
+    "android/src/main/",
+    "dist/",
+    "src/"
+  ],
+  "keywords": ["capacitor", "plugin", "ffmpeg"],
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  }
+}
