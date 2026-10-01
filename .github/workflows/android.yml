@@ -53,7 +53,7 @@ jobs:
       - name: Install capacitor-assets
         run: npm install --no-save @capacitor/assets
 
-      - name: Generate custom icons and splash
+      - name: Generate custom Android icons
         run: npx capacitor-assets generate --android
         continue-on-error: true
 
@@ -76,8 +76,4 @@ jobs:
           name: dayront-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-<<<<<<< HEAD
           if-no-files-found: error
-=======
-          if-no-files-found: error
->>>>>>> f2a28b2 (fix(android): restore assets, untrack .nomedia, sync native config)
