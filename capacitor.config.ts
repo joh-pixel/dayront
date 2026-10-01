@@ -56,6 +56,10 @@ const config: CapacitorConfig = {
       style: 'dark',
       resizeOnFullScreen: true,
     },
+    /**
+     * FFmpeg plugin is auto-discovered from node_modules via the
+     * "capacitor" field in its package.json. No explicit config needed here.
+     */
   },
 };
 

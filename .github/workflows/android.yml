@@ -32,13 +32,31 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Verify file-picker plugin is installed
+      - name: Verify @capawesome/capacitor-file-picker is installed
         run: |
           if [ ! -d "node_modules/@capawesome/capacitor-file-picker" ]; then
             echo "❌ @capawesome/capacitor-file-picker missing"
             exit 1
           fi
           echo "✅ File picker plugin present"
+
+      # ── Local FFmpeg plugin ─────────────────────────────────
+      # The custom FFmpeg plugin lives in ./plugins/ffmpeg and must be
+      # installed into node_modules so `cap sync` can discover it.
+      # Capacitor reads the "capacitor" field from the plugin's package.json.
+      - name: Install local FFmpeg plugin
+        run: |
+          if [ ! -d "plugins/ffmpeg" ]; then
+            echo "❌ plugins/ffmpeg directory missing"
+            exit 1
+          fi
+          npm install ./plugins/ffmpeg --no-audit --no-fund
+          if [ ! -d "node_modules/@dayront/capacitor-ffmpeg" ]; then
+            echo "❌ Local FFmpeg plugin failed to install"
+            ls -la node_modules/@dayront/ 2>/dev/null || echo "  (no @dayront dir)"
+            exit 1
+          fi
+          echo "✅ Local FFmpeg plugin installed at node_modules/@dayront/capacitor-ffmpeg"
 
       - name: Build web assets
         run: npm run build
@@ -88,10 +106,31 @@ jobs:
           echo "── Registered Capacitor plugins ──"
           cat "$PLUGINS_FILE"
           echo ""
+
+          FP_OK=false
+          FF_OK=false
+
           if grep -q "FilePicker" "$PLUGINS_FILE"; then
             echo "✅ FilePicker registered"
+            FP_OK=true
           else
             echo "⚠️ FilePicker not found in plugins list"
+          fi
+
+          if grep -q "FFmpeg" "$PLUGINS_FILE"; then
+            echo "✅ FFmpeg registered"
+            FF_OK=true
+          else
+            echo "⚠️ FFmpeg not found in plugins list"
+          fi
+
+          # Fail the build if either plugin is missing — otherwise we'd
+          # ship a silently broken APK.
+          if [ "$FP_OK" = "false" ] || [ "$FF_OK" = "false" ]; then
+            echo ""
+            echo "❌ One or more required plugins were not registered."
+            echo "   Check the plugin installation steps above."
+            exit 1
           fi
 
       - name: Setup local.properties

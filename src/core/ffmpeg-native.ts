@@ -1,53 +1,20 @@
-/**
- * src/core/ffmpeg-native.ts
- * ----------------------------------------------------------------------------
- * Native FFmpeg bridge for Capacitor (mobile) and Tauri (desktop).
- *
- * When running inside a native shell, ffmpeg runs as a real binary on the
- * device — no WASM, no 300 MB memory cap, 5 GB files, 10× speed.
- *
- * The bridge has two backends:
- *   - Capacitor: uses @capacitor-community/ffmpeg (or a custom Capacitor plugin)
- *   - Tauri: uses the tauri-plugin-shell to invoke a bundled FFmpeg binary
- *
- * On web, this module stays dormant — isNativeFFmpegAvailable() returns false
- * and the caller falls back to the WASM implementation in ffmpeg.ts.
- *
- * NOTE: All Capacitor/Tauri packages are loaded via `import(/* @vite-ignore *\/ ...)`
- * so Rollup doesn't try to bundle them at build time — they only exist inside
- * the native shell.
- */
-
 import { getPlatform } from './platform';
 
 export interface NativeFFmpegResult {
-  /** Output file contents as a Blob, ready to save. */
   blob: Blob;
-  /** Suggested filename for the output. */
   filename: string;
 }
 
 export interface NativeRunOptions {
-  /** FFmpeg argument array (as you'd pass to the CLI). */
   args: string[];
-  /** Input files, in the order they're referenced in `args` as -i paths. */
   inputs: File[];
-  /** Output filename (last arg — usually 'output.mp4'). */
   outputName: string;
-  /** MIME type for the resulting Blob. */
   outputMime: string;
-  /** Progress callback (0–100). */
   onProgress?: (p: number) => void;
 }
 
-/* ── Availability check ──────────────────────────────────── */
-
 let _available: boolean | null = null;
 
-/**
- * Returns true if a native FFmpeg backend is available.
- * Cached after first check.
- */
 export function isNativeFFmpegAvailable(): boolean {
   if (_available !== null) return _available;
 
@@ -63,36 +30,20 @@ export function isNativeFFmpegAvailable(): boolean {
   }
 
   const w = window as any;
-
-  // Capacitor plugin available?
+  // Our custom plugin registers under the name "FFmpeg"
   if (w.Capacitor?.Plugins?.FFmpeg) {
     _available = true;
     return _available;
   }
 
-  // Tauri shell available?
-  if (w.__TAURI__?.shell?.Command) {
-    _available = true;
-    return _available;
-  }
-
-  // Platform says native but no plugin found — not yet wired.
   _available = false;
   return _available;
 }
 
-/** Reset the availability cache (use after installing a plugin). */
 export function resetNativeAvailability(): void {
   _available = null;
 }
 
-/* ── Backend dispatch ─────────────────────────────────────── */
-
-/**
- * Run FFmpeg using whichever native backend is available.
- * Throws if no native backend is present — callers should check
- * `isNativeFFmpegAvailable()` first.
- */
 export async function runNativeFFmpeg(
   opts: NativeRunOptions,
 ): Promise<NativeFFmpegResult> {
@@ -101,35 +52,14 @@ export async function runNativeFFmpeg(
   }
 
   const w = window as any;
-
-  /* ── Capacitor backend ──────────────────────────────── */
-  if (w.Capacitor?.Plugins?.FFmpeg) {
-    return runCapacitorFFmpeg(w.Capacitor.Plugins.FFmpeg, opts);
+  if (!w.Capacitor?.Plugins?.FFmpeg) {
+    throw new Error('Native FFmpeg plugin is not available.');
   }
 
-  /* ── Tauri backend ──────────────────────────────────── */
-  if (w.__TAURI__?.shell?.Command) {
-    return runTauriFFmpeg(opts);
-  }
+  const plugin = w.Capacitor.Plugins.FFmpeg;
 
-  throw new Error(
-    'Native FFmpeg is not available. ' +
-    'On web, use the WASM implementation in src/core/ffmpeg.ts instead.',
-  );
-}
-
-/* ── Capacitor backend ───────────────────────────────────── */
-
-async function runCapacitorFFmpeg(
-  plugin: any,
-  opts: NativeRunOptions,
-): Promise<NativeFFmpegResult> {
-  // 1. Write inputs to a temp directory using Capacitor Filesystem
-  // 2. Call the FFmpeg plugin with the argument array
-  // 3. Read the output file back as a Blob
-
+  // 1. Write input files to the native filesystem
   const { Filesystem, Directory } = await importCapacitorFilesystem();
-
   const tempDir = 'dayront-tmp';
   const inputPaths: string[] = [];
 
@@ -150,26 +80,43 @@ async function runCapacitorFFmpeg(
     inputPaths.push(path);
   }
 
-  // 2. Build the argument array with the native input paths
-  const nativeArgs = buildNativeArgs(opts.args, inputPaths, `${tempDir}/${opts.outputName}`);
+  // 2. Build the native argument array with the real file paths
+  const nativeArgs = buildNativeArgs(
+    opts.args,
+    inputPaths,
+    `${tempDir}/${opts.outputName}`,
+  );
 
-  let unlistenProgress: (() => void) | null = null;
+  // 3. Attach a progress listener
+  let listenerHandle: any = null;
   if (opts.onProgress) {
-    try {
-      const handle = await plugin.addListener('progress', (e: any) => {
-        const p = Math.max(0, Math.min(100, Math.round((e?.progress ?? 0) * 100)));
-        opts.onProgress?.(p);
-      });
-      unlistenProgress = () => handle?.remove?.();
-    } catch {
-      // Progress events not supported — continue without them
-    }
+    // We estimate total duration from the source file
+    // FFmpegKit emits `timeProcessedMs` — we map it to a percentage
+    // We'll track the maximum time seen, then compute progress
+    // (best-effort heuristic)
+    let maxMs = 0;
+    listenerHandle = await plugin.addListener('progress', (e: any) => {
+      const processed = e?.timeProcessedMs ?? 0;
+      if (processed > maxMs) maxMs = processed;
+      // We don't know the total, so we emit a logarithmic-ish progress
+      // Once we exceed a threshold we assume ~50%, and so on.
+      // A more accurate approach would use ffprobe to get duration.
+      const approxPercent = Math.min(95, Math.round(Math.log10(processed / 1000 + 1) * 40));
+      opts.onProgress?.(approxPercent);
+    });
   }
 
   try {
-    await plugin.exec({ args: nativeArgs });
+    // 4. Execute FFmpeg natively
+    const result = await plugin.exec({ args: nativeArgs });
 
-    // 3. Read the output back
+    if (result.exitCode !== 0) {
+      throw new Error(`FFmpeg exited with code ${result.exitCode}`);
+    }
+
+    opts.onProgress?.(100);
+
+    // 5. Read the output file back as a Blob
     const read = await Filesystem.readFile({
       path: `${tempDir}/${opts.outputName}`,
       directory: Directory.Cache,
@@ -177,7 +124,7 @@ async function runCapacitorFFmpeg(
 
     const blob = base64ToBlob(read.data as string, opts.outputMime);
 
-    // Cleanup temp files (best-effort)
+    // 6. Cleanup temp files
     await Promise.all(
       [...inputPaths, `${tempDir}/${opts.outputName}`].map((p) =>
         Filesystem.deleteFile({ path: p, directory: Directory.Cache }).catch(() => {}),
@@ -186,86 +133,18 @@ async function runCapacitorFFmpeg(
 
     return { blob, filename: opts.outputName };
   } finally {
-    unlistenProgress?.();
+    if (listenerHandle?.remove) listenerHandle.remove();
   }
 }
 
 async function importCapacitorFilesystem(): Promise<any> {
-  try {
-    // @vite-ignore keeps Rollup from trying to resolve this at build time.
-    // The package only exists inside the native shell.
-    const mod: any = await import(/* @vite-ignore */ '@capacitor/filesystem');
-    return mod;
-  } catch {
-    throw new Error(
-      'Capacitor Filesystem plugin not installed. ' +
-      'Run: npm install @capacitor/filesystem',
-    );
-  }
+  const mod: any = await import(/* @vite-ignore */ '@capacitor/filesystem');
+  return mod;
 }
-
-/* ── Tauri backend ───────────────────────────────────────── */
-
-async function runTauriFFmpeg(
-  opts: NativeRunOptions,
-): Promise<NativeFFmpegResult> {
-  const w = window as any;
-  const { Command } = w.__TAURI__.shell;
-
-  // In Tauri we can pass File objects via stdin or write to a temp dir
-  // managed by tauri-plugin-fs. For simplicity, assume the Tauri shell
-  // command has been set up to accept base64-encoded inputs on stdin.
-
-  const inputsBase64 = await Promise.all(
-    opts.inputs.map(async (f) => arrayBufferToBase64(await f.arrayBuffer())),
-  );
-
-  const payload = JSON.stringify({
-    args: opts.args,
-    inputs: inputsBase64,
-    output: opts.outputName,
-  });
-
-  const cmd = Command.sidecar('binaries/ffmpeg');
-  const child = await cmd.spawn();
-  await child.write(payload + '\n');
-  await child.write('\x04'); // EOT — signals end of stdin
-
-  if (opts.onProgress) {
-    child.stdout.on('data', (line: string) => {
-      const m = /progress=(\d+)%/.exec(line);
-      if (m) opts.onProgress?.(parseInt(m[1], 10));
-    });
-  }
-
-  await child.kill(); // ensure cleanup
-  const output = await child.wait(); // tauri returns the shell exit record
-
-  if (output.code !== 0) {
-    throw new Error(`FFmpeg exited with code ${output.code}`);
-  }
-
-  // Read the output blob from the temp file (must be exposed by the sidecar)
-  const response = await Command.sidecar('binaries/ffmpeg-read')
-    .execute([opts.outputName]);
-
-  const base64 = (response.stdout || '').trim();
-  const blob = base64ToBlob(base64, opts.outputMime);
-
-  return { blob, filename: opts.outputName };
-}
-
-/* ── Argument rewriting ──────────────────────────────────── */
 
 /**
- * Rewrite an FFmpeg argument array so that:
- *  - input paths (the token after each `-i`) point at the native temp paths
- *  - the output path (last arg) points at the native temp output path
- *
- * The `args` array arrives from the tool runner, e.g.:
- *   ['-i', 'input-abc.mp3', '-i', 'input-def.mp3', '-filter_complex', '...', 'output-xyz.mp3']
- *
- * We replace the input/output filenames but keep all flags intact.
+ * Rewrite the FFmpeg argument array so that input paths point at the
+ * native temp paths and the output path points at the native output path.
  */
 function buildNativeArgs(
   args: string[],
@@ -294,8 +173,6 @@ function buildNativeArgs(
 
   return out;
 }
-
-/* ── Base64 helpers ──────────────────────────────────────── */
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
