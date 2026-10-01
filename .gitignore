@@ -29,6 +29,6 @@ Thumbs.db
 *.swo
 
 # ── Capacitor / Android (regenerated in CI) ──────────────
-android/
-ios/
-capacitor.config.ts.bak.nomedia
+/android/
+/ios/
+capacitor.config.ts.bak
