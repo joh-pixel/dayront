@@ -30,3 +30,4 @@ Thumbs.db
 # Capacitor / Android (regenerated in CI)
 android/
 ios/
+dayront.bak*
