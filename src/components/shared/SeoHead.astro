@@ -1,30 +1,141 @@
 ---
-export interface Props {
+// src/components/shared/SeoHead.astro
+import { getToolBySlug } from '../../lib/tools';
+
+interface Props {
   title: string;
   description: string;
   ogImage?: string;
   canonicalURL?: string;
+  type?: 'website' | 'article' | 'software' | 'faq';
+  toolSlug?: string;
+  publishedAt?: string;
+  author?: string;
+  noindex?: boolean;
 }
 
-const { title, description, ogImage, canonicalURL } = Astro.props;
-const siteName = 'Dayront';
+const {
+  title,
+  description,
+  ogImage,
+  canonicalURL,
+  type,
+  toolSlug,
+  publishedAt,
+  author,
+  noindex = false,
+} = Astro.props;
 
-// Create a clean canonical URL: 
-// 1. Use the passed canonicalURL prop if it exists.
-// 2. Otherwise, construct a clean URL using the current pathname and your configured 'site' (from astro.config.mjs).
-// This removes query parameters like '?lang=en' and ensures 'www' is stripped if your site config uses non-www.
-const finalCanonicalURL = canonicalURL || new URL(Astro.url.pathname, Astro.site).href;
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://dayront.com';
+const currentPath = Astro.url.pathname;
+const canonical = canonicalURL ? canonicalURL : `${siteUrl}${currentPath}`;
+
+const ogImageUrl = ogImage
+  ? (ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`)
+  : `${siteUrl}/og/default.png`;
+
+let schemaType = type;
+if (!schemaType) {
+  if (toolSlug) schemaType = 'software';
+  else if (publishedAt) schemaType = 'article';
+  else if (currentPath === '/') schemaType = 'website';
+}
+
+const tool = toolSlug ? getToolBySlug(toolSlug) : null;
+
+let jsonLd: Record<string, any> | null = null;
+
+if (schemaType === 'software' && tool) {
+  jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: tool.name,
+    description: tool.description,
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Web browser',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    url: `${siteUrl}/tools/${tool.slug}`,
+    browserRequirements: 'Requires a modern browser with WebAssembly support',
+  };
+} else if (schemaType === 'article') {
+  jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description,
+    datePublished: publishedAt,
+    author: author ? { '@type': 'Person', name: author } : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Dayront',
+      logo: { '@type': 'ImageObject', url: `${siteUrl}/icons/icon-192.png` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    image: ogImageUrl,
+  };
+} else if (schemaType === 'website') {
+  jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Dayront',
+    url: siteUrl,
+    description:
+      'Free media tools that run entirely in your browser. Audio, video, and AI — no uploads, no servers.',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Dayront',
+      logo: { '@type': 'ImageObject', url: `${siteUrl}/icons/icon-192.png` },
+    },
+  };
+}
+
+const jsonLdString = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : '';
 ---
 
-<title>{title} | {siteName}</title>
+<meta charset="utf-8" />
+<title>{title}</title>
 <meta name="description" content={description} />
-<link rel="canonical" href={finalCanonicalURL} />
+<link rel="canonical" href={canonical} />
 
+{noindex
+  ? <meta name="robots" content="noindex, nofollow" />
+  : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />}
+
+<!-- Open Graph -->
+<meta property="og:type" content={schemaType === 'article' ? 'article' : 'website'} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:type" content="website" />
-<meta property="og:url" content={finalCanonicalURL} />
-{ogImage && <meta property="og:image" content={ogImage} />}
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={title} />
+<meta property="og:site_name" content="Dayront" />
+<meta property="og:locale" content="en_US" />
+{publishedAt && <meta property="article:published_time" content={publishedAt} />}
+{author && <meta property="article:author" content={author} />}
+
+<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageUrl} />
+<meta name="twitter:image:alt" content={title} />
+<meta name="twitter:site" content="@dayront" />
+<meta name="twitter:creator" content="@dayront" />
+
+<!-- JSON-LD -->
+{jsonLd && <script type="application/ld+json" set:html={jsonLdString} />}
+
+<!-- Performance hints -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />

@@ -1,0 +1,17 @@
+# robots.txt for dayront.com
+# Learn more: https://dayront.com/about
+
+User-agent: *
+Allow: /
+
+# Block noise
+Disallow: /api/
+Disallow: /status
+Disallow: /*?q=
+Disallow: /*?lang=
+
+# Canonical download lives on subdomain
+Disallow: /download
+
+# Sitemap
+Sitemap: https://dayront.com/sitemap-index.xml
