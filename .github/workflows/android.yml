@@ -3,13 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'capacitor.config.ts'
-      - '.github/workflows/android.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +14,6 @@ concurrency:
 
 jobs:
   build:
-    name: Build APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -58,8 +50,18 @@ jobs:
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
+      - name: Install capacitor-assets
+        run: npm install --no-save @capacitor/assets
+
+      - name: Generate custom Android icons
+        run: npx capacitor-assets generate --android
+
       - name: Sync Capacitor
         run: node ./node_modules/@capacitor/cli/bin/capacitor sync android
+
+      - name: Setup local.properties
+        working-directory: android
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Build Debug APK
         working-directory: android
