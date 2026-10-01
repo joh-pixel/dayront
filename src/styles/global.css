@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════════
+   DAYRONT BRAND TOKENS
+   Used by all pages. Dark mode overrides below.
+   ══════════════════════════════════════════════════════════ */
+:root {
+  --brand-50:  #E5F7FE;
+  --brand-100: #C7EBFC;
+  --brand-200: #8FD6F8;
+  --brand-300: #57C0F3;
+  --brand-400: #2CB5F0;
+  --brand-500: #0EA5E9;
+  --brand-600: #0284C7;
+  --brand-700: #0369A1;
+  --brand-800: #075985;
+  --brand-900: #0C4A6E;
+
+  --brand-gradient: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
+}
+
+/* Dark mode: keep brand tokens, but swap which end of the
+   gradient is visible so dark backgrounds stay readable. */
+.dark {
+  --brand-gradient: linear-gradient(135deg, #2CB5F0 0%, #38BDF8 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #0C2A42 0%, #0C4A6E 100%);
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -10,7 +37,7 @@
   }
 
   /* ========== NATIVE BROWSER DARK MODE ========== */
-  html.dark, 
+  html.dark,
   .dark {
     color-scheme: dark;
   }
@@ -66,18 +93,18 @@
     appearance: none;
     width: 18px;
     height: 18px;
-    background: #38bdf8; /* sky-400 */
+    background: #2CB5F0;
     border-radius: 50%;
     margin-top: -6px;
-    box-shadow: 0 0 4px rgba(56, 189, 248, 0.6);
+    box-shadow: 0 0 4px rgba(44, 181, 240, 0.6);
   }
   .dark input[type='range']::-moz-range-thumb {
     width: 18px;
     height: 18px;
-    background: #38bdf8;
+    background: #2CB5F0;
     border: none;
     border-radius: 50%;
-    box-shadow: 0 0 4px rgba(56, 189, 248, 0.6);
+    box-shadow: 0 0 4px rgba(44, 181, 240, 0.6);
   }
 }
 
@@ -134,7 +161,8 @@
            transition-all duration-200;
   }
   .dark .input-field {
-    @apply bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-sky-500 focus:ring-sky-500/30;
+    @apply bg-gray-900 border-gray-700 text-white placeholder-gray-400
+           focus:border-sky-500 focus:ring-sky-500/30;
   }
 
   /* ========== SELECT FIELDS ========== */
@@ -182,7 +210,7 @@
     --tw-prose-th-borders: #374151;
     --tw-prose-td-borders: #374151;
   }
-  
+
   .dark .prose th {
     background-color: #1f2937;
   }
@@ -262,19 +290,4 @@
   100% {
     background-position: 200% 0;
   }
-}
-:root {
-  --brand-50:  #E5F7FE;
-  --brand-100: #C7EBFC;
-  --brand-200: #8FD6F8;
-  --brand-300: #57C0F3;
-  --brand-400: #2CB5F0;
-  --brand-500: #0EA5E9;
-  --brand-600: #0284C7;
-  --brand-700: #0369A1;
-  --brand-800: #075985;
-  --brand-900: #0C4A6E;
-
-  --brand-gradient: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
-  --brand-gradient-soft: linear-gradient(135deg, #E5F7FE 0%, #C7EBFC 100%);
 }

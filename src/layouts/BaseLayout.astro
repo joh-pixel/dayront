@@ -4,6 +4,7 @@ import Footer from '../components/layout/Footer.astro';
 import SeoHead from '../components/shared/SeoHead.astro';
 import AdSlot from '../components/layout/AdSlot.astro';
 import SearchModal from '../components/ui/SearchModal.astro';
+import FirstRunWelcome from '../components/ui/FirstRunWelcome.tsx';
 import { getCollection } from 'astro:content';
 import { tools } from '../lib/tools';
 import Analytics from '@vercel/analytics/astro';
@@ -15,7 +16,7 @@ export interface Props {
   ogImage?: string;
   canonicalURL?: string;
   lang?: string;
-  // ★ Added in Step 6A — SEO pass-through
+  // ★ SEO pass-through
   toolSlug?: string;
   publishedAt?: string;
   author?: string;
@@ -67,7 +68,6 @@ const allSearchItems = [...toolItems, ...blogItems];
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- ★ Updated in Step 6A — pass through SEO props -->
     <SeoHead
       title={title}
       description={description}
@@ -172,19 +172,27 @@ const allSearchItems = [...toolItems, ...blogItems];
     <!-- ★ AD SLOT — Sticky Footer (fixed to bottom of viewport, always visible) ★ -->
     <AdSlot position="sticky-footer" class="fixed bottom-0 left-0 right-0 z-40" />
 
+    <!-- ★ First-run welcome toast — shows once per browser ★ -->
+    <FirstRunWelcome client:load />
+
     <SearchModal items={allSearchItems} />
 
-    <button
+    <!-- ════════════════════════════════════════════════════
+         FLOATING INSTALL BUTTON — links to download subdomain
+         Shown only when the browser supports PWA install
+         ════════════════════════════════════════════════════ -->
+    <a
       id="pwa-install-btn"
-      type="button"
+      href="https://download.dayront.com"
+      rel="noopener"
       aria-label="Install Dayront"
-      class="fixed bottom-20 right-4 z-50 bg-sky text-black font-semibold px-4 py-2 rounded-full shadow-lg hover:bg-sky-bright transition-all duration-300 hidden items-center gap-2"
+      class="pwa-float-btn hidden"
     >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+      <svg class="pwa-float-btn__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
       </svg>
-      Install Dayront
-    </button>
+      <span>Install Dayront</span>
+    </a>
 
     <!-- ════════════════════════════════════════════════════
          SERVICE WORKER REGISTRATION
@@ -215,41 +223,31 @@ const allSearchItems = [...toolItems, ...blogItems];
     </script>
 
     <!-- ════════════════════════════════════════════════════
-         PWA INSTALL PROMPT
+         FLOATING BUTTON VISIBILITY
+         Shows on any device that has a download option.
+         Hides on the download subdomain itself to avoid self-links.
          ════════════════════════════════════════════════════ -->
     <script>
       (() => {
-        let deferredPrompt = null;
-        const installButton = document.getElementById('pwa-install-btn');
-        if (!installButton) return;
+        const btn = document.getElementById('pwa-install-btn');
+        if (!btn) return;
 
-        window.addEventListener('beforeinstallprompt', (event) => {
-          event.preventDefault();
-          deferredPrompt = event;
-          installButton.classList.remove('hidden');
-          installButton.classList.add('inline-flex');
-        });
+        // Don't show on the download subdomain
+        const host = location.hostname;
+        if (host === 'download.dayront.com' || host === 'www.download.dayront.com') {
+          return;
+        }
 
-        installButton.addEventListener('click', async () => {
-          if (!deferredPrompt) return;
-          try {
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
-            if (result?.outcome === 'accepted') {
-              installButton.classList.add('hidden');
-              installButton.classList.remove('inline-flex');
-            }
-          } catch (error) {
-            console.warn('Dayront install prompt failed:', error);
-          }
-          deferredPrompt = null;
-        });
+        // Don't show on /download (if user reached the old route)
+        if (location.pathname === '/download') {
+          return;
+        }
 
-        window.addEventListener('appinstalled', () => {
-          installButton.classList.add('hidden');
-          installButton.classList.remove('inline-flex');
-          deferredPrompt = null;
-        });
+        // Reveal after a short delay so it doesn't block first paint
+        setTimeout(() => {
+          btn.classList.remove('hidden');
+          btn.classList.add('pwa-float-btn--visible');
+        }, 1200);
       })();
     </script>
 
@@ -299,6 +297,273 @@ const allSearchItems = [...toolItems, ...blogItems];
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════
+     FLOATING INSTALL BUTTON
+     ════════════════════════════════════════════════════════ */
+
+  .pwa-float-btn {
+    position: fixed;
+    right: 1rem;
+    bottom: 5rem;
+    z-index: 45;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 1.1rem;
+    border-radius: 999px;
+
+    background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+
+    box-shadow:
+      0 8px 24px rgba(44, 181, 240, 0.42),
+      0 2px 6px rgba(15, 23, 42, 0.12);
+
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .pwa-float-btn--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .pwa-float-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 32px rgba(44, 181, 240, 0.55),
+      0 4px 10px rgba(15, 23, 42, 0.15);
+  }
+
+  .pwa-float-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .pwa-float-btn__icon {
+    flex-shrink: 0;
+  }
+
+  /* Safe area for iPhone home indicator */
+  @supports (padding: max(0px)) {
+    .pwa-float-btn {
+      bottom: max(5rem, calc(4rem + env(safe-area-inset-bottom)));
+    }
+  }
+
+  @media (min-width: 768px) {
+    .pwa-float-btn {
+      right: 1.5rem;
+      bottom: 6rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    .pwa-float-btn {
+      transition: opacity 0.2s ease;
+    }
+    .pwa-float-btn:hover {
+      transform: none;
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════
+     FIRST-RUN WELCOME TOAST
+     ════════════════════════════════════════════════════════ */
+
+  .first-run-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 96px;
+    transform: translateX(-50%) translateY(0);
+    z-index: 44;
+
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.75rem 0.875rem;
+    align-items: flex-start;
+
+    width: calc(100% - 2rem);
+    max-width: 420px;
+    padding: 1rem 1rem 0.875rem;
+
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow:
+      0 20px 50px -12px rgba(44, 181, 240, 0.25),
+      0 8px 20px -8px rgba(15, 23, 42, 0.12);
+
+    animation: first-run-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .first-run-toast--out {
+    transform: translateX(-50%) translateY(16px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes first-run-in {
+    from {
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .first-run-toast__icon {
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #e5f7fe;
+    flex-shrink: 0;
+  }
+
+  .first-run-toast__body {
+    grid-column: 2 / 3;
+    min-width: 0;
+  }
+
+  .first-run-toast__title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #0c4a6e;
+    margin-bottom: 0.35rem;
+    line-height: 1.25;
+  }
+
+  .first-run-toast__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.78rem;
+    color: #334155;
+    line-height: 1.45;
+  }
+
+  .first-run-toast__list li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+  }
+
+  .first-run-toast__list span {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .first-run-toast__close {
+    grid-row: 1 / 2;
+    grid-column: 3 / 4;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .first-run-toast__close:hover {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .first-run-toast__cta {
+    grid-row: 2 / 3;
+    grid-column: 3 / 4;
+    align-self: end;
+    padding: 0.45rem 0.9rem;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2cb5f0, #0ea5e9);
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(44, 181, 240, 0.28);
+  }
+
+  .first-run-toast__cta:hover { opacity: 0.92; }
+  .first-run-toast__cta:active { transform: scale(0.97); }
+
+  @media (min-width: 640px) {
+    .first-run-toast {
+      left: 1rem;
+      bottom: 1.5rem;
+      transform: none;
+      width: 100%;
+      max-width: 380px;
+    }
+    .first-run-toast--out {
+      transform: translateY(16px);
+    }
+    @keyframes first-run-in {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .first-run-toast {
+      background: #0f172a;
+      border-color: #1e293b;
+      box-shadow:
+        0 20px 50px -12px rgba(44, 181, 240, 0.35),
+        0 8px 20px -8px rgba(0, 0, 0, 0.5);
+    }
+    .first-run-toast__icon { background: #0c2a42; }
+    .first-run-toast__title { color: #c7ebfc; }
+    .first-run-toast__list { color: #cbd5e1; }
+    .first-run-toast__close { color: #64748b; }
+    .first-run-toast__close:hover { background: #1e293b; color: #cbd5e1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .first-run-toast,
+    .first-run-toast--out {
+      animation: none;
+      transition: opacity 0.15s ease;
     }
   }
 
@@ -475,5 +740,23 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.classList.toggle('dark', isDark);
+
+    // Re-trigger floating button visibility check on page swap
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) {
+      const host = location.hostname;
+      const onDownloadHost =
+        host === 'download.dayront.com' ||
+        host === 'www.download.dayront.com';
+      const onDownloadPage = location.pathname === '/download';
+
+      if (onDownloadHost || onDownloadPage) {
+        btn.classList.add('hidden');
+        btn.classList.remove('pwa-float-btn--visible');
+      } else {
+        btn.classList.remove('hidden');
+        btn.classList.add('pwa-float-btn--visible');
+      }
+    }
   });
 </script>
