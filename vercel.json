@@ -1,4 +1,7 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
+
   "redirects": [
     {
       "source": "/download",
@@ -15,9 +18,9 @@
     { "source": "/en/:path*", "destination": "/:path*", "permanent": true },
     { "source": "/convert",   "destination": "/tools",   "permanent": true },
     { "source": "/blog",      "destination": "/blog/en", "permanent": true },
-    { "source": "/get",       "destination": "https://download.dayront.com", "permanent": true },
-    { "source": "/app",       "destination": "https://download.dayront.com", "permanent": true }
+    { "source": "/get",       "destination": "https://download.dayront.com", "permanent": true }
   ],
+
   "headers": [
     {
       "source": "/(.*)",

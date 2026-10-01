@@ -4,7 +4,6 @@ import Footer from '../components/layout/Footer.astro';
 import SeoHead from '../components/shared/SeoHead.astro';
 import AdSlot from '../components/layout/AdSlot.astro';
 import SearchModal from '../components/ui/SearchModal.astro';
-import FirstRunWelcome from '../components/ui/FirstRunWelcome.tsx';
 import { getCollection } from 'astro:content';
 import { tools } from '../lib/tools';
 import Analytics from '@vercel/analytics/astro';
@@ -117,28 +116,21 @@ const allSearchItems = [...toolItems, ...blogItems];
          PWA — expanded icon set, manifest, theme colors
          ════════════════════════════════════════════════════ -->
 
-    <!-- SVG favicon (modern browsers) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-    <!-- PNG favicons (multi-size fallback) -->
     <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon-48.png" />
     <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96.png" />
     <link rel="icon" type="image/png" sizes="144x144" href="/icons/icon-144.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
 
-    <!-- Apple touch icons (iOS home screen) -->
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
 
-    <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Theme color (adapts to system light/dark) -->
     <meta name="theme-color" content="#2CB5F0" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0C4A6E" media="(prefers-color-scheme: dark)" />
 
-    <!-- Web app capability hints -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -174,7 +166,6 @@ const allSearchItems = [...toolItems, ...blogItems];
   >
     <Header lang={lang} />
 
-    <!-- ★ AD SLOT — Below Header (rotates every few seconds) ★ -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       <AdSlot position="below-header" class="my-3 md:my-4" />
     </div>
@@ -185,28 +176,28 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <Footer lang={lang} />
 
-    <!-- ★ AD SLOT — Sticky Footer (fixed to bottom of viewport, always visible) ★ -->
     <AdSlot position="sticky-footer" class="fixed bottom-0 left-0 right-0 z-40" />
-
-    <!-- ★ First-run welcome toast — shows once per browser ★ -->
-    <FirstRunWelcome client:load />
 
     <SearchModal items={allSearchItems} />
 
     <!-- ════════════════════════════════════════════════════
-         FLOATING INSTALL BUTTON — links to download subdomain
+         INSTALL ARROW — compact icon button
+         Web only · tool pages only · first visit only
          ════════════════════════════════════════════════════ -->
     <a
-      id="pwa-install-btn"
+      id="install-arrow-btn"
       href="https://download.dayront.com"
       rel="noopener"
-      aria-label="Install Dayront"
-      class="pwa-float-btn hidden"
+      aria-label="Get the Dayront app for bigger files"
+      title="Get the app for bigger files"
+      class="install-arrow-btn"
+      hidden
     >
-      <svg class="pwa-float-btn__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="M7 10l5 5 5-5" />
+        <path d="M12 15V3" />
       </svg>
-      <span>Install Dayront</span>
     </a>
 
     <!-- ════════════════════════════════════════════════════
@@ -238,26 +229,67 @@ const allSearchItems = [...toolItems, ...blogItems];
     </script>
 
     <!-- ════════════════════════════════════════════════════
-         FLOATING BUTTON VISIBILITY
+         INSTALL ARROW — visibility logic
          ════════════════════════════════════════════════════ -->
     <script>
       (() => {
-        const btn = document.getElementById('pwa-install-btn');
+        const btn = document.getElementById('install-arrow-btn');
         if (!btn) return;
 
+        // 1. Never show inside the native app (Capacitor/Tauri)
+        const w = window as any;
+        const isNative =
+          w.Capacitor?.isNativePlatform?.() === true ||
+          w.__TAURI__ !== undefined;
+        if (isNative) return;
+
+        // 2. Only show on tool pages
+        const path = location.pathname;
+        const isToolPage =
+          path.startsWith('/tools/') ||
+          path.startsWith('/convert/');
+        if (!isToolPage) return;
+
+        // 3. Never show on the download page or subdomain
+        if (path === '/download' || path.startsWith('/download/')) return;
         const host = location.hostname;
-        if (host === 'download.dayront.com' || host === 'www.download.dayront.com') {
+        if (
+          host === 'download.dayront.com' ||
+          host === 'www.download.dayront.com'
+        ) {
           return;
         }
 
-        if (location.pathname === '/download') {
-          return;
+        // 4. First-visit-only — check localStorage
+        const SEEN_KEY = 'dayront:install-arrow-seen:v1';
+        let alreadySeen = false;
+        try {
+          alreadySeen = !!localStorage.getItem(SEEN_KEY);
+        } catch {
+          // localStorage unavailable — fall through and show anyway
         }
+        if (alreadySeen) return;
 
+        // 5. Show after a short delay so it doesn't distract from load
         setTimeout(() => {
-          btn.classList.remove('hidden');
-          btn.classList.add('pwa-float-btn--visible');
-        }, 1200);
+          btn.hidden = false;
+          requestAnimationFrame(() => {
+            btn.setAttribute('data-visible', 'true');
+          });
+
+          // 6. Mark as seen immediately — never shows again on this device
+          try {
+            localStorage.setItem(SEEN_KEY, Date.now().toString());
+          } catch {}
+        }, 2200);
+
+        // 7. On click, keep the link behavior (navigates to download subdomain)
+        //    and ensure the "seen" flag is set (already done above)
+        btn.addEventListener('click', () => {
+          try {
+            localStorage.setItem(SEEN_KEY, Date.now().toString());
+          } catch {}
+        });
       })();
     </script>
 
@@ -271,7 +303,6 @@ const allSearchItems = [...toolItems, ...blogItems];
      GLOBAL LAYOUT STYLES
      ════════════════════════════════════════════════════════ */
 
-  /* Reserve space for sticky footer ad */
   body {
     padding-bottom: 64px;
   }
@@ -311,274 +342,103 @@ const allSearchItems = [...toolItems, ...blogItems];
   }
 
   /* ════════════════════════════════════════════════════════
-     FLOATING INSTALL BUTTON
+     INSTALL ARROW BUTTON
+     Compact 48px circular icon. Bottom-right, above sticky ad.
      ════════════════════════════════════════════════════════ */
 
-  .pwa-float-btn {
+  .install-arrow-btn {
     position: fixed;
-    right: 1rem;
-    bottom: 5rem;
+    right: 1.25rem;
+    bottom: 5.5rem;
     z-index: 45;
 
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.7rem 1.1rem;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
     border-radius: 999px;
 
     background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
     color: #ffffff;
-    font-size: 0.85rem;
-    font-weight: 700;
-    font-family: inherit;
     text-decoration: none;
-    white-space: nowrap;
 
     box-shadow:
-      0 8px 24px rgba(44, 181, 240, 0.42),
+      0 8px 20px rgba(44, 181, 240, 0.42),
       0 2px 6px rgba(15, 23, 42, 0.12);
 
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
     opacity: 0;
-    pointer-events: none;
+    transform: scale(0.8);
+    transition:
+      opacity 0.35s ease,
+      transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s ease;
+
+    animation: install-arrow-pulse 2.6s ease-in-out infinite;
+    animation-play-state: paused;
   }
 
-  .pwa-float-btn--visible {
+  .install-arrow-btn[data-visible="true"] {
     opacity: 1;
-    pointer-events: auto;
+    transform: scale(1);
+    animation-play-state: running;
   }
 
-  .pwa-float-btn:hover {
-    transform: translateY(-2px);
+  .install-arrow-btn:hover {
+    transform: scale(1.08);
     box-shadow:
-      0 12px 32px rgba(44, 181, 240, 0.55),
+      0 12px 28px rgba(44, 181, 240, 0.55),
       0 4px 10px rgba(15, 23, 42, 0.15);
+    animation-play-state: paused;
   }
 
-  .pwa-float-btn:active {
-    transform: translateY(0) scale(0.98);
+  .install-arrow-btn:active {
+    transform: scale(0.95);
   }
 
-  .pwa-float-btn__icon {
-    flex-shrink: 0;
+  @keyframes install-arrow-pulse {
+    0%, 100% {
+      box-shadow:
+        0 8px 20px rgba(44, 181, 240, 0.42),
+        0 2px 6px rgba(15, 23, 42, 0.12);
+    }
+    50% {
+      box-shadow:
+        0 10px 26px rgba(44, 181, 240, 0.65),
+        0 2px 6px rgba(15, 23, 42, 0.12);
+    }
   }
 
-  /* Safe area for iPhone home indicator */
   @supports (padding: max(0px)) {
-    .pwa-float-btn {
-      bottom: max(5rem, calc(4rem + env(safe-area-inset-bottom)));
+    .install-arrow-btn {
+      bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom)));
     }
   }
 
   @media (min-width: 768px) {
-    .pwa-float-btn {
+    .install-arrow-btn {
       right: 1.5rem;
-      bottom: 6rem;
-      padding: 0.75rem 1.25rem;
-      font-size: 0.9rem;
+      bottom: 6.5rem;
+      width: 52px;
+      height: 52px;
     }
   }
 
-  /* Reduce motion */
   @media (prefers-reduced-motion: reduce) {
-    .pwa-float-btn {
+    .install-arrow-btn {
+      animation: none;
       transition: opacity 0.2s ease;
     }
-    .pwa-float-btn:hover {
+    .install-arrow-btn[data-visible="true"] {
+      transform: none;
+    }
+    .install-arrow-btn:hover {
       transform: none;
     }
   }
 
   /* ════════════════════════════════════════════════════════
-     FIRST-RUN WELCOME TOAST
-     ════════════════════════════════════════════════════════ */
-
-  .first-run-toast {
-    position: fixed;
-    left: 50%;
-    bottom: 96px;
-    transform: translateX(-50%) translateY(0);
-    z-index: 44;
-
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: auto auto;
-    gap: 0.75rem 0.875rem;
-    align-items: flex-start;
-
-    width: calc(100% - 2rem);
-    max-width: 420px;
-    padding: 1rem 1rem 0.875rem;
-
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    box-shadow:
-      0 20px 50px -12px rgba(44, 181, 240, 0.25),
-      0 8px 20px -8px rgba(15, 23, 42, 0.12);
-
-    animation: first-run-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    transition: transform 0.25s ease, opacity 0.25s ease;
-  }
-
-  .first-run-toast--out {
-    transform: translateX(-50%) translateY(16px);
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  @keyframes first-run-in {
-    from {
-      transform: translateX(-50%) translateY(20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .first-run-toast__icon {
-    grid-row: 1 / 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: #e5f7fe;
-    flex-shrink: 0;
-  }
-
-  .first-run-toast__body {
-    grid-column: 2 / 3;
-    min-width: 0;
-  }
-
-  .first-run-toast__title {
-    font-size: 0.92rem;
-    font-weight: 800;
-    color: #0c4a6e;
-    margin-bottom: 0.35rem;
-    line-height: 1.25;
-  }
-
-  .first-run-toast__list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    font-size: 0.78rem;
-    color: #334155;
-    line-height: 1.45;
-  }
-
-  .first-run-toast__list li {
-    display: flex;
-    align-items: baseline;
-    gap: 0.35rem;
-  }
-
-  .first-run-toast__list span {
-    flex-shrink: 0;
-    font-size: 0.75rem;
-    line-height: 1;
-  }
-
-  .first-run-toast__close {
-    grid-row: 1 / 2;
-    grid-column: 3 / 4;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: #94a3b8;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-    padding: 0;
-    flex-shrink: 0;
-  }
-
-  .first-run-toast__close:hover {
-    background: #f1f5f9;
-    color: #475569;
-  }
-
-  .first-run-toast__cta {
-    grid-row: 2 / 3;
-    grid-column: 3 / 4;
-    align-self: end;
-    padding: 0.45rem 0.9rem;
-    border: none;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #2cb5f0, #0ea5e9);
-    color: #ffffff;
-    font-size: 0.78rem;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.1s ease;
-    white-space: nowrap;
-    box-shadow: 0 3px 10px rgba(44, 181, 240, 0.28);
-  }
-
-  .first-run-toast__cta:hover { opacity: 0.92; }
-  .first-run-toast__cta:active { transform: scale(0.97); }
-
-  @media (min-width: 640px) {
-    .first-run-toast {
-      left: 1rem;
-      bottom: 1.5rem;
-      transform: none;
-      width: 100%;
-      max-width: 380px;
-    }
-    .first-run-toast--out {
-      transform: translateY(16px);
-    }
-    @keyframes first-run-in {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .first-run-toast {
-      background: #0f172a;
-      border-color: #1e293b;
-      box-shadow:
-        0 20px 50px -12px rgba(44, 181, 240, 0.35),
-        0 8px 20px -8px rgba(0, 0, 0, 0.5);
-    }
-    .first-run-toast__icon { background: #0c2a42; }
-    .first-run-toast__title { color: #c7ebfc; }
-    .first-run-toast__list { color: #cbd5e1; }
-    .first-run-toast__close { color: #64748b; }
-    .first-run-toast__close:hover { background: #1e293b; color: #cbd5e1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .first-run-toast,
-    .first-run-toast--out {
-      animation: none;
-      transition: opacity 0.15s ease;
-    }
-  }
-
-  /* ════════════════════════════════════════════════════════
-     NOTIFY FORM — global so any page can drop in <NotifyForm />
+     NOTIFY FORM
      ════════════════════════════════════════════════════════ */
 
   .notify-form {
@@ -590,7 +450,6 @@ const allSearchItems = [...toolItems, ...blogItems];
     margin: 0 auto;
   }
 
-  /* Honeypot — invisible to humans, visible to bots */
   .notify-form__honeypot {
     position: absolute !important;
     width: 1px !important;
@@ -750,22 +609,5 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.classList.toggle('dark', isDark);
-
-    const btn = document.getElementById('pwa-install-btn');
-    if (btn) {
-      const host = location.hostname;
-      const onDownloadHost =
-        host === 'download.dayront.com' ||
-        host === 'www.download.dayront.com';
-      const onDownloadPage = location.pathname === '/download';
-
-      if (onDownloadHost || onDownloadPage) {
-        btn.classList.add('hidden');
-        btn.classList.remove('pwa-float-btn--visible');
-      } else {
-        btn.classList.remove('hidden');
-        btn.classList.add('pwa-float-btn--visible');
-      }
-    }
   });
 </script>
