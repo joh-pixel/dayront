@@ -2,7 +2,9 @@
  * src/ui/mobile/screens/ToolScreen.tsx
  * Full-screen tool — pick file → options → process → download.
  *
- * Storage: uses src/core/storage.ts for Recent entries and preferences.
+ * In the native app: uses @capawesome/capacitor-file-picker to read
+ * real file bytes (fixes "File could not be read! Code=-1" on Android).
+ * On the web: falls back to <input type="file">.
  */
 import { useMemo, useRef, useState } from 'preact/hooks';
 import ProgressBar from '../../shared/ProgressBar';
@@ -44,6 +46,19 @@ type State = 'idle' | 'ready' | 'processing' | 'done' | 'error';
 
 const MAX_WEB_MB = 300;
 
+/* ── Environment ────────────────────────────────────────────── */
+
+function isNativeApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  const w = window as any;
+  return (
+    w.Capacitor?.isNativePlatform?.() === true ||
+    w.__TAURI__ !== undefined
+  );
+}
+
+/* ── File size / name helpers ───────────────────────────────── */
+
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -56,6 +71,30 @@ function haptic(ms = 8) {
     try { navigator.vibrate(ms); } catch {}
   }
 }
+
+function base64ToFile(base64: string, name: string, mime: string): File {
+  // Strip data URL prefix if present (e.g. "data:video/mp4;base64,")
+  const clean = base64.includes(',') ? base64.split(',')[1] : base64;
+  const binary = atob(clean);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return new File([bytes], name, { type: mime || 'application/octet-stream' });
+}
+
+function mimeForExt(ext: string): string {
+  const m: Record<string, string> = {
+    mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4',
+    aac: 'audio/aac', ogg: 'audio/ogg', opus: 'audio/ogg',
+    flac: 'audio/flac', mp4: 'video/mp4', webm: 'video/webm',
+    mov: 'video/quicktime', avi: 'video/x-msvideo',
+    mkv: 'video/x-matroska', flv: 'video/x-flv',
+    gif: 'image/gif',
+  };
+  return m[ext.toLowerCase()] || 'application/octet-stream';
+}
+
+/* ── Component ──────────────────────────────────────────────── */
 
 export default function ToolScreen({ tool }: Props) {
   const [state, setState] = useState<State>('idle');
@@ -73,6 +112,7 @@ export default function ToolScreen({ tool }: Props) {
   });
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const native = isNativeApp();
   const multi = isMultiFileTool(tool);
   const outputFormat = tool.outputFormat ?? 'mp3';
 
@@ -88,8 +128,10 @@ export default function ToolScreen({ tool }: Props) {
     return '*/*';
   }, [tool.from]);
 
-  function pickFiles(list: FileList) {
-    const arr = Array.from(list);
+  /* ── File picking ─────────────────────────────────────── */
+
+  function addFiles(arr: File[]) {
+    if (arr.length === 0) return;
     if (!multi) {
       setFiles([arr[0]]);
     } else {
@@ -98,6 +140,53 @@ export default function ToolScreen({ tool }: Props) {
     setState('ready');
     setErrorMsg('');
     haptic();
+  }
+
+  async function handlePickNative() {
+    try {
+      const mod: any = await import(/* @vite-ignore */ '@capawesome/capacitor-file-picker');
+      const FilePicker = mod.FilePicker;
+      const result = await FilePicker.pickFiles({
+        types: [accept],
+        readData: true, // returns base64
+        limit: multi ? 0 : 1,
+      });
+
+      if (!result.files || result.files.length === 0) return;
+
+      const files: File[] = [];
+      for (const f of result.files) {
+        if (!f.data) {
+          console.warn('[picker] No base64 data returned for', f.name);
+          continue;
+        }
+        const ext = (f.name.split('.').pop() || tool.from || 'bin').toLowerCase();
+        const mime = f.mimeType || mimeForExt(ext);
+        files.push(base64ToFile(f.data, f.name, mime));
+      }
+
+      addFiles(files);
+    } catch (err: any) {
+      console.error('[picker] Failed:', err);
+      // Fall back to the web input if the plugin isn't available
+      inputRef.current?.click();
+    }
+  }
+
+  function handlePickWeb() {
+    inputRef.current?.click();
+  }
+
+  function onWebInput(e: Event) {
+    const list = (e.target as HTMLInputElement).files;
+    if (list && list.length > 0) {
+      addFiles(Array.from(list));
+    }
+  }
+
+  function handlePick() {
+    if (native) handlePickNative();
+    else handlePickWeb();
   }
 
   function removeFile(idx: number) {
@@ -119,15 +208,19 @@ export default function ToolScreen({ tool }: Props) {
     haptic();
   }
 
+  /* ── Processing ───────────────────────────────────────── */
+
   async function start() {
     if (files.length === 0) return;
 
     const totalMB = files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
-    if (totalMB > MAX_WEB_MB) {
+    // Native apps can handle much bigger files
+    const maxMB = native ? 2000 : MAX_WEB_MB;
+    if (totalMB > maxMB) {
       setState('error');
       setErrorMsg(
-        `File too large for web processing (${totalMB.toFixed(0)} MB). ` +
-        `Max is ${MAX_WEB_MB} MB on this device. The native app supports up to 5 GB.`
+        `File too large (${totalMB.toFixed(0)} MB). ` +
+        `Max is ${maxMB} MB on this device.`
       );
       return;
     }
@@ -137,7 +230,6 @@ export default function ToolScreen({ tool }: Props) {
     setProgress(0);
     setErrorMsg('');
 
-    // Mark this tool as recently used
     try { pushRecentTool(tool.slug); } catch {}
 
     try {
@@ -162,7 +254,6 @@ export default function ToolScreen({ tool }: Props) {
       setProgress(100);
       setState('done');
 
-      // Record in Recent — storage.ts handles serialization
       try {
         addRecent({
           tool: tool.slug,
@@ -191,10 +282,10 @@ export default function ToolScreen({ tool }: Props) {
     if (!resultBlob) return;
     haptic();
     const ok = await shareBlob(resultBlob, resultName, tool.name);
-    if (!ok) {
-      await saveBlob(resultBlob, resultName);
-    }
+    if (!ok) await saveBlob(resultBlob, resultName);
   }
+
+  /* ── Render ──────────────────────────────────────────── */
 
   return (
     <div class="d-tool">
@@ -207,20 +298,24 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       </div>
 
-      {/* Pick file */}
+      {/* Hidden web input — always in the DOM as fallback */}
+      <input
+        ref={inputRef}
+        type="file"
+        class="d-tool__file-input"
+        accept={accept}
+        multiple={multi}
+        style="display:none"
+        onChange={onWebInput}
+      />
+
+      {/* Idle: pick a file */}
       {state === 'idle' && (
-        <label class="d-tool__file">
-          <input
-            ref={inputRef}
-            type="file"
-            class="d-tool__file-input"
-            accept={accept}
-            multiple={multi}
-            onChange={(e) => {
-              const list = (e.target as HTMLInputElement).files;
-              if (list && list.length > 0) pickFiles(list);
-            }}
-          />
+        <button
+          type="button"
+          class="d-tool__file"
+          onClick={handlePick}
+        >
           <span class="d-tool__file-icon" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -236,7 +331,7 @@ export default function ToolScreen({ tool }: Props) {
               ? `Accepts ${tool.from.toUpperCase()} files${multi ? ' · select multiple' : ''}`
               : 'Choose any supported file'}
           </p>
-        </label>
+        </button>
       )}
 
       {/* Selected files */}
@@ -267,19 +362,9 @@ export default function ToolScreen({ tool }: Props) {
           ))}
 
           {multi && state === 'ready' && (
-            <label class="d-tool__addmore">
-              <input
-                type="file"
-                accept={accept}
-                multiple
-                style="display:none"
-                onChange={(e) => {
-                  const list = (e.target as HTMLInputElement).files;
-                  if (list && list.length > 0) pickFiles(list);
-                }}
-              />
+            <button type="button" class="d-tool__addmore" onClick={handlePick}>
               + Add another file
-            </label>
+            </button>
           )}
         </div>
       )}
@@ -353,7 +438,7 @@ export default function ToolScreen({ tool }: Props) {
             <div class="d-tool__progress-body">
               <p class="d-tool__progress-title">Processing…</p>
               <p class="d-tool__progress-sub">
-                {tool.name} · runs in your browser
+                {tool.name} · {native ? 'runs on your device' : 'runs in your browser'}
               </p>
             </div>
           </div>
@@ -375,19 +460,9 @@ export default function ToolScreen({ tool }: Props) {
           </p>
           <div class="d-tool__success-actions">
             <button type="button" class="d-tool__success-btn d-tool__success-btn--primary" onClick={handleShare}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <path d="M16 6l-4-4-4 4" />
-                <path d="M12 2v13" />
-              </svg>
               Share / Save
             </button>
             <button type="button" class="d-tool__success-btn d-tool__success-btn--ghost" onClick={handleDownload}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <path d="M7 10l5 5 5-5" />
-                <path d="M12 15V3" />
-              </svg>
               Download
             </button>
             <button type="button" class="d-tool__success-btn d-tool__success-btn--ghost" onClick={clearFiles}>
@@ -421,19 +496,12 @@ export default function ToolScreen({ tool }: Props) {
       {/* Start */}
       {state === 'ready' && files.length > 0 && (
         <button type="button" class="d-tool__start" onClick={start}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
           {multi ? `Merge ${files.length} files` : `Start ${tool.name}`}
         </button>
       )}
 
       {state === 'processing' && (
-        <button
-          type="button"
-          class="d-tool__success-btn d-tool__success-btn--ghost"
-          onClick={clearFiles}
-        >
+        <button type="button" class="d-tool__success-btn d-tool__success-btn--ghost" onClick={clearFiles}>
           Cancel
         </button>
       )}
