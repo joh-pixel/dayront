@@ -41,9 +41,6 @@ jobs:
           echo "✅ File picker plugin present"
 
       # ── Local FFmpeg plugin ─────────────────────────────────
-      # The custom FFmpeg plugin lives in ./plugins/ffmpeg and must be
-      # installed into node_modules so `cap sync` can discover it.
-      # Capacitor reads the "capacitor" field from the plugin's package.json.
       - name: Install local FFmpeg plugin
         run: |
           if [ ! -d "plugins/ffmpeg" ]; then
@@ -53,10 +50,9 @@ jobs:
           npm install ./plugins/ffmpeg --no-audit --no-fund
           if [ ! -d "node_modules/@dayront/capacitor-ffmpeg" ]; then
             echo "❌ Local FFmpeg plugin failed to install"
-            ls -la node_modules/@dayront/ 2>/dev/null || echo "  (no @dayront dir)"
             exit 1
           fi
-          echo "✅ Local FFmpeg plugin installed at node_modules/@dayront/capacitor-ffmpeg"
+          echo "✅ Local FFmpeg plugin installed"
 
       - name: Build web assets
         run: npm run build
@@ -86,6 +82,18 @@ jobs:
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
+      # ── CRITICAL: FFmpegKit requires minSdkVersion 24 ───────
+      - name: Set minSdkVersion 24 for FFmpegKit
+        run: |
+          if [ -f android/variables.gradle ]; then
+            sed -i 's|minSdkVersion = .*|minSdkVersion = 24|' android/variables.gradle
+            echo "── android/variables.gradle ──"
+            cat android/variables.gradle
+          else
+            echo "⚠️ android/variables.gradle not found"
+            exit 1
+          fi
+
       - name: Install capacitor-assets
         run: npm install --no-save @capacitor/assets
 
@@ -100,36 +108,22 @@ jobs:
         run: |
           PLUGINS_FILE="android/app/src/main/assets/capacitor.plugins.json"
           if [ ! -f "$PLUGINS_FILE" ]; then
-            echo "⚠️ No capacitor.plugins.json — no plugins registered"
+            echo "⚠️ No capacitor.plugins.json"
             exit 0
           fi
           echo "── Registered Capacitor plugins ──"
           cat "$PLUGINS_FILE"
           echo ""
-
-          FP_OK=false
-          FF_OK=false
-
           if grep -q "FilePicker" "$PLUGINS_FILE"; then
             echo "✅ FilePicker registered"
-            FP_OK=true
           else
-            echo "⚠️ FilePicker not found in plugins list"
+            echo "❌ FilePicker missing"
+            exit 1
           fi
-
           if grep -q "FFmpeg" "$PLUGINS_FILE"; then
             echo "✅ FFmpeg registered"
-            FF_OK=true
           else
-            echo "⚠️ FFmpeg not found in plugins list"
-          fi
-
-          # Fail the build if either plugin is missing — otherwise we'd
-          # ship a silently broken APK.
-          if [ "$FP_OK" = "false" ] || [ "$FF_OK" = "false" ]; then
-            echo ""
-            echo "❌ One or more required plugins were not registered."
-            echo "   Check the plugin installation steps above."
+            echo "❌ FFmpeg missing"
             exit 1
           fi
 
