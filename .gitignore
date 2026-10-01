@@ -27,3 +27,6 @@ pnpm-debug.log*
 Thumbs.db
 *.swp
 *.swo
+# Capacitor / Android (regenerated in CI)
+android/
+ios/
