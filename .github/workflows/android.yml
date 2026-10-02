@@ -62,22 +62,11 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # ── UPDATED: Install SDK 35 and build tools ───────────
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
           cmdline-tools-version: 11076708
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
 
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
@@ -101,21 +90,16 @@ jobs:
           # 3. Manifest override — MUST be on <uses-sdk>, NOT <application>
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
-            # Add xmlns:tools to the manifest tag if missing
             if ! grep -q 'xmlns:tools' "$MANIFEST"; then
               sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |' "$MANIFEST"
             fi
-            
-            # Remove any incorrectly placed overrideLibrary on <application>
+            # Remove any incorrectly placed overrideLibrary
             sed -i 's| tools:overrideLibrary="[^"]*"||g' "$MANIFEST"
-            
             # Add or update <uses-sdk> with the overrideLibrary
             if grep -q '<uses-sdk' "$MANIFEST"; then
-              # Update existing uses-sdk tag
-              sed -i 's|<uses-sdk.*/>|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit" />|' "$MANIFEST"
+              sed -i 's|<uses-sdk.*/>|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit, com.arthenica.ffmpegkit.flutter" />|' "$MANIFEST"
             else
-              # Insert a new uses-sdk tag just before <application>
-              sed -i 's|<application|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit" />\n    <application|' "$MANIFEST"
+              sed -i 's|<application|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit, com.arthenica.ffmpegkit.flutter" />\n    <application|' "$MANIFEST"
             fi
           fi
 
@@ -163,6 +147,13 @@ jobs:
         working-directory: android
         run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
+      # ── NEW: Clear Gradle cache to avoid stale dependencies ──
+      - name: Clear Gradle cache
+        run: |
+          rm -rf ~/.gradle/caches
+          rm -rf ~/.gradle/wrapper/dists
+          echo "✅ Gradle cache cleared"
+
       # ── Build APK — full log captured to file ──────────────
       - name: Build Debug APK
         id: build_apk
@@ -170,7 +161,6 @@ jobs:
         run: |
           chmod +x gradlew
           set +e
-          # Added --refresh-dependencies to avoid stale cache of the dead com.arthenica artifacts
           ./gradlew assembleDebug --no-daemon --stacktrace --refresh-dependencies 2>&1 | tee gradle-full.log
           EXIT_CODE=${PIPESTATUS[0]}
           echo "gradle_exit=$EXIT_CODE" >> $GITHUB_OUTPUT
@@ -185,7 +175,6 @@ jobs:
           echo "════════════════════════════════════════════"
           echo "  REAL GRADLE ERROR (What went wrong)"
           echo "════════════════════════════════════════════"
-          # Increased context window from -A 20 to -A 30
           grep -B 2 -A 30 "What went wrong" gradle-full.log || echo "(no 'What went wrong' found)"
           echo ""
           echo "════════════════════════════════════════════"
