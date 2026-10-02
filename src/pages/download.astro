@@ -32,10 +32,10 @@ const RELEASES: Record<string, Release> = {
     label: 'Android',
     svg: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#34A853" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 0 0 6 7h12a5.98 5.98 0 0 0-2.47-4.84zM9.5 5.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zm5 0c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5z"/></svg>`,
     url: 'https://github.com/joh-pixel/dayront/releases/latest/download/Dayront.apk',
-    store: 'Android 7+ · Universal',
-    note: 'Direct APK · Works offline · No ads',
+    store: 'Android 7+ · ARM64',
+    note: 'Native FFmpeg · 5 GB files · Works offline',
     status: 'available',
-    size: '44 MB',
+    size: '126 MB',
   },
   ios: {
     label: 'iOS',
@@ -116,8 +116,8 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
 
         <h2 class="android-live__title">Download Dayront for Android</h2>
         <p class="android-live__sub">
-          Direct APK · 44 MB · Works offline · No ads, no signup.
-          Install it in under a minute.
+          Direct APK · 126 MB · Native FFmpeg engine · 5 GB file support.
+          Works fully offline. No ads, no signup.
         </p>
 
         <a
@@ -134,7 +134,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
         </a>
 
         <p class="android-live__note">
-          Android 7+ · Chrome may show a security warning — that's normal for direct APK installs.
+          Android 7+ · 126 MB (native FFmpeg) · Chrome may show a security warning — that's normal for direct APK installs.
         </p>
       </div>
     </section>
@@ -198,7 +198,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
               </div>
               <div class="pwa-step">
                 <strong>2. Open your Downloads folder</strong>
-                <span>Look for <code>Dayront.apk</code> (44 MB)</span>
+                <span>Look for <code>Dayront.apk</code> (126 MB)</span>
               </div>
               <div class="pwa-step">
                 <strong>3. Tap the file to install</strong>
@@ -351,11 +351,15 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
         </details>
         <details>
           <summary>Why is the app faster than the browser?</summary>
-          <p>The browser version has stricter memory limits per tab. The app processes files directly on your device — 10× faster and no memory limit.</p>
+          <p>The browser version has stricter memory limits per tab. The app runs a native FFmpeg binary directly on your device — 10× faster and no memory limit.</p>
         </details>
         <details>
           <summary>Does the app upload my files?</summary>
           <p>No. Everything happens locally on your device, exactly like the web version. The app never connects to a server for processing.</p>
+        </details>
+        <details>
+          <summary>Why is the APK 126 MB?</summary>
+          <p>The app bundles a full native FFmpeg engine (libavcodec, libx264, libmp3lame, and more) for ARM64 devices. This is what enables 5 GB file support and 10× faster processing. It's the same size range as professional media editors like CapCut or InShot.</p>
         </details>
         <details>
           <summary>Will my settings and preferences carry over?</summary>
@@ -368,6 +372,10 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
         <details>
           <summary>When will it be on the Play Store?</summary>
           <p>The Play Store listing is in review. In the meantime, the direct APK works identically. Leave your email below if you want to be notified when the Play Store version goes live.</p>
+        </details>
+        <details>
+          <summary>Does it work on older Android phones?</summary>
+          <p>The app supports Android 7+ on ARM64 devices (virtually every phone made since 2017). 32-bit-only devices from before 2017 are not supported.</p>
         </details>
       </div>
     </section>
