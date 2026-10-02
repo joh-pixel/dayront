@@ -62,10 +62,11 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      # ── UPDATED: Install SDK 35 and build tools ───────────
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools'
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
           cmdline-tools-version: 11076708
 
       - name: Cache Gradle
@@ -81,36 +82,49 @@ jobs:
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
-      # ── CRITICAL: FFmpegKit requires minSdkVersion 24 ───────
-      - name: Force minSdkVersion 24 everywhere for FFmpegKit
+      # ── CRITICAL: Force compileSdk 35, minSdk 24, and correct manifest override ──
+      - name: Force compileSdk 35 & minSdk 24 everywhere for FFmpegKit
         run: |
           echo "── Before ──"
-          grep -rn "minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
+          grep -rn "compileSdk\|minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
 
           # 1. Capacitor's central config
+          sed -i 's|compileSdkVersion = .*|compileSdkVersion = 35|' android/variables.gradle
           sed -i 's|minSdkVersion = .*|minSdkVersion = 24|' android/variables.gradle
 
-          # 2. App-level build.gradle — force literal value
+          # 2. App-level build.gradle — force literal values
+          sed -i 's|compileSdkVersion rootProject.ext.compileSdkVersion|compileSdkVersion 35|' android/app/build.gradle
+          sed -i 's|compileSdkVersion .*|compileSdkVersion 35|' android/app/build.gradle
           sed -i 's|minSdkVersion rootProject.ext.minSdkVersion|minSdkVersion 24|' android/app/build.gradle
           sed -i 's|minSdkVersion .*|minSdkVersion 24|' android/app/build.gradle
 
-          # 3. Manifest override — tell merger to ignore FFmpegKit's minSdk
+          # 3. Manifest override — MUST be on <uses-sdk>, NOT <application>
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
+            # Add xmlns:tools to the manifest tag if missing
             if ! grep -q 'xmlns:tools' "$MANIFEST"; then
               sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |' "$MANIFEST"
             fi
-            if ! grep -q 'overrideLibrary' "$MANIFEST"; then
-              sed -i 's|<application |<application tools:overrideLibrary="com.arthenica.ffmpegkit" |' "$MANIFEST"
+            
+            # Remove any incorrectly placed overrideLibrary on <application>
+            sed -i 's| tools:overrideLibrary="[^"]*"||g' "$MANIFEST"
+            
+            # Add or update <uses-sdk> with the overrideLibrary
+            if grep -q '<uses-sdk' "$MANIFEST"; then
+              # Update existing uses-sdk tag
+              sed -i 's|<uses-sdk.*/>|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit" />|' "$MANIFEST"
+            else
+              # Insert a new uses-sdk tag just before <application>
+              sed -i 's|<application|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit" />\n    <application|' "$MANIFEST"
             fi
           fi
 
           echo ""
           echo "── After ──"
-          grep -rn "minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
+          grep -rn "compileSdk\|minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
           echo ""
-          echo "── Manifest (first 20 lines) ──"
-          head -20 "$MANIFEST"
+          echo "── Manifest (first 25 lines) ──"
+          head -25 "$MANIFEST"
 
       - name: Install capacitor-assets
         run: npm install --no-save @capacitor/assets
@@ -156,7 +170,8 @@ jobs:
         run: |
           chmod +x gradlew
           set +e
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle-full.log
+          # Added --refresh-dependencies to avoid stale cache of the dead com.arthenica artifacts
+          ./gradlew assembleDebug --no-daemon --stacktrace --refresh-dependencies 2>&1 | tee gradle-full.log
           EXIT_CODE=${PIPESTATUS[0]}
           echo "gradle_exit=$EXIT_CODE" >> $GITHUB_OUTPUT
           exit $EXIT_CODE
@@ -170,7 +185,8 @@ jobs:
           echo "════════════════════════════════════════════"
           echo "  REAL GRADLE ERROR (What went wrong)"
           echo "════════════════════════════════════════════"
-          grep -B 2 -A 20 "What went wrong" gradle-full.log || echo "(no 'What went wrong' found)"
+          # Increased context window from -A 20 to -A 30
+          grep -B 2 -A 30 "What went wrong" gradle-full.log || echo "(no 'What went wrong' found)"
           echo ""
           echo "════════════════════════════════════════════"
           echo "  ALL 'error:' LINES"
@@ -183,9 +199,9 @@ jobs:
           grep -E "FAILED|failed" gradle-full.log | grep "Task" | head -10 || echo "(no failed tasks)"
           echo ""
           echo "════════════════════════════════════════════"
-          echo "  LAST 30 LINES OF LOG"
+          echo "  LAST 40 LINES OF LOG"
           echo "════════════════════════════════════════════"
-          tail -30 gradle-full.log
+          tail -40 gradle-full.log
 
       # ── Upload log artifact for offline inspection ─────────
       - name: Upload Gradle failure log
