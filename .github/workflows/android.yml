@@ -62,7 +62,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # ── UPDATED: Install SDK 36 and build tools 36.0.0 ───
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -72,47 +71,74 @@ jobs:
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
-      # ── CRITICAL: Force compileSdk 36, minSdk 24, and correct manifest override ──
-      - name: Force compileSdk 36 & minSdk 24 everywhere for FFmpegKit
+      # ── Force SDK versions + write override.gradle ────────────
+      - name: Force SDK versions and native library overrides
         run: |
           echo "── Before ──"
-          grep -rn "compileSdk\|minSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
+          grep -rn "compileSdk\|minSdk\|targetSdk" android/variables.gradle 2>/dev/null || true
 
           # 1. Capacitor's central config
-          # Bumped compileSdk to 36 to satisfy androidx.activity:1.11.0
-          # Keeping targetSdk at 35 to avoid unexpected runtime behavior changes
           sed -i 's|compileSdkVersion = .*|compileSdkVersion = 36|' android/variables.gradle
           sed -i 's|minSdkVersion = .*|minSdkVersion = 24|' android/variables.gradle
           sed -i 's|targetSdkVersion = .*|targetSdkVersion = 35|' android/variables.gradle
 
-          # 2. App-level build.gradle — force literal values
-          sed -i 's|compileSdkVersion rootProject.ext.compileSdkVersion|compileSdkVersion 36|' android/app/build.gradle
-          sed -i 's|compileSdkVersion .*|compileSdkVersion 36|' android/app/build.gradle
-          sed -i 's|minSdkVersion rootProject.ext.minSdkVersion|minSdkVersion 24|' android/app/build.gradle
-          sed -i 's|minSdkVersion .*|minSdkVersion 24|' android/app/build.gradle
-
-          # 3. Manifest override — MUST be on <uses-sdk>, NOT <application>
+          # 2. Manifest override — must be on <uses-sdk>, not <application>
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             if ! grep -q 'xmlns:tools' "$MANIFEST"; then
               sed -i 's|<manifest |<manifest xmlns:tools="http://schemas.android.com/tools" |' "$MANIFEST"
             fi
-            # Remove any incorrectly placed overrideLibrary
             sed -i 's| tools:overrideLibrary="[^"]*"||g' "$MANIFEST"
-            # Add or update <uses-sdk> with the overrideLibrary
             if grep -q '<uses-sdk' "$MANIFEST"; then
-              sed -i 's|<uses-sdk.*/>|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit, com.arthenica.ffmpegkit.flutter" />|' "$MANIFEST"
+              sed -i 's|<uses-sdk.*/>|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit" />|' "$MANIFEST"
             else
-              sed -i 's|<application|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit, com.arthenica.ffmpegkit.flutter" />\n    <application|' "$MANIFEST"
+              sed -i 's|<application|<uses-sdk tools:overrideLibrary="com.arthenica.ffmpegkit" />\n    <application|' "$MANIFEST"
             fi
           fi
 
+          # 3. Write an override.gradle that patches app/build.gradle
+          cat > android/override.gradle << 'GRADLE'
+          android {
+              packagingOptions {
+                  // Multiple deps bundle their own libc++_shared.so and FFmpeg .so files
+                  // Pick the first one found instead of failing on the duplicate
+                  pickFirst '**/libc++_shared.so'
+                  pickFirst '**/libavcodec.so'
+                  pickFirst '**/libavdevice.so'
+                  pickFirst '**/libavfilter.so'
+                  pickFirst '**/libavformat.so'
+                  pickFirst '**/libavutil.so'
+                  pickFirst '**/libpostproc.so'
+                  pickFirst '**/libswresample.so'
+                  pickFirst '**/libswscale.so'
+                  pickFirst '**/libffmpegkit.so'
+                  pickFirst '**/libffmpegkit_abidetect.so'
+              }
+              defaultConfig {
+                  ndk {
+                      // ffmpegkit-maintained publishes only these two ABIs
+                      abiFilters 'arm64-v8a', 'x86_64'
+                  }
+              }
+          }
+          GRADLE
+
+          # 4. Apply the override at the end of app/build.gradle
+          if ! grep -q "apply from: '../override.gradle'" android/app/build.gradle; then
+            echo "" >> android/app/build.gradle
+            echo "// Added by CI: native library overrides for FFmpegKit" >> android/app/build.gradle
+            echo "apply from: '../override.gradle'" >> android/app/build.gradle
+          fi
+
           echo ""
-          echo "── After ──"
-          grep -rn "compileSdk\|minSdk\|targetSdk" android/variables.gradle android/app/build.gradle 2>/dev/null || true
+          echo "── After (variables.gradle) ──"
+          grep -rn "compileSdk\|minSdk\|targetSdk" android/variables.gradle || true
           echo ""
-          echo "── Manifest (first 25 lines) ──"
-          head -25 "$MANIFEST"
+          echo "── override.gradle ──"
+          cat android/override.gradle
+          echo ""
+          echo "── app/build.gradle tail ──"
+          tail -5 android/app/build.gradle
 
       - name: Install capacitor-assets
         run: npm install --no-save @capacitor/assets
@@ -151,14 +177,7 @@ jobs:
         working-directory: android
         run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      # ── Clear Gradle cache to avoid stale dependencies ──
-      - name: Clear Gradle cache
-        run: |
-          rm -rf ~/.gradle/caches
-          rm -rf ~/.gradle/wrapper/dists
-          echo "✅ Gradle cache cleared"
-
-      # ── Build APK — full log captured to file ──────────────
+      # ── Build APK — full log captured ──────────────────────
       - name: Build Debug APK
         id: build_apk
         working-directory: android
@@ -182,21 +201,20 @@ jobs:
           grep -B 2 -A 30 "What went wrong" gradle-full.log || echo "(no 'What went wrong' found)"
           echo ""
           echo "════════════════════════════════════════════"
-          echo "  ALL 'error:' LINES"
+          echo "  FAILED TASKS"
           echo "════════════════════════════════════════════"
-          grep -i "error:" gradle-full.log | head -20 || echo "(no error: lines)"
+          grep -E "^> Task .* FAILED" gradle-full.log || echo "(no failed tasks found)"
           echo ""
           echo "════════════════════════════════════════════"
-          echo "  'FAILED' TASK LINES"
+          echo "  ERRORS / EXCEPTIONS"
           echo "════════════════════════════════════════════"
-          grep -E "FAILED|failed" gradle-full.log | grep "Task" | head -10 || echo "(no failed tasks)"
+          grep -iE "^e: |error:|Caused by:|Duplicate class|Cannot find|Could not resolve" gradle-full.log | head -30 || echo "(no error lines)"
           echo ""
           echo "════════════════════════════════════════════"
-          echo "  LAST 40 LINES OF LOG"
+          echo "  LAST 60 LINES"
           echo "════════════════════════════════════════════"
-          tail -40 gradle-full.log
+          tail -60 gradle-full.log
 
-      # ── Upload log artifact for offline inspection ─────────
       - name: Upload Gradle failure log
         if: failure() || steps.build_apk.outputs.gradle_exit != '0'
         uses: actions/upload-artifact@v4
