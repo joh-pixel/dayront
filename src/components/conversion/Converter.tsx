@@ -1,1496 +1,1070 @@
-/**
- * src/ui/mobile/screens/ToolScreen.tsx
- * ----------------------------------------------------------------------------
- * Mobile-first tool screen with:
- *   • Real file thumbnails (video poster / image / audio icon)
- *   • Tap-to-preview full screen before processing
- *   • Wrong-file-type warning
- *   • Sanitized filenames (strips Android cache hashes)
- *   • Segmented pill options (CapCut-style)
- *   • Inline preview of the result before saving
- *   • Local notification when a job completes (settings-gated)
- *   • Keep-awake during processing (settings-gated)
- *   • Auto-save result (settings-gated)
- *   • Shared haptic feedback (settings-gated)
- *   • Prominent "don't close" warning while processing
- */
-import { useMemo, useRef, useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
+import FileDropzone from './FileDropzone';
+import ProgressBar, { useSmoothProgress } from './ProgressBar';
+import PrivacyToggle from './PrivacyToggle';
+
 import {
-  runTool,
-  isMultiFileTool,
-  ToolFallbackError,
-  isMemoryError,
+  convertFile,
+  cutAudio,
+  mergeAudio,
+  compressAudio,
+  boostVolume,
+  changeSpeed,
+  reverseAudio,
+  stereoToMono,
+  compressVideo,
+  cutVideo,
+  mergeVideos,
+  videoToGif,
+  gifToMp4,
+  resizeVideo,
+  resolutionConvert,
+  cropVideo,
+  changeFPS,
+  muteVideo,
+  extractAudio,
+} from '../../lib/ffmpeg';
+
+import {
   checkWebCapacity,
-  type RunnerTool,
+  isMemoryError,
+  ToolFallbackError,
   type FallbackReason,
-} from '../../../core/toolRunner';
-import {
-  saveBlob,
-  shareBlob,
-  makeOutputName,
-  cleanFileName,
-} from '../../../core/save';
-import { addRecent, pushRecentTool, getSettings } from '../../../core/storage';
-import { NativeAppPromo, type SettingOption } from '../../../components/conversion/Converter';
-import { haptic } from '../haptic';
+} from '../../core/toolRunner';
 
-/* ── Types ─────────────────────────────────────────────── */
+import { cleanFileName, makeOutputName } from '../../core/save';
 
-interface SettingDef {
+import { saveFile } from '../../lib/db';
+import { formatBytes } from '../../lib/utils';
+
+type ToolType =
+  | 'convert'
+  | 'cut'
+  | 'merge'
+  | 'compress'
+  | 'boost'
+  | 'speed'
+  | 'reverse'
+  | 'stereo-to-mono'
+  | 'video-compress'
+  | 'video-cut'
+  | 'video-merge'
+  | 'video-to-gif'
+  | 'gif-to-video'
+  | 'resize-video'
+  | 'crop-video'
+  | 'change-fps'
+  | 'mute-video'
+  | 'extract-audio'
+  | 'convert-video'
+  | 'resolution-convert';
+
+/* ── Friendly option type ─────────────────────────────────
+   A setting option can be either:
+     - a plain string  → "192k"
+     - a friendly pair → { value: 192, label: "High (192 kbps)" }
+   The `value` is what FFmpeg receives; the `label` is what the user sees.
+   ─────────────────────────────────────────────────────────── */
+export interface SettingOption {
+  value: string | number;
+  label: string;
+}
+
+export interface SettingDef {
   name: string;
   label: string;
   type: 'range' | 'number' | 'select';
   min?: number;
   max?: number;
+  /** Plain strings OR { value, label } objects */
   options?: Array<string | SettingOption>;
   default: string | number;
 }
 
-interface Tool {
-  slug: string;
-  name: string;
-  description: string;
-  icon: string;
-  category: string;
-  type?: string;
+interface ToolConfig {
+  type: ToolType;
   from?: string;
   to?: string;
-  settings?: SettingDef[];
   outputFormat?: string;
+  label?: string;
+  settings?: SettingDef[];
   presetWidth?: number;
   presetHeight?: number;
-  faq?: Array<{ question: string; answer: string }>;
+  requiresDesktop?: boolean;
 }
 
-interface Props {
-  tool: Tool;
+/** Detect time-related settings */
+function isTimeSetting(name: string): boolean {
+  const lower = name.toLowerCase();
+  return lower.includes('start') || lower.includes('duration') || lower.includes('cut');
 }
 
-type State = 'idle' | 'ready' | 'processing' | 'done' | 'error';
-
-const MAX_WEB_MB = 300;
-const MAX_NATIVE_MB = 5000;
-
-/* ── Environment ─────────────────────────────────────────── */
-
-function isNativeApp(): boolean {
-  if (typeof window === 'undefined') return false;
-  const w = window as any;
-  return w.Capacitor?.isNativePlatform?.() === true || w.__TAURI__ !== undefined;
+/** Human-readable hint for range sliders */
+function rangeHint(setting: SettingDef): string | null {
+  const name = setting.name.toLowerCase();
+  if (name === 'crf') return 'Lower = better quality, larger file';
+  if (name === 'quality') return '0 = best, 9 = smallest';
+  return null;
 }
 
-/* ── Helpers ─────────────────────────────────────────────── */
-
-function humanSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-function base64ToFile(base64: string, name: string, mime: string): File {
-  const clean = base64.includes(',') ? base64.split(',')[1] : base64;
-  const binary = atob(clean);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-  return new File([bytes], name, { type: mime || 'application/octet-stream' });
-}
-
-function mimeForExt(ext: string): string {
-  const m: Record<string, string> = {
-    mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4',
-    aac: 'audio/aac', ogg: 'audio/ogg', opus: 'audio/ogg',
-    flac: 'audio/flac', mp4: 'video/mp4', webm: 'video/webm',
-    mov: 'video/quicktime', avi: 'video/x-msvideo',
-    mkv: 'video/x-matroska', flv: 'video/x-flv', gif: 'image/gif',
-  };
-  return m[ext.toLowerCase()] || 'application/octet-stream';
-}
-
-function isAudioMime(m: string): boolean { return m.startsWith('audio/'); }
-function isVideoMime(m: string): boolean { return m.startsWith('video/'); }
-function isImageMime(m: string): boolean { return m.startsWith('image/'); }
-
-/** Detect media kind from a File object */
-function fileKind(file: File): 'video' | 'audio' | 'image' | 'unknown' {
-  if (isVideoMime(file.type)) return 'video';
-  if (isAudioMime(file.type)) return 'audio';
-  if (isImageMime(file.type)) return 'image';
-  const ext = (file.name.split('.').pop() || '').toLowerCase();
-  if (['mp4','mov','webm','mkv','avi','flv','m4v'].includes(ext)) return 'video';
-  if (['mp3','wav','m4a','aac','ogg','opus','flac','aiff','amr','ape'].includes(ext)) return 'audio';
-  if (['jpg','jpeg','png','webp','gif','bmp','heic'].includes(ext)) return 'image';
-  return 'unknown';
-}
-
-/** Validate a picked file against the tool's `from` field */
-function validateFileForTool(file: File, tool: Tool): { ok: boolean; reason?: string } {
-  const from = tool.from;
-  if (!from) return { ok: true };
-
-  const kind = fileKind(file);
-  const audioFormats = ['mp3','wav','m4a','aac','ogg','opus','flac','aiff','amr','ape'];
-  const videoFormats = ['mp4','mov','mkv','avi','webm','flv','m4v'];
-  const imageFormats = ['gif','png','jpg','jpeg','webp'];
-
-  const fromLower = from.toLowerCase();
-
-  if (audioFormats.includes(fromLower)) {
-    if (kind === 'audio') return { ok: true };
-    return { ok: false, reason: `This tool expects an audio file (${from.toUpperCase()}). You picked a ${kind}.` };
-  }
-  if (videoFormats.includes(fromLower)) {
-    if (kind === 'video') return { ok: true };
-    return { ok: false, reason: `This tool expects a video file (${from.toUpperCase()}). You picked a ${kind}.` };
-  }
-  if (imageFormats.includes(fromLower)) {
-    if (kind === 'image') return { ok: true };
-    return { ok: false, reason: `This tool expects an image file (${from.toUpperCase()}). You picked a ${kind}.` };
-  }
-
-  return { ok: true };
-}
-
-/* ── Native integrations (lazy, safe on web, settings-gated) ── */
-
-async function ensureNotificationPermission(): Promise<boolean> {
-  if (!isNativeApp()) return false;
-  if (!getSettings().notifications) return false;
-  try {
-    const mod: any = await import(/* @vite-ignore */ '@capacitor/local-notifications');
-    const LocalNotifications = mod.LocalNotifications;
-    const cur = await LocalNotifications.checkPermissions();
-    if (cur.display === 'granted') return true;
-    const req = await LocalNotifications.requestPermissions();
-    return req.display === 'granted';
-  } catch { return false; }
-}
-
-async function notifyJobDone(toolName: string, fileName: string) {
-  if (!isNativeApp()) return;
-  if (!getSettings().notifications) return;
-  try {
-    const mod: any = await import(/* @vite-ignore */ '@capacitor/local-notifications');
-    await mod.LocalNotifications.schedule({
-      notifications: [{
-        id: Math.floor(Date.now() % 2147483647),
-        title: 'Dayront — Done!',
-        body: `${fileName} is ready`,
-        schedule: { at: new Date(Date.now() + 100) },
-        smallIcon: 'ic_stat_icon_config_sample',
-        channelId: 'dayront-jobs',
-      }],
-    });
-  } catch (err) { console.warn('[notify] Failed:', err); }
-}
-
-async function keepAwakeOn() {
-  if (!isNativeApp()) return;
-  if (!getSettings().keepAwake) return;
-  try {
-    const mod: any = await import(/* @vite-ignore */ '@capacitor-community/keep-awake');
-    await mod.KeepAwake.keepAwake();
-  } catch {}
-}
-
-async function keepAwakeOff() {
-  if (!isNativeApp()) return;
-  if (!getSettings().keepAwake) return;
-  try {
-    const mod: any = await import(/* @vite-ignore */ '@capacitor-community/keep-awake');
-    await mod.KeepAwake.allowSleep();
-  } catch {}
-}
-
-/* ── Bottom sheet wrapper ───────────────────────────────── */
-
-function BottomSheet({
-  open, onClose, children,
-}: { open: boolean; onClose: () => void; children: any; }) {
-  if (!open) return null;
-  return (
-    <div role="dialog" aria-modal="true" style={{
-      position: 'fixed', inset: 0, zIndex: 100,
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    }}>
-      <div onClick={onClose} style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(0,0,0,0.45)',
-        backdropFilter: 'blur(2px)',
-        animation: 'd-fade-in 180ms ease-out',
-      }} />
-      <div style={{
-        position: 'relative',
-        width: '100%', maxWidth: '560px',
-        background: 'var(--bg-elev, #fff)',
-        color: 'var(--fg, #0f172a)',
-        borderTopLeftRadius: '24px',
-        borderTopRightRadius: '24px',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: '0 -12px 40px rgba(0,0,0,0.28)',
-        animation: 'd-slide-up 260ms cubic-bezier(0.16, 1, 0.3, 1)',
-        maxHeight: '92vh',
-        display: 'flex', flexDirection: 'column',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '10px', paddingBottom: '4px' }}>
-          <div style={{ width: '42px', height: '4px', borderRadius: '999px', background: 'rgba(120,120,120,0.4)' }} />
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* ── Premium curved button ──────────────────────────────── */
-
-function PremiumButton({
-  children, onClick, variant = 'primary', disabled = false,
-}: {
-  children: any;
-  onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
-  disabled?: boolean;
-}) {
-  const [pressed, setPressed] = useState(false);
-  const styles: Record<string, any> = {
-    primary: {
-      background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-      color: '#fff',
-      border: 'none',
-      boxShadow: pressed
-        ? '0 4px 12px rgba(2,132,199,0.35)'
-        : '0 10px 24px rgba(2,132,199,0.40), inset 0 1px 0 rgba(255,255,255,0.25)',
-    },
-    secondary: {
-      background: 'var(--bg-soft, #eef2f7)',
-      color: 'inherit',
-      border: '1px solid var(--line, rgba(148,163,184,0.35))',
-      boxShadow: pressed
-        ? '0 2px 6px rgba(0,0,0,0.06)'
-        : '0 6px 14px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)',
-    },
-    ghost: {
-      background: 'transparent',
-      color: 'inherit',
-      border: '1px solid var(--line, rgba(148,163,184,0.35))',
-      boxShadow: 'none',
-    },
-  };
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      onPointerDown={() => setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        width: '100%',
-        padding: '1rem 1.5rem',
-        borderRadius: '999px',
-        fontSize: '1rem',
-        fontWeight: 800,
-        letterSpacing: '0.01em',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.55 : 1,
-        transform: pressed ? 'scale(0.985)' : 'scale(1)',
-        transition: 'transform 120ms ease-out, box-shadow 120ms ease-out',
-        ...styles[variant],
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ── File thumbnail helper — generates a preview URL ─────── */
-
-function useFileThumbnail(file: File | null): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-
+/** Detect mobile devices (browser UA + viewport width) */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    if (!file) { setUrl(null); return; }
-    const kind = fileKind(file);
-    if (kind !== 'video' && kind !== 'image') { setUrl(null); return; }
-
-    const objectUrl = URL.createObjectURL(file);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
-
-  return url;
-}
-
-/* ── File chip with REAL thumbnail ──────────────────────────
-   Shows:
-     • video  → poster frame (works on most Android WebViews)
-     • image  → actual image
-     • audio  → tool icon + waveform glyph
-     • tap    → opens full preview
-   ─────────────────────────────────────────────────────────── */
-
-function FileChip({
-  file, tool, onRemove, onPreview,
-}: {
-  file: File;
-  tool: Tool;
-  onRemove?: () => void;
-  onPreview?: () => void;
-}) {
-  const thumb = useFileThumbnail(file);
-  const kind = fileKind(file);
-
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '0.75rem',
-      padding: '0.875rem',
-      borderRadius: '1rem',
-      border: '1px solid var(--line, #e2e8f0)',
-      background: 'var(--bg-elev, #fff)',
-    }}>
-      {/* Thumbnail slot */}
-      <button
-        type="button"
-        onClick={onPreview}
-        aria-label={`Preview ${file.name}`}
-        style={{
-          width: '56px',
-          height: '56px',
-          flexShrink: 0,
-          borderRadius: '12px',
-          background: kind === 'audio' ? 'var(--brand-soft, #e0f2fe)' : '#0A0E1A',
-          color: '#fff',
-          border: 'none',
-          padding: 0,
-          cursor: 'pointer',
-          overflow: 'hidden',
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.5rem',
-        }}
-      >
-        {kind === 'video' && thumb ? (
-          <>
-            {/* Best-effort poster frame — some WebViews show a blank frame */}
-            <video
-              src={thumb}
-              preload="metadata"
-              muted
-              playsInline
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-            {/* Play overlay */}
-            <span style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.28)',
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </span>
-          </>
-        ) : kind === 'image' && thumb ? (
-          <img
-            src={thumb}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : kind === 'audio' ? (
-          /* Audio — clean speaker icon */
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18V5l12-2v13" />
-            <circle cx="6" cy="18" r="3" />
-            <circle cx="18" cy="16" r="3" />
-          </svg>
-        ) : (
-          <span>{tool.icon}</span>
-        )}
-      </button>
-
-      {/* Body */}
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{
-          fontSize: '0.9rem',
-          fontWeight: 700,
-          lineHeight: 1.35,
-          wordBreak: 'break-all',
-          overflowWrap: 'anywhere',
-        }}>
-          {file.name}
-        </div>
-        <div style={{
-          fontSize: '0.75rem',
-          opacity: 0.6,
-          marginTop: '2px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.35rem',
-        }}>
-          <span>{humanSize(file.size)}</span>
-          <span>·</span>
-          <span style={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.05em', fontWeight: 700 }}>
-            {kind}
-          </span>
-        </div>
-      </div>
-
-      {onRemove && (
-        <button
-          type="button"
-          aria-label={`Remove ${file.name}`}
-          onClick={onRemove}
-          style={{
-            width: '32px', height: '32px', flexShrink: 0,
-            borderRadius: '50%', border: 'none',
-            background: 'rgba(120,120,120,0.12)',
-            color: 'inherit',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ── Full-screen file preview ───────────────────────────── */
-
-function FilePreview({
-  file, open, onClose,
-}: { file: File | null; open: boolean; onClose: () => void }) {
-  const thumb = useFileThumbnail(file);
-  if (!open || !file || !thumb) return null;
-  const kind = fileKind(file);
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 150,
-        background: 'rgba(0,0,0,0.92)',
-        display: 'flex', flexDirection: 'column',
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-      }}
-    >
-      {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0.875rem 1rem', color: '#fff', flexShrink: 0,
-      }}>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close preview"
-          style={{
-            width: '40px', height: '40px',
-            borderRadius: '50%', border: 'none',
-            background: 'rgba(255,255,255,0.15)', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-        <div style={{
-          fontSize: '0.85rem', fontWeight: 700,
-          opacity: 0.75, maxWidth: '70%',
-          textAlign: 'center', overflow: 'hidden',
-          textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {file.name}
-        </div>
-        <div style={{ width: '40px' }} />
-      </div>
-
-      {/* Body */}
-      <div style={{
-        flex: 1, display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '0 1rem 1rem',
-        minHeight: 0,
-      }}>
-        {kind === 'video' ? (
-          <video
-            src={thumb}
-            controls
-            autoPlay
-            playsInline
-            style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '1rem' }}
-          />
-        ) : kind === 'image' ? (
-          <img
-            src={thumb}
-            alt={file.name}
-            style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '1rem', objectFit: 'contain' }}
-          />
-        ) : null}
-      </div>
-
-      {/* Info strip */}
-      <div style={{
-        padding: '0.875rem 1.5rem 1.25rem',
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: '0.78rem',
-        textAlign: 'center',
-        flexShrink: 0,
-      }}>
-        {humanSize(file.size)} · {file.type || 'unknown type'}
-      </div>
-    </div>
-  );
-}
-
-/* ── Segmented pill option (CapCut-style) ───────────────── */
-
-function PillSetting({
-  setting, value, onChange,
-}: {
-  setting: SettingDef;
-  value: string | number;
-  onChange: (v: string | number) => void;
-}) {
-  return (
-    <div style={{ marginBottom: '1.25rem' }}>
-      <div style={{
-        fontSize: '0.78rem', fontWeight: 700,
-        letterSpacing: '0.06em', textTransform: 'uppercase',
-        opacity: 0.55, marginBottom: '0.5rem',
-      }}>
-        {setting.label}
-      </div>
-
-      {setting.type === 'select' && setting.options && (
-        <div style={{
-          display: 'flex', gap: '0.5rem',
-          overflowX: 'auto', paddingBottom: '0.25rem',
-          scrollbarWidth: 'none',
-        }}>
-          {setting.options.map((opt) => {
-            const val = typeof opt === 'string' ? opt : opt.value;
-            const lbl = typeof opt === 'string' ? opt : opt.label;
-            const active = String(val) === String(value);
-            return (
-              <button
-                key={String(val)}
-                type="button"
-                onClick={() => { haptic(); onChange(val); }}
-                style={{
-                  flexShrink: 0,
-                  padding: '0.65rem 1rem',
-                  borderRadius: '999px',
-                  border: active ? 'none' : '1px solid var(--line, rgba(148,163,184,0.35))',
-                  background: active ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)' : 'var(--bg-elev, #fff)',
-                  color: active ? '#fff' : 'inherit',
-                  fontSize: '0.85rem',
-                  fontWeight: active ? 700 : 600,
-                  cursor: 'pointer',
-                  boxShadow: active ? '0 6px 14px rgba(2,132,199,0.35)' : '0 1px 2px rgba(0,0,0,0.04)',
-                  transition: 'all 140ms ease-out',
-                }}
-              >
-                {lbl}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {setting.type === 'range' && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.75rem',
-          padding: '0.5rem 0.75rem', borderRadius: '1rem',
-          background: 'var(--bg-soft, rgba(241,245,249,0.6))',
-        }}>
-          <input
-            type="range"
-            min={setting.min}
-            max={setting.max}
-            value={Number(value)}
-            onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))}
-            style={{ flex: 1 }}
-          />
-          <span style={{ minWidth: '52px', textAlign: 'center', fontWeight: 800, fontSize: '0.9rem' }}>
-            {value}
-          </span>
-        </div>
-      )}
-
-      {setting.type === 'number' && (
-        <input
-          type="number"
-          min={setting.min}
-          max={setting.max}
-          value={Number(value)}
-          onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))}
-          style={{
-            width: '100%', padding: '0.875rem 1rem',
-            fontSize: '1rem', fontWeight: 700,
-            borderRadius: '1rem',
-            border: '1px solid var(--line, rgba(148,163,184,0.35))',
-            background: 'var(--bg-elev, #fff)',
-            color: 'inherit',
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-/* ── Progress ring ──────────────────────────────────────── */
-
-function ProgressRing({ percent }: { percent: number }) {
-  const size = 148, stroke = 10;
-  const radius = (size - stroke) / 2;
-  const circ = 2 * Math.PI * radius;
-  const clamped = Math.max(0, Math.min(100, percent));
-  const offset = circ * (1 - clamped / 100);
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-      <circle cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={stroke} />
-      <circle cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke="#38bdf8" strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ transition: 'stroke-dashoffset 300ms ease-out' }} />
-      <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle"
-        fill="white" fontSize="28" fontWeight="800">
-        {Math.round(clamped)}%
-      </text>
-    </svg>
-  );
-}
-
-/* ── Main component ─────────────────────────────────────── */
-
-export default function ToolScreen({ tool }: Props) {
-  const [state, setState] = useState<State>('idle');
-  const [files, setFiles] = useState<File[]>([]);
-  const [progress, setProgress] = useState(0);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-  const [resultName, setResultName] = useState('');
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
-
-  const [promo, setPromo] = useState<
-    { reason: FallbackReason | 'native-limit'; totalMB: number } | null
-  >(null);
-  const [bypassPromo, setBypassPromo] = useState(false);
-  const [optionsOpen, setOptionsOpen] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [errorOpen, setErrorOpen] = useState(false);
-  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
-
-  /* File preview + validation */
-  const [previewFile, setPreviewFile] = useState<File | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [fileWarning, setFileWarning] = useState<string | null>(null);
-
-  const [settings, setSettings] = useState<Record<string, string | number>>(() => {
-    const initial: Record<string, string | number> = {};
-    (tool.settings ?? []).forEach((s) => { initial[s.name] = s.default; });
-    return initial;
-  });
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const native = isNativeApp();
-  const multi = isMultiFileTool(tool);
-  const outputFormat = tool.outputFormat ?? 'mp3';
-  const hasSettings = (tool.settings?.length ?? 0) > 0;
-
-  const accept = useMemo(() => {
-    const f = tool.from;
-    if (!f) return '*/*';
-    const audio = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'opus', 'flac', 'aiff', 'amr', 'ape'];
-    const video = ['mp4', 'webm', 'mov', 'mkv', 'avi', 'flv'];
-    const image = ['gif', 'png', 'jpg', 'jpeg', 'webp'];
-    if (audio.includes(f)) return 'audio/*';
-    if (video.includes(f)) return 'video/*';
-    if (image.includes(f)) return 'image/*';
-    return '*/*';
-  }, [tool.from]);
-
-  useEffect(() => {
-    if (native) ensureNotificationPermission();
-  }, [native]);
-
-  useEffect(() => {
-    return () => { if (resultUrl) URL.revokeObjectURL(resultUrl); };
-  }, [resultUrl]);
-
-  useEffect(() => {
-    if (state !== 'processing') return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
+    const check = () => {
+      const mobileByUA = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const mobileByWidth = window.innerWidth < 768;
+      setIsMobile(mobileByUA || mobileByWidth);
     };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [state]);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
 
-  /* ── File picking ─────────────────────────────────────── */
-
-  function addFiles(arr: File[]) {
-    if (arr.length === 0) return;
-
-    // Validate first file against the tool
-    const first = arr[0];
-    const check = validateFileForTool(first, tool);
-    if (!check.ok && check.reason) {
-      setFileWarning(check.reason);
-    } else {
-      setFileWarning(null);
-    }
-
-    const next = multi ? [...files, ...arr] : [arr[0]];
-    setFiles(next);
-    setState('ready');
-    setErrorMsg('');
-
-    const totalMB = next.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
-    if (native) {
-      if (totalMB > MAX_NATIVE_MB) {
-        setPromo({ reason: 'native-limit', totalMB });
-        setBypassPromo(true);
-      } else {
-        setPromo(null); setBypassPromo(false);
-      }
-    } else {
-      const capacity = checkWebCapacity(next, true);
-      if (capacity) {
-        setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
-        setBypassPromo(false);
-      } else {
-        setPromo(null); setBypassPromo(false);
-      }
-    }
-    haptic();
+/** Determine accepted input file extensions based on the tool's configuration */
+function getAllowedExtensions(config: ToolConfig): string[] {
+  if (config.type === 'resolution-convert') {
+    return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
   }
 
-  async function handlePickNative() {
-    try {
-      const mod: any = await import(/* @vite-ignore */ '@capawesome/capacitor-file-picker');
-      const FilePicker = mod.FilePicker;
-      const result = await FilePicker.pickFiles({
-        types: [accept], readData: true, limit: multi ? 0 : 1,
-      });
-      if (!result.files || result.files.length === 0) return;
-      const picked: File[] = [];
-      for (const f of result.files) {
-        if (!f.data) continue;
-        const ext = (f.name.split('.').pop() || tool.from || 'bin').toLowerCase();
-        const mime = f.mimeType || mimeForExt(ext);
-        const friendlyName = cleanFileName(f.name);
-        picked.push(base64ToFile(f.data, friendlyName, mime));
-      }
-      addFiles(picked);
-    } catch (err) {
-      console.error('[picker] Failed:', err);
-      inputRef.current?.click();
-    }
+  if (config.from) {
+    const formatMap: Record<string, string[]> = {
+      mp3: ['mp3'],
+      wav: ['wav'],
+      mp4: ['mp4', 'm4v'],
+      flac: ['flac'],
+      m4a: ['m4a'],
+      mov: ['mov', 'qt'],
+      webm: ['webm'],
+      aac: ['aac'],
+      ogg: ['ogg', 'oga'],
+      opus: ['opus'],
+      avi: ['avi'],
+      mkv: ['mkv'],
+      aiff: ['aiff', 'aif'],
+      amr: ['amr'],
+      ape: ['ape'],
+      flv: ['flv'],
+      gif: ['gif'],
+    };
+    return formatMap[config.from] || [];
   }
 
-  function handlePickWeb() { inputRef.current?.click(); }
-  function onWebInput(e: Event) {
-    const list = (e.target as HTMLInputElement).files;
-    if (list && list.length > 0) {
-      const cleaned = Array.from(list).map((f) => {
-        const n = cleanFileName(f.name);
-        if (n === f.name) return f;
-        try { return new File([f], n, { type: f.type }); } catch { return f; }
-      });
-      addFiles(cleaned);
-    }
+  switch (config.type) {
+    case 'cut':
+    case 'merge':
+    case 'compress':
+    case 'boost':
+    case 'speed':
+    case 'reverse':
+    case 'stereo-to-mono':
+      return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'];
+
+    case 'video-compress':
+    case 'video-cut':
+    case 'video-merge':
+    case 'video-to-gif':
+    case 'resize-video':
+    case 'crop-video':
+    case 'change-fps':
+    case 'mute-video':
+    case 'extract-audio':
+      return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
+
+    case 'gif-to-video':
+      return ['gif'];
+
+    case 'convert':
+    case 'convert-video':
+      return [];
+
+    default:
+      return [];
   }
-  function handlePick() { if (native) handlePickNative(); else handlePickWeb(); }
+}
 
-  function removeFile(idx: number) {
-    setFiles((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      if (next.length === 0) {
-        setState('idle'); setPromo(null); setBypassPromo(false); setFileWarning(null);
-      } else {
-        const totalMB = next.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
-        if (native && totalMB > MAX_NATIVE_MB) setPromo({ reason: 'native-limit', totalMB });
-        else if (!native) {
-          const capacity = checkWebCapacity(next, true);
-          if (capacity) setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
-          else { setPromo(null); setBypassPromo(false); }
-        } else { setPromo(null); setBypassPromo(false); }
-      }
-      return next;
-    });
-    haptic();
+/* ══════════════════════════════════════════════════════════════
+   NATIVE APP PROMO
+   ══════════════════════════════════════════════════════════════ */
+
+const APP_DOWNLOAD_URL = 'https://download.dayront.com';
+
+function reasonToHeadline(reason: FallbackReason | 'desktop-only'): string {
+  switch (reason) {
+    case 'file-too-large':
+      return 'This file needs the app';
+    case 'out-of-memory':
+      return 'Your browser ran out of memory';
+    case 'timeout':
+      return 'This job is taking too long in the browser';
+    case 'desktop-only':
+      return 'Best on the Dayront App';
+    default:
+      return 'Use the Dayront App for this file';
   }
+}
 
-  function clearFiles() {
-    if (resultUrl) { URL.revokeObjectURL(resultUrl); setResultUrl(null); }
-    setFiles([]); setState('idle'); setErrorMsg(''); setResultBlob(null); setResultName('');
-    setPromo(null); setBypassPromo(false);
-    setSuccessOpen(false); setErrorOpen(false); setOptionsOpen(false);
-    setFileWarning(null);
-    if (inputRef.current) inputRef.current.value = '';
-    haptic();
+function reasonToBody(
+  reason: FallbackReason | 'desktop-only',
+  totalMB: number,
+  isMobile: boolean,
+): string {
+  const sizeLabel = totalMB >= 1024
+    ? `${(totalMB / 1024).toFixed(2)} GB`
+    : `${Math.round(totalMB)} MB`;
+
+  switch (reason) {
+    case 'file-too-large':
+      return `Your file is ${sizeLabel}. Browsers cap out around ${
+        isMobile ? '250 MB' : '500 MB'
+      } because they rely on WebAssembly. The Dayront App uses a native engine — no caps, no crashes.`;
+    case 'out-of-memory':
+      return `The browser tab ran out of memory while working on your ${sizeLabel} file. The Dayront App ships a native FFmpeg engine with no memory limits and processes up to 5 GB at 10× the speed.`;
+    case 'timeout':
+      return `Processing a ${sizeLabel} file in the browser can take minutes and sometimes stalls. The Dayront App does the same job in seconds — fully offline.`;
+    case 'desktop-only':
+      return `This tool needs more processing power than a mobile browser can give. For the best experience, use the Dayront App (Android) for native speed, or a desktop computer with 8 GB+ RAM.`;
+    default:
+      return 'The Dayront App handles large files, runs 10× faster, and works fully offline.';
   }
+}
 
-  function handleTryAnyway() { setBypassPromo(true); }
+export function NativeAppPromo({
+  reason,
+  totalMB,
+  isMobile,
+  onTryAnyway,
+  canBypass,
+}: {
+  reason: FallbackReason | 'desktop-only';
+  totalMB: number;
+  isMobile: boolean;
+  onTryAnyway?: () => void;
+  canBypass: boolean;
+}) {
+  return (
+    <div class="w-full overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white shadow-sm dark:border-sky-900/60 dark:from-sky-950/50 dark:to-gray-900">
+      {/* Header strip */}
+      <div class="flex items-center gap-2 border-b border-sky-100 bg-sky-500/10 px-5 py-2.5 dark:border-sky-900/60">
+        <span class="h-2 w-2 rounded-full bg-sky-500 animate-pulse" aria-hidden="true" />
+        <span class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+          Recommended: Dayront App
+        </span>
+      </div>
 
-  function openPreview(file: File) {
-    haptic();
-    setPreviewFile(file);
-    setPreviewOpen(true);
-  }
-
-  /* ── Processing ───────────────────────────────────────── */
-
-  async function start() {
-    if (files.length === 0) return;
-    if (promo && !bypassPromo) return;
-
-    const totalMB = files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
-    const hardLimit = native ? MAX_NATIVE_MB : 2000;
-    if (totalMB > hardLimit) {
-      setState('error');
-      setErrorMsg(
-        `File is ${totalMB >= 1024
-          ? `${(totalMB / 1024).toFixed(2)} GB`
-          : `${Math.round(totalMB)} MB`}. ` +
-        `The maximum is ${hardLimit} MB on this device.`,
-      );
-      setErrorOpen(true);
-      return;
-    }
-
-    haptic();
-    setState('processing');
-    setProgress(0);
-    setErrorMsg('');
-    await keepAwakeOn();
-    try { pushRecentTool(tool.slug); } catch {}
-
-    try {
-      const runner: RunnerTool = {
-        slug: tool.slug, name: tool.name, type: tool.type,
-        outputFormat: tool.outputFormat,
-        presetWidth: tool.presetWidth, presetHeight: tool.presetHeight,
-      };
-      const blob = await runTool(runner, {
-        files, settings, onProgress: (p) => setProgress(p),
-      });
-
-      const name = makeOutputName(tool.slug, files[0].name, outputFormat);
-
-      if (getSettings().autoDownload) {
-        try { await saveBlob(blob, name); } catch (err) { console.warn('[auto-save] Failed:', err); }
-      }
-
-      setResultBlob(blob);
-      setResultName(name);
-      setProgress(100);
-      setState('done');
-      setPromo(null);
-
-      const url = URL.createObjectURL(blob);
-      setResultUrl(url);
-      setSuccessOpen(true);
-      notifyJobDone(tool.name, name);
-
-      try {
-        addRecent({
-          tool: tool.slug, toolName: tool.name, icon: tool.icon,
-          fileName: name, fileSize: blob.size,
-        });
-      } catch {}
-
-      haptic(24);
-    } catch (err: any) {
-      console.error('[ToolScreen] Processing failed:', err);
-      if (!native && (err instanceof ToolFallbackError || isMemoryError(err))) {
-        const mb = files.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
-        setPromo({ reason: 'out-of-memory', totalMB: mb });
-        setBypassPromo(false);
-        setState('ready');
-        return;
-      }
-      setState('error');
-      setErrorMsg(err?.message || 'Something went wrong. Try again.');
-      setErrorOpen(true);
-    } finally {
-      await keepAwakeOff();
-    }
-  }
-
-  /* ── Result actions ───────────────────────────────────── */
-
-  async function handleShare() {
-    if (!resultBlob) return;
-    haptic();
-    try {
-      const ok = await shareBlob(resultBlob, resultName, tool.name);
-      if (!ok) {
-        await saveBlob(resultBlob, resultName);
-        setSaveFeedback('Saved to your device');
-      } else {
-        setSaveFeedback('Shared successfully');
-      }
-    } catch (err) {
-      console.error('[share] Failed:', err);
-      setSaveFeedback('Could not share — try Download');
-    }
-    setTimeout(() => setSaveFeedback(null), 2400);
-  }
-
-  async function handleDownload() {
-    if (!resultBlob) return;
-    haptic();
-    try {
-      await saveBlob(resultBlob, resultName);
-      setSaveFeedback('Saved to your device');
-    } catch (err) {
-      console.error('[download] Failed:', err);
-      setSaveFeedback('Could not save file');
-    }
-    setTimeout(() => setSaveFeedback(null), 2400);
-  }
-
-  /* ── Derived values ───────────────────────────────────── */
-
-  const outputMime: string = (() => {
-    if (outputFormat === 'mp3') return 'audio/mpeg';
-    if (['wav', 'ogg', 'opus'].includes(outputFormat)) return 'audio/' + outputFormat;
-    if (['m4a', 'aac'].includes(outputFormat)) return 'audio/mp4';
-    if (outputFormat === 'flac') return 'audio/flac';
-    if (['mp4', 'mov', 'm4v'].includes(outputFormat)) return 'video/mp4';
-    if (outputFormat === 'webm') return 'video/webm';
-    if (outputFormat === 'mkv') return 'video/x-matroska';
-    if (outputFormat === 'avi') return 'video/x-msvideo';
-    if (outputFormat === 'gif') return 'image/gif';
-    if (['png', 'jpg', 'jpeg', 'webp'].includes(outputFormat)) return 'image/' + outputFormat;
-    return 'application/octet-stream';
-  })();
-
-  const totalSize = files.reduce((s, f) => s + f.size, 0);
-
-  /* ── Promo views ──────────────────────────────────────── */
-
-  if (native && promo?.reason === 'native-limit') {
-    const sizeLabel = promo.totalMB >= 1024
-      ? `${(promo.totalMB / 1024).toFixed(2)} GB`
-      : `${Math.round(promo.totalMB)} MB`;
-    return (
-      <div class="d-tool">
-        <div class="d-tool__hero">
-          <div class="d-tool__hero-icon" aria-hidden="true">{tool.icon}</div>
-          <div class="d-tool__hero-body">
-            <h1 class="d-tool__hero-name">{tool.name}</h1>
-            <p class="d-tool__hero-desc">{tool.description}</p>
+      <div class="p-6">
+        {/* Icon + headline */}
+        <div class="flex items-start gap-4">
+          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-2xl shadow-md">
+            📱
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+              {reasonToHeadline(reason)}
+            </h3>
+            <p class="mt-1.5 text-sm leading-6 text-gray-700 dark:text-gray-300">
+              {reasonToBody(reason, totalMB, isMobile)}
+            </p>
           </div>
         </div>
-        <div style={{
-          padding: '1.25rem', borderRadius: '1.25rem',
-          background: 'linear-gradient(135deg,#fef3c7,#fde68a)',
-          border: '1px solid #f59e0b', color: '#78350f',
-        }}>
-          <p style={{ fontWeight: 800, fontSize: '1.05rem', margin: '0 0 0.5rem' }}>
-            File exceeds the 5 GB app limit
-          </p>
-          <p style={{ margin: 0, lineHeight: 1.5, fontSize: '0.9rem' }}>
-            Your file is <strong>{sizeLabel}</strong>. The app processes up to 5 GB per file.
-            For larger files, split them first with the Video Cutter or Audio Cutter.
-          </p>
+
+        {/* Feature bullets */}
+        <ul class="mt-5 grid gap-2 sm:grid-cols-3">
+          <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
+            <span aria-hidden="true">⚡</span> 10× faster
+          </li>
+          <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
+            <span aria-hidden="true">📁</span> Up to 5 GB files
+          </li>
+          <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
+            <span aria-hidden="true">🔒</span> 100% offline
+          </li>
+        </ul>
+
+        {/* CTAs */}
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <a
+            href={APP_DOWNLOAD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-sky-600 active:scale-[0.98]"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="M7 10l5 5 5-5" />
+              <path d="M12 15V3" />
+            </svg>
+            Download the App
+          </a>
+
+          {canBypass && onTryAnyway && (
+            <button
+              type="button"
+              onClick={onTryAnyway}
+              class="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Try anyway in browser
+            </button>
+          )}
         </div>
-        <div style={{ marginTop: '1rem' }}>
-          <PremiumButton variant="secondary" onClick={clearFiles}>
-            Choose another file
-          </PremiumButton>
-        </div>
+
+        {/* Platform hint */}
+        <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          Android available now · iOS, Windows, macOS &amp; Linux coming soon.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+
+export default function Converter({
+  toolConfig,
+}: {
+  toolConfig: ToolConfig;
+}) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [outputFilename, setOutputFilename] = useState('');
+  const [privacy, setPrivacy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [promo, setPromo] = useState<
+    { reason: FallbackReason | 'desktop-only'; totalMB: number } | null
+  >(null);
+  const [bypassPromo, setBypassPromo] = useState(false);
+
+  const [settingsState, setSettingsState] = useState<Record<string, string | number>>(() => {
+    const initial: Record<string, string | number> = {};
+    toolConfig.settings?.forEach((setting) => {
+      initial[setting.name] = setting.default;
+    });
+    return initial;
+  });
+
+  const [timeUnits, setTimeUnits] = useState<Record<string, 'seconds' | 'minutes'>>({});
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
+
+  const isMobile = useIsMobile();
+  const isDesktopOnlyTool = isMobile && toolConfig.requiresDesktop === true;
+
+  const smoothProgress = useSmoothProgress(progress);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  function clampProgress(value: number) {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function updateProgress(value: number) {
+    setProgress(clampProgress(value));
+  }
+
+  function getSetting(name: string) {
+    return settingsState[name];
+  }
+
+  function updateSetting(name: string, value: string | number) {
+    setSettingsState((previous) => ({ ...previous, [name]: value }));
+  }
+
+  function toDisplayValue(name: string, internalValue: number): number {
+    const unit = timeUnits[name] || 'seconds';
+    return unit === 'minutes' ? internalValue / 60 : internalValue;
+  }
+
+  function fromDisplayValue(name: string, displayValue: number): number {
+    const unit = timeUnits[name] || 'seconds';
+    return unit === 'minutes' ? displayValue * 60 : displayValue;
+  }
+
+  /**
+   * Sanitize incoming files — some browsers (and every native picker)
+   * hand us filenames with cache hashes like "1fe1b728..._17909978.mp4".
+   * We rebuild the File object with a cleaned name so it shows nicely
+   * everywhere downstream.
+   */
+  function sanitizeFiles(selected: File[]): File[] {
+    return selected.map((file) => {
+      const clean = cleanFileName(file.name);
+      if (clean === file.name) return file;
+      try {
+        return new File([file], clean, { type: file.type });
+      } catch {
+        // Some browsers restrict File() construction — fall back to original
+        return file;
+      }
+    });
+  }
+
+  function handleFiles(selected: File[]) {
+    if (processing) return;
+
+    const cleaned = sanitizeFiles(selected);
+
+    setFiles(cleaned);
+    setResultBlob(null);
+    setOutputFilename('');
+    setError(null);
+    setProgress(0);
+    setBypassPromo(false);
+
+    const capacity = checkWebCapacity(cleaned, isMobile);
+    if (capacity) {
+      setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
+    } else {
+      setPromo(null);
+    }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }
+
+  function handleTryAnyway() {
+    setBypassPromo(true);
+  }
+
+  async function startConversion() {
+    if (files.length === 0 || processing) return;
+
+    if (promo && !bypassPromo) return;
+
+    setProcessing(true);
+    setProgress(0);
+    setError(null);
+    setResultBlob(null);
+    setOutputFilename('');
+
+    try {
+      let output: Blob;
+      const type = toolConfig.type;
+
+      switch (type) {
+        case 'cut': {
+          const start = Math.max(0, Number(getSetting('start') ?? 0));
+          const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
+          output = await cutAudio(
+            files[0], start, duration,
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'merge': {
+          if (files.length < 2) throw new Error('Please select at least 2 audio files.');
+          output = await mergeAudio(files, toolConfig.outputFormat || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'compress': {
+          output = await compressAudio(
+            files[0], Number(getSetting('quality') ?? 3),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'boost': {
+          output = await boostVolume(
+            files[0], Number(getSetting('gain') ?? 6),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'speed': {
+          output = await changeSpeed(
+            files[0], Number(getSetting('factor') ?? 1.5),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'reverse': {
+          output = await reverseAudio(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'stereo-to-mono': {
+          output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'convert': {
+          output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
+          break;
+        }
+        case 'video-compress': {
+          output = await compressVideo(
+            files[0], Number(getSetting('crf') ?? 23),
+            String(getSetting('preset') ?? 'medium'),
+            toolConfig.outputFormat || 'mp4',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'video-cut': {
+          const start = Math.max(0, Number(getSetting('start') ?? 0));
+          const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
+          output = await cutVideo(
+            files[0], start, duration,
+            toolConfig.outputFormat || 'mp4',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'video-merge': {
+          if (files.length < 2) throw new Error('Please select at least 2 video files.');
+          output = await mergeVideos(files, toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
+        case 'video-to-gif': {
+          output = await videoToGif(
+            files[0], Number(getSetting('fps') ?? 10),
+            Number(getSetting('width') ?? 320),
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'gif-to-video': {
+          output = await gifToMp4(files[0], privacy, updateProgress);
+          break;
+        }
+        case 'resize-video': {
+          output = await resizeVideo(
+            files[0],
+            Number(getSetting('width') ?? 1280),
+            Number(getSetting('height') ?? 720),
+            toolConfig.outputFormat || 'mp4',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'resolution-convert': {
+          const w = toolConfig.presetWidth ?? 1920;
+          const h = toolConfig.presetHeight ?? 1080;
+          output = await resolutionConvert(
+            files[0], w, h,
+            toolConfig.outputFormat || 'mp4',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'crop-video': {
+          output = await cropVideo(
+            files[0],
+            Number(getSetting('x') ?? 0), Number(getSetting('y') ?? 0),
+            Number(getSetting('w') ?? 640), Number(getSetting('h') ?? 480),
+            toolConfig.outputFormat || 'mp4',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'change-fps': {
+          output = await changeFPS(
+            files[0], Number(getSetting('fps') ?? 30),
+            toolConfig.outputFormat || 'mp4',
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'mute-video': {
+          output = await muteVideo(files[0], toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
+        case 'extract-audio': {
+          output = await extractAudio(
+            files[0], String(getSetting('format') ?? 'mp3'),
+            privacy, updateProgress,
+          );
+          break;
+        }
+        case 'convert-video': {
+          output = await convertFile(files[0], toolConfig.to || 'mp4', privacy, updateProgress);
+          break;
+        }
+        default:
+          throw new Error('Unsupported tool.');
+      }
+
+      const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      await saveFile(id, output);
+
+      // ★ Clean, descriptive output name:
+      //     "myvideo-720p-to-8k.mp4"  (instead of "myvideo.mp4")
+      const format = toolConfig.outputFormat || toolConfig.to || 'mp3';
+      const originalName = files[0]?.name || 'my-file';
+      const filename = makeOutputName(
+        toolConfig.type + '-conversion',
+        originalName,
+        format,
+      );
+
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const url = URL.createObjectURL(output);
+      setPreviewUrl(url);
+      setResultBlob(output);
+      setOutputFilename(filename);
+      setProgress(100);
+      setPromo(null);
+    } catch (e: unknown) {
+      if (e instanceof ToolFallbackError) {
+        setPromo({ reason: e.reason, totalMB: e.fileSizeMB });
+        setBypassPromo(false);
+      } else if (isMemoryError(e)) {
+        const totalMB = files.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
+        setPromo({ reason: 'out-of-memory', totalMB });
+        setBypassPromo(false);
+      } else {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message || 'An error occurred while processing your file.');
+      }
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  function download() {
+    if (!resultBlob) return;
+    const url = URL.createObjectURL(resultBlob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = outputFilename || 'output.mp3';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function resetAll() {
+    setFiles([]);
+    setResultBlob(null);
+    setOutputFilename('');
+    setError(null);
+    setProgress(0);
+    setProcessing(false);
+    setPromo(null);
+    setBypassPromo(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }
+
+  const settings = toolConfig.settings || [];
+  const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
+  const allowedExtensions = getAllowedExtensions(toolConfig);
+
+  const inputClass = [
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
+    'outline-none transition placeholder:text-gray-400',
+    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
+    'dark:border-gray-600 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500',
+    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
+  ].join(' ');
+
+  /* Bigger tap target on mobile-friendly selects */
+  const selectClass = [
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-900',
+    'outline-none transition appearance-none cursor-pointer',
+    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
+    'dark:border-gray-600 dark:bg-gray-950 dark:text-white',
+    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
+  ].join(' ');
+
+  const outputFormat = toolConfig.outputFormat || toolConfig.to || 'mp3';
+  const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
+  const isGif = outputFormat === 'gif';
+
+  function getLoadingLabel(): string {
+    if (progress > 0) return 'Processing your file…';
+    if (smoothProgress < 4) return 'Downloading FFmpeg engine…';
+    if (smoothProgress < 8) return 'Compiling WASM (this takes a moment)…';
+    if (smoothProgress < 12) return 'Almost ready…';
+    return 'Still loading FFmpeg…';
+  }
+
+  /* ─────────── Blocking states ─────────── */
+
+  // 1. Desktop-only tools on mobile → unified NativeAppPromo (app-first)
+  if (isDesktopOnlyTool) {
+    return (
+      <div class="w-full">
+        <NativeAppPromo
+          reason="desktop-only"
+          totalMB={files.reduce((s, f) => s + f.size, 0) / (1024 * 1024)}
+          isMobile={true}
+          canBypass={false}
+        />
       </div>
     );
   }
 
-  if (!native && promo && !bypassPromo) {
+  // 2. Capacity warning on selected files → NativeAppPromo with bypass
+  if (promo && !bypassPromo && !resultBlob) {
     return (
-      <div class="d-tool">
-        <div class="d-tool__hero">
-          <div class="d-tool__hero-icon" aria-hidden="true">{tool.icon}</div>
-          <div class="d-tool__hero-body">
-            <h1 class="d-tool__hero-name">{tool.name}</h1>
-            <p class="d-tool__hero-desc">{tool.description}</p>
-          </div>
-        </div>
+      <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
         <NativeAppPromo
           reason={promo.reason}
           totalMB={promo.totalMB}
-          isMobile={true}
+          isMobile={isMobile}
           canBypass={true}
           onTryAnyway={handleTryAnyway}
         />
+
         {files.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-            {files.map((f, i) => (
-              <FileChip
-                key={`${f.name}-${i}`}
-                file={f}
-                tool={tool}
-                onRemove={() => removeFile(i)}
-                onPreview={() => openPreview(f)}
-              />
-            ))}
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+              <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
+              <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                {files.length} {files.length === 1 ? 'file' : 'files'}
+              </span>
+            </div>
+            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+              {files.map((file) => (
+                <li
+                  key={`${file.name}-${file.size}-${file.lastModified}`}
+                  class="flex items-center justify-between gap-4 px-5 py-3"
+                >
+                  <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {file.name}
+                  </span>
+                  <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {formatBytes(file.size)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-        <div style={{ marginTop: '1rem' }}>
-          <PremiumButton variant="secondary" onClick={clearFiles}>
-            Choose different files
-          </PremiumButton>
-        </div>
+
+        <button
+          type="button"
+          onClick={resetAll}
+          class="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-3 font-semibold text-gray-800 transition hover:bg-gray-200 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+        >
+          Choose different files
+        </button>
       </div>
     );
   }
 
-  /* ── Main render ──────────────────────────────────────── */
+  /* ─────────── Main UI ─────────── */
 
   return (
-    <div class="d-tool" style={{
-      minHeight: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'relative',
-    }}>
-      {/* Hero */}
-      <div class="d-tool__hero">
-        <div class="d-tool__hero-icon" aria-hidden="true">{tool.icon}</div>
-        <div class="d-tool__hero-body">
-          <h1 class="d-tool__hero-name">{tool.name}</h1>
-          <p class="d-tool__hero-desc">{tool.description}</p>
-        </div>
-      </div>
+    <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
+      {!resultBlob && (
+        <>
+          <FileDropzone
+            onFilesSelected={handleFiles}
+            multiple={multipleAllowed}
+            allowedExtensions={allowedExtensions}
+          />
 
-      {/* Hidden web input */}
-      <input
-        ref={inputRef}
-        type="file"
-        class="d-tool__file-input"
-        accept={accept}
-        multiple={multi}
-        style="display:none"
-        onChange={onWebInput}
-      />
+          {files.length > 0 && (
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
+                <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                  {files.length} {files.length === 1 ? 'file' : 'files'}
+                </span>
+              </div>
+              <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                {files.map((file) => (
+                  <li
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
+                    class="flex items-center justify-between gap-4 px-5 py-3"
+                  >
+                    <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {file.name}
+                    </span>
+                    <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {formatBytes(file.size)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-      {/* Scrollable body */}
-      <div style={{ flex: 1, paddingBottom: '124px' }}>
+          {settings.length > 0 && (
+            <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div class="border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-lg dark:bg-sky-900/40">
+                    ⚙️
+                  </div>
+                  <div class="min-w-0">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white">Settings &amp; Adjustments</h2>
+                    <p class="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">
+                      Customize your output before processing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-6 p-5">
+                {settings.map((setting) => {
+                  const value = settingsState[setting.name] ?? setting.default;
+                  return (
+                    <div key={setting.name} class="space-y-2.5">
+                      <label
+                        for={`setting-${setting.name}`}
+                        class="block text-sm font-semibold text-gray-900 dark:text-white"
+                      >
+                        {setting.label}
+                      </label>
 
-        {/* Idle — pick a file */}
-        {state === 'idle' && (
+                      {setting.type === 'select' && (
+                        <div class="relative">
+                          <select
+                            id={`setting-${setting.name}`}
+                            value={String(value)}
+                            disabled={processing}
+                            class={selectClass}
+                            onChange={(event) =>
+                              updateSetting(setting.name, event.currentTarget.value)
+                            }
+                          >
+                            {setting.options?.map((option) => {
+                              const val = typeof option === 'string' ? option : option.value;
+                              const lbl = typeof option === 'string' ? option : option.label;
+                              return (
+                                <option key={String(val)} value={val}>
+                                  {lbl}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+
+                      {setting.type === 'range' && (
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-950">
+                          <div class="flex items-center gap-3">
+                            <input
+                              id={`setting-${setting.name}`}
+                              type="range"
+                              min={setting.min}
+                              max={setting.max}
+                              value={Number(value)}
+                              disabled={processing}
+                              onInput={(event) =>
+                                updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
+                              }
+                              class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-300 accent-sky-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700"
+                            />
+                            <output
+                              aria-live="polite"
+                              class="flex h-9 min-w-[52px] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-xs font-bold tabular-nums text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                            >
+                              {value}
+                            </output>
+                          </div>
+                          {rangeHint(setting) && (
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{rangeHint(setting)}</p>
+                          )}
+                          {(setting.min !== undefined || setting.max !== undefined) && (
+                            <div class="mt-2 flex justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                              <span>{setting.min ?? ''}</span>
+                              <span>{setting.max ?? ''}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {setting.type === 'number' && (
+                        isTimeSetting(setting.name) ? (
+                          <div class="flex gap-2">
+                            <input
+                              type="number"
+                              id={`setting-${setting.name}`}
+                              min={setting.min != null ? (timeUnits[setting.name] === 'minutes' ? Math.ceil((setting.min || 0) / 60) : setting.min) : undefined}
+                              max={setting.max != null ? (timeUnits[setting.name] === 'minutes' ? Math.floor((setting.max || 9999) / 60) : setting.max) : undefined}
+                              value={toDisplayValue(setting.name, Number(value))}
+                              disabled={processing}
+                              onInput={(e) => {
+                                const displayVal = Number((e.target as HTMLInputElement).value);
+                                if (!isNaN(displayVal)) {
+                                  updateSetting(setting.name, fromDisplayValue(setting.name, displayVal));
+                                }
+                              }}
+                              class={inputClass}
+                              step={timeUnits[setting.name] === 'minutes' ? 0.1 : 1}
+                            />
+                            <select
+                              value={timeUnits[setting.name] || 'seconds'}
+                              onChange={(e) => setTimeUnits((prev) => ({ ...prev, [setting.name]: e.currentTarget.value as 'seconds' | 'minutes' }))}
+                              class="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-white"
+                            >
+                              <option value="seconds">Seconds</option>
+                              <option value="minutes">Minutes</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <input
+                            type="number"
+                            id={`setting-${setting.name}`}
+                            min={setting.min}
+                            max={setting.max}
+                            value={Number(value)}
+                            disabled={processing}
+                            onInput={(event) =>
+                              updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
+                            }
+                            class={inputClass}
+                          />
+                        )
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <PrivacyToggle checked={privacy} onChange={setPrivacy} />
+          </div>
+
           <button
             type="button"
-            onClick={handlePick}
-            style={{
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              width: '100%', padding: '2.75rem 1.5rem',
-              borderRadius: '1.5rem',
-              border: '2px dashed var(--line-strong, #cbd5e1)',
-              background: 'var(--bg-soft, rgba(241,245,249,0.55))',
-              color: 'inherit', gap: '0.75rem',
-              minHeight: '240px', cursor: 'pointer',
-            }}
+            disabled={files.length === 0 || processing}
+            onClick={startConversion}
+            aria-busy={processing}
+            class="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-xl bg-sky-500 px-6 py-3.5 font-semibold text-white shadow-sm transition-all hover:bg-sky-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-sky-500 dark:hover:bg-sky-400"
           >
-            <span aria-hidden="true" style={{
-              width: '72px', height: '72px', borderRadius: '50%',
-              background: 'linear-gradient(135deg,#38bdf8,#0284c7)',
-              color: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 12px 28px rgba(2,132,199,0.4)',
-            }}>
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 5v14" />
-                <path d="M5 12h14" />
-              </svg>
-            </span>
-            <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
-              {multi ? 'Add your first file' : 'Tap to choose a file'}
-            </p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.6, margin: 0 }}>
-              {tool.from
-                ? `Accepts ${tool.from.toUpperCase()}${multi ? ' · multiple allowed' : ''}`
-                : 'Any supported file'}
-              {native ? ' · up to 5 GB' : ' · up to 300 MB'}
-            </p>
+            {processing ? (
+              <>
+                <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Processing…
+              </>
+            ) : (
+              `Start ${toolConfig.label || 'Conversion'}`
+            )}
           </button>
-        )}
 
-        {/* Selected files — full names + thumbnails */}
-        {files.length > 0 && state !== 'idle' && state !== 'processing' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {files.map((f, i) => (
-              <FileChip
-                key={`${f.name}-${i}`}
-                file={f}
-                tool={tool}
-                onRemove={state === 'ready' ? () => removeFile(i) : undefined}
-                onPreview={() => openPreview(f)}
-              />
-            ))}
-            {multi && state === 'ready' && (
-              <button
-                type="button"
-                onClick={handlePick}
-                style={{
-                  padding: '0.75rem',
-                  borderRadius: '1rem',
-                  border: '2px dashed var(--line-strong, #cbd5e1)',
-                  background: 'transparent',
-                  color: 'inherit',
-                  fontSize: '0.9rem', fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                + Add another file
-              </button>
+          {processing && (
+            <div
+              class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+              role="status"
+              aria-live="polite"
+              aria-label={`Processing ${Math.round(smoothProgress)}% complete`}
+            >
+              <div class="px-5 py-4">
+                <div class="mb-3 flex items-center justify-between gap-4">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-sky-500" aria-hidden="true" />
+                    <span class="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                      {getLoadingLabel()}
+                    </span>
+                  </div>
+                  <span class="shrink-0 text-sm font-bold tabular-nums text-sky-600 dark:text-sky-400">
+                    {Math.round(smoothProgress)}%
+                  </span>
+                </div>
+
+                <ProgressBar percent={smoothProgress} />
+
+                {progress === 0 && smoothProgress >= 12 && (
+                  <p class="mt-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                    First-time load can take 1–2 minutes on mobile. Please keep this tab open.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {error && (
+        <div class="overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-sm dark:border-red-900/70 dark:bg-red-950/40">
+          <div class="p-5">
+            <div class="flex gap-3">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 font-bold text-red-600 dark:bg-red-900/50 dark:text-red-300">!</div>
+              <div class="min-w-0">
+                <p class="font-semibold text-red-900 dark:text-red-100">Something went wrong</p>
+                <p class="mt-1 break-words text-sm leading-6 text-red-700 dark:text-red-300">{error}</p>
+                <button
+                  type="button"
+                  class="mt-3 font-semibold text-red-700 underline decoration-red-300 underline-offset-4 hover:no-underline dark:text-red-300 dark:decoration-red-700"
+                  onClick={resetAll}
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resultBlob && (
+        <div class="overflow-hidden rounded-2xl border border-green-200 bg-green-50 shadow-sm dark:border-green-900/70 dark:bg-green-950/30">
+          <div class="p-6">
+            <div class="flex items-start gap-4">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-100 text-xl font-bold text-green-700 dark:bg-green-900/50 dark:text-green-300">✓</div>
+              <div class="min-w-0">
+                <h2 class="text-lg font-bold text-green-900 dark:text-green-100">Your file is ready</h2>
+                <p class="mt-1 break-all text-sm font-medium text-green-700 dark:text-green-300">{outputFilename}</p>
+                <p class="mt-1 text-xs font-medium text-green-600 dark:text-green-400">{formatBytes(resultBlob.size)}</p>
+              </div>
+            </div>
+
+            {previewUrl && (
+              <div class="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                {isGif ? (
+                  <img src={previewUrl} alt="Preview" class="w-full h-auto" />
+                ) : isVideoPreview ? (
+                  <video controls class="w-full max-h-96" src={previewUrl}>
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <audio controls class="w-full" src={previewUrl}>
+                    Your browser does not support the audio element.
+                  </audio>
+                )}
+              </div>
             )}
           </div>
-        )}
 
-        {/* Wrong-file warning */}
-        {fileWarning && state === 'ready' && (
-          <div style={{
-            marginTop: '0.75rem',
-            padding: '0.875rem 1rem',
-            borderRadius: '1rem',
-            background: 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(239,68,68,0.08))',
-            border: '1px solid rgba(251,146,60,0.45)',
-            fontSize: '0.85rem',
-            lineHeight: 1.5,
-            display: 'flex',
-            gap: '0.625rem',
-            alignItems: 'flex-start',
-          }}>
-            <span style={{ fontSize: '1.15rem', lineHeight: 1, flexShrink: 0 }} aria-hidden="true">⚠️</span>
-            <div>
-              <strong style={{ display: 'block', marginBottom: '0.15rem' }}>Wrong file type</strong>
-              <span style={{ opacity: 0.85 }}>{fileWarning}</span>
+          <div class="border-t border-green-200 bg-white p-5 dark:border-green-900/70 dark:bg-gray-900/60">
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={download}
+                class="w-full rounded-xl bg-sky-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-sky-600 active:scale-[0.98] dark:bg-sky-500 dark:hover:bg-sky-400"
+              >
+                Download File
+              </button>
+              <button
+                type="button"
+                onClick={resetAll}
+                class="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-3 font-semibold text-gray-800 transition hover:bg-gray-200 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              >
+                Convert Another File
+              </button>
             </div>
           </div>
-        )}
-
-        {/* Options trigger */}
-        {state === 'ready' && hasSettings && (
-          <button
-            type="button"
-            onClick={() => { haptic(); setOptionsOpen(true); }}
-            style={{
-              width: '100%', marginTop: '0.875rem',
-              padding: '1rem 1.125rem',
-              borderRadius: '1.25rem',
-              border: '1px solid var(--line, #e2e8f0)',
-              background: 'var(--bg-elev, #fff)',
-              color: 'inherit',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              cursor: 'pointer', textAlign: 'left',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>
-                Adjust settings
-              </div>
-              <div style={{ fontSize: '0.78rem', opacity: 0.6, marginTop: '2px' }}>
-                {summarizeSettings(tool.settings ?? [], settings)}
-              </div>
-            </div>
-            <span aria-hidden="true" style={{ opacity: 0.5 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 6l6 6-6 6" />
-              </svg>
-            </span>
-          </button>
-        )}
-
-        {/* Processing warning */}
-        {state === 'processing' && (
-          <div style={{
-            padding: '1rem 1.1rem',
-            borderRadius: '1rem',
-            background: 'linear-gradient(135deg, rgba(251,146,60,0.14), rgba(239,68,68,0.10))',
-            border: '1.5px solid rgba(251,146,60,0.45)',
-            fontSize: '0.85rem',
-            lineHeight: 1.55,
-            marginTop: '1rem',
-            display: 'flex',
-            gap: '0.75rem',
-            alignItems: 'flex-start',
-          }}>
-            <span style={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0 }} aria-hidden="true">⚠️</span>
-            <div>
-              <strong style={{ display: 'block', marginBottom: '0.2rem' }}>Don't close the app</strong>
-              <span style={{ opacity: 0.85 }}>
-                Processing runs on your device. Closing the app, locking the screen,
-                or switching away for a long time will pause the job.
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Sticky bottom CTA */}
-      {state === 'ready' && files.length > 0 && (
-        <div style={{
-          position: 'sticky', bottom: 0,
-          paddingTop: '0.75rem',
-          paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
-          background: 'linear-gradient(to top, var(--bg, #fff) 55%, transparent)',
-          zIndex: 20,
-        }}>
-          <PremiumButton variant="primary" onClick={start} disabled={!!fileWarning}>
-            {multi ? `Merge ${files.length} files` : `Start ${tool.name}`}
-          </PremiumButton>
-          {totalSize > 0 && (
-            <p style={{
-              textAlign: 'center', fontSize: '0.72rem',
-              opacity: 0.55, margin: '0.5rem 0 0',
-            }}>
-              {humanSize(totalSize)} · {native ? 'runs on your device' : 'runs in your browser'}
-            </p>
-          )}
         </div>
       )}
-
-      {/* Processing overlay */}
-      {state === 'processing' && (
-        <div role="status" aria-live="polite" style={{
-          position: 'fixed', inset: 0, zIndex: 90,
-          background: 'rgba(15,23,42,0.78)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'white', padding: '2rem',
-        }}>
-          <ProgressRing percent={progress} />
-          <p style={{ fontSize: '1.15rem', fontWeight: 800, margin: '1.5rem 0 0.5rem' }}>
-            Processing…
-          </p>
-          <p style={{ fontSize: '0.85rem', opacity: 0.75, margin: 0, textAlign: 'center', maxWidth: '280px', lineHeight: 1.5 }}>
-            {tool.name}
-            <br />
-            {native ? 'runs on your device' : 'runs in your browser'}
-          </p>
-        </div>
-      )}
-
-      {/* Toast feedback */}
-      {saveFeedback && (
-        <div style={{
-          position: 'fixed',
-          left: '50%',
-          bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
-          transform: 'translateX(-50%)',
-          background: 'rgba(15,23,42,0.92)',
-          color: 'white',
-          padding: '0.65rem 1.15rem',
-          borderRadius: '999px',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          zIndex: 200,
-          boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
-          animation: 'd-slide-up 200ms ease-out',
-        }}>
-          {saveFeedback}
-        </div>
-      )}
-
-      {/* Full-screen file preview */}
-      <FilePreview
-        file={previewFile}
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-      />
-
-      {/* ── Options bottom sheet ─────────────────────── */}
-      <BottomSheet open={optionsOpen} onClose={() => setOptionsOpen(false)}>
-        <div style={{ padding: '0.5rem 1.25rem 0' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Options</h2>
-          <p style={{ fontSize: '0.82rem', opacity: 0.6, margin: '4px 0 0' }}>
-            Customize your output before processing.
-          </p>
-        </div>
-
-        <div style={{ padding: '1rem 1.25rem', overflowY: 'auto', flex: 1 }}>
-          {(tool.settings ?? []).map((s) => (
-            <PillSetting
-              key={s.name}
-              setting={s}
-              value={settings[s.name]}
-              onChange={(v) => setSettings((prev) => ({ ...prev, [s.name]: v }))}
-            />
-          ))}
-        </div>
-
-        <div style={{
-          padding: '0.75rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px))',
-          borderTop: '1px solid var(--line, #e2e8f0)',
-        }}>
-          <PremiumButton variant="primary" onClick={() => { haptic(); setOptionsOpen(false); }}>
-            Done
-          </PremiumButton>
-        </div>
-      </BottomSheet>
-
-      {/* ── Success bottom sheet ─────────────────────── */}
-      <BottomSheet
-        open={successOpen && !!resultBlob}
-        onClose={() => setSuccessOpen(false)}
-      >
-        <div style={{ padding: '0.5rem 1.25rem 0', textAlign: 'center' }}>
-          <div style={{
-            width: '68px', height: '68px', margin: '0.5rem auto 0.75rem',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg,#22c55e,#16a34a)',
-            color: 'white',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 12px 28px rgba(22,163,74,0.4)',
-          }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          </div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-            Your file is ready
-          </h2>
-          <p style={{
-            fontSize: '0.85rem', opacity: 0.75,
-            margin: '0.5rem 0 0',
-            wordBreak: 'break-all', overflowWrap: 'anywhere',
-            lineHeight: 1.4,
-          }}>
-            {resultName}
-          </p>
-          {resultBlob && (
-            <p style={{ fontSize: '0.78rem', opacity: 0.55, margin: '0.25rem 0 0' }}>
-              {humanSize(resultBlob.size)}
-            </p>
-          )}
-        </div>
-
-        {resultUrl && (
-          <div style={{
-            margin: '1rem 1.25rem 0',
-            borderRadius: '1rem',
-            overflow: 'hidden',
-            background: '#000',
-            maxHeight: '260px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {isVideoMime(outputMime) ? (
-              <video src={resultUrl} controls playsInline style={{ width: '100%', maxHeight: '260px', display: 'block' }} />
-            ) : isAudioMime(outputMime) ? (
-              <div style={{ padding: '1rem', width: '100%' }}>
-                <audio src={resultUrl} controls style={{ width: '100%' }} />
-              </div>
-            ) : isImageMime(outputMime) ? (
-              <img src={resultUrl} alt="Preview" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', display: 'block' }} />
-            ) : null}
-          </div>
-        )}
-
-        <div style={{
-          padding: '1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px))',
-          display: 'flex', flexDirection: 'column', gap: '0.625rem',
-        }}>
-          <PremiumButton variant="primary" onClick={handleShare}>
-            Share / Save
-          </PremiumButton>
-          <PremiumButton variant="secondary" onClick={handleDownload}>
-            Download
-          </PremiumButton>
-          <PremiumButton variant="ghost" onClick={clearFiles}>
-            Process another file
-          </PremiumButton>
-        </div>
-      </BottomSheet>
-
-      {/* ── Error bottom sheet ───────────────────────── */}
-      <BottomSheet
-        open={errorOpen && state === 'error'}
-        onClose={() => { setErrorOpen(false); setState('ready'); }}
-      >
-        <div style={{ padding: '0.5rem 1.25rem 0', textAlign: 'center' }}>
-          <div style={{
-            width: '68px', height: '68px', margin: '0.5rem auto 0.75rem',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg,#fb923c,#dc2626)',
-            color: 'white',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem',
-          }}>
-            ⚠️
-          </div>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
-            Something went wrong
-          </h2>
-          <p style={{
-            fontSize: '0.85rem', opacity: 0.75, margin: '0.5rem 0 0',
-            wordBreak: 'break-word', lineHeight: 1.5,
-          }}>
-            {errorMsg}
-          </p>
-        </div>
-        <div style={{
-          padding: '1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px))',
-          display: 'flex', flexDirection: 'column', gap: '0.625rem',
-        }}>
-          <PremiumButton
-            variant="primary"
-            onClick={() => { haptic(); setErrorOpen(false); setState('ready'); setErrorMsg(''); }}
-          >
-            Try again
-          </PremiumButton>
-          <PremiumButton variant="secondary" onClick={clearFiles}>
-            Choose another file
-          </PremiumButton>
-        </div>
-      </BottomSheet>
     </div>
   );
-}
-
-/* ── Helper: one-line settings summary ──────────────────── */
-
-function summarizeSettings(
-  settings: SettingDef[],
-  values: Record<string, string | number>,
-): string {
-  const parts: string[] = [];
-  for (const s of settings.slice(0, 2)) {
-    const val = values[s.name] ?? s.default;
-    if (s.type === 'select' && s.options) {
-      const match = s.options.find((o) =>
-        typeof o !== 'string' && String(o.value) === String(val),
-      );
-      const label = typeof match === 'string' ? match : match?.label;
-      parts.push(label ?? String(val));
-    } else {
-      parts.push(String(val));
-    }
-  }
-  if (settings.length > 2) parts.push(`+${settings.length - 2}`);
-  return parts.join(' · ');
 }

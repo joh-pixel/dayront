@@ -2,18 +2,23 @@
  * src/ui/mobile/screens/ToolScreen.tsx
  * ----------------------------------------------------------------------------
  * Mobile-first tool screen with:
- *   • Full file name display (no truncation)
+ *   • Real file thumbnails (video poster / image / audio icon)
+ *   • Tap-to-preview full screen before processing
+ *   • Wrong-file-type warning
+ *   • Sanitized filenames (strips Android cache hashes)
  *   • Segmented pill options (CapCut-style)
  *   • Inline preview of the result before saving
  *   • Local notification when a job completes (settings-gated)
  *   • Keep-awake during processing (settings-gated)
  *   • Auto-save result (settings-gated)
  *   • Shared haptic feedback (settings-gated)
- *   • Premium curved buttons
+ *   • Prominent "don't close" warning while processing
  *
- * ── Limits ──────────────────────────────────────────────────────────
- *   Native app (Capacitor):  5 GB
- *   Browser (WASM):          300 MB mobile / 500 MB desktop
+ * SSR NOTE: the default export is a thin wrapper. Astro bundles all
+ * `client:load` components for a route into a single shared chunk; when
+ * that chunk is evaluated on a page that doesn't render ToolScreen
+ * (like /app/tools), the inner component must never be invoked. The
+ * wrapper guards against a missing `tool` prop so SSR never crashes.
  */
 import { useMemo, useRef, useState, useEffect } from 'preact/hooks';
 import {
@@ -25,7 +30,12 @@ import {
   type RunnerTool,
   type FallbackReason,
 } from '../../../core/toolRunner';
-import { saveBlob, shareBlob, makeOutputName } from '../../../core/save';
+import {
+  saveBlob,
+  shareBlob,
+  makeOutputName,
+  cleanFileName,
+} from '../../../core/save';
 import { addRecent, pushRecentTool, getSettings } from '../../../core/storage';
 import { NativeAppPromo, type SettingOption } from '../../../components/conversion/Converter';
 import { haptic } from '../haptic';
@@ -108,6 +118,46 @@ function isAudioMime(m: string): boolean { return m.startsWith('audio/'); }
 function isVideoMime(m: string): boolean { return m.startsWith('video/'); }
 function isImageMime(m: string): boolean { return m.startsWith('image/'); }
 
+/** Detect media kind from a File object */
+function fileKind(file: File): 'video' | 'audio' | 'image' | 'unknown' {
+  if (isVideoMime(file.type)) return 'video';
+  if (isAudioMime(file.type)) return 'audio';
+  if (isImageMime(file.type)) return 'image';
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (['mp4','mov','webm','mkv','avi','flv','m4v'].includes(ext)) return 'video';
+  if (['mp3','wav','m4a','aac','ogg','opus','flac','aiff','amr','ape'].includes(ext)) return 'audio';
+  if (['jpg','jpeg','png','webp','gif','bmp','heic'].includes(ext)) return 'image';
+  return 'unknown';
+}
+
+/** Validate a picked file against the tool's `from` field */
+function validateFileForTool(file: File, tool: Tool): { ok: boolean; reason?: string } {
+  const from = tool.from;
+  if (!from) return { ok: true };
+
+  const kind = fileKind(file);
+  const audioFormats = ['mp3','wav','m4a','aac','ogg','opus','flac','aiff','amr','ape'];
+  const videoFormats = ['mp4','mov','mkv','avi','webm','flv','m4v'];
+  const imageFormats = ['gif','png','jpg','jpeg','webp'];
+
+  const fromLower = from.toLowerCase();
+
+  if (audioFormats.includes(fromLower)) {
+    if (kind === 'audio') return { ok: true };
+    return { ok: false, reason: `This tool expects an audio file (${from.toUpperCase()}). You picked a ${kind}.` };
+  }
+  if (videoFormats.includes(fromLower)) {
+    if (kind === 'video') return { ok: true };
+    return { ok: false, reason: `This tool expects a video file (${from.toUpperCase()}). You picked a ${kind}.` };
+  }
+  if (imageFormats.includes(fromLower)) {
+    if (kind === 'image') return { ok: true };
+    return { ok: false, reason: `This tool expects an image file (${from.toUpperCase()}). You picked a ${kind}.` };
+  }
+
+  return { ok: true };
+}
+
 /* ── Native integrations (lazy, safe on web, settings-gated) ── */
 
 async function ensureNotificationPermission(): Promise<boolean> {
@@ -120,9 +170,7 @@ async function ensureNotificationPermission(): Promise<boolean> {
     if (cur.display === 'granted') return true;
     const req = await LocalNotifications.requestPermissions();
     return req.display === 'granted';
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 async function notifyJobDone(toolName: string, fileName: string) {
@@ -130,22 +178,17 @@ async function notifyJobDone(toolName: string, fileName: string) {
   if (!getSettings().notifications) return;
   try {
     const mod: any = await import(/* @vite-ignore */ '@capacitor/local-notifications');
-    const LocalNotifications = mod.LocalNotifications;
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: Math.floor(Date.now() % 2147483647),
-          title: 'Dayront — Done!',
-          body: `${fileName} is ready`,
-          schedule: { at: new Date(Date.now() + 100) },
-          smallIcon: 'ic_stat_icon_config_sample',
-          channelId: 'dayront-jobs',
-        },
-      ],
+    await mod.LocalNotifications.schedule({
+      notifications: [{
+        id: Math.floor(Date.now() % 2147483647),
+        title: 'Dayront — Done!',
+        body: `${fileName} is ready`,
+        schedule: { at: new Date(Date.now() + 100) },
+        smallIcon: 'ic_stat_icon_config_sample',
+        channelId: 'dayront-jobs',
+      }],
     });
-  } catch (err) {
-    console.warn('[notify] Failed:', err);
-  }
+  } catch (err) { console.warn('[notify] Failed:', err); }
 }
 
 async function keepAwakeOn() {
@@ -271,11 +314,43 @@ function PremiumButton({
   );
 }
 
-/* ── File chip (full name, wraps) ───────────────────────── */
+/* ── File thumbnail helper — generates a preview URL ─────── */
+
+function useFileThumbnail(file: File | null): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) { setUrl(null); return; }
+    const kind = fileKind(file);
+    if (kind !== 'video' && kind !== 'image') { setUrl(null); return; }
+
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  return url;
+}
+
+/* ── File chip with REAL thumbnail ──────────────────────────
+   Shows:
+     • video  → poster frame (works on most Android WebViews)
+     • image  → actual image
+     • audio  → tool icon + waveform glyph
+     • tap    → opens full preview
+   ─────────────────────────────────────────────────────────── */
 
 function FileChip({
-  file, tool, onRemove,
-}: { file: File; tool: Tool; onRemove?: () => void; }) {
+  file, tool, onRemove, onPreview,
+}: {
+  file: File;
+  tool: Tool;
+  onRemove?: () => void;
+  onPreview?: () => void;
+}) {
+  const thumb = useFileThumbnail(file);
+  const kind = fileKind(file);
+
   return (
     <div style={{
       display: 'flex',
@@ -286,15 +361,66 @@ function FileChip({
       border: '1px solid var(--line, #e2e8f0)',
       background: 'var(--bg-elev, #fff)',
     }}>
-      <span style={{
-        width: '44px', height: '44px', flexShrink: 0,
-        borderRadius: '12px',
-        background: 'var(--brand-soft, #e0f2fe)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '1.35rem',
-      }}>
-        {tool.icon}
-      </span>
+      {/* Thumbnail slot */}
+      <button
+        type="button"
+        onClick={onPreview}
+        aria-label={`Preview ${file.name}`}
+        style={{
+          width: '56px',
+          height: '56px',
+          flexShrink: 0,
+          borderRadius: '12px',
+          background: kind === 'audio' ? 'var(--brand-soft, #e0f2fe)' : '#0A0E1A',
+          color: '#fff',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.5rem',
+        }}
+      >
+        {kind === 'video' && thumb ? (
+          <>
+            <video
+              src={thumb}
+              preload="metadata"
+              muted
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            <span style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.28)',
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          </>
+        ) : kind === 'image' && thumb ? (
+          <img
+            src={thumb}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : kind === 'audio' ? (
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+          </svg>
+        ) : (
+          <span>{tool.icon}</span>
+        )}
+      </button>
+
+      {/* Body */}
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
           fontSize: '0.9rem',
@@ -309,11 +435,18 @@ function FileChip({
           fontSize: '0.75rem',
           opacity: 0.6,
           marginTop: '2px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.35rem',
         }}>
-          {humanSize(file.size)}
-          {file.type ? ` · ${file.type}` : ''}
+          <span>{humanSize(file.size)}</span>
+          <span>·</span>
+          <span style={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.05em', fontWeight: 700 }}>
+            {kind}
+          </span>
         </div>
       </div>
+
       {onRemove && (
         <button
           type="button"
@@ -337,6 +470,94 @@ function FileChip({
   );
 }
 
+/* ── Full-screen file preview ───────────────────────────── */
+
+function FilePreview({
+  file, open, onClose,
+}: { file: File | null; open: boolean; onClose: () => void }) {
+  const thumb = useFileThumbnail(file);
+  if (!open || !file || !thumb) return null;
+  const kind = fileKind(file);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 150,
+        background: 'rgba(0,0,0,0.92)',
+        display: 'flex', flexDirection: 'column',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0.875rem 1rem', color: '#fff', flexShrink: 0,
+      }}>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close preview"
+          style={{
+            width: '40px', height: '40px',
+            borderRadius: '50%', border: 'none',
+            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <div style={{
+          fontSize: '0.85rem', fontWeight: 700,
+          opacity: 0.75, maxWidth: '70%',
+          textAlign: 'center', overflow: 'hidden',
+          textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {file.name}
+        </div>
+        <div style={{ width: '40px' }} />
+      </div>
+
+      <div style={{
+        flex: 1, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '0 1rem 1rem',
+        minHeight: 0,
+      }}>
+        {kind === 'video' ? (
+          <video
+            src={thumb}
+            controls
+            autoPlay
+            playsInline
+            style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '1rem' }}
+          />
+        ) : kind === 'image' ? (
+          <img
+            src={thumb}
+            alt={file.name}
+            style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '1rem', objectFit: 'contain' }}
+          />
+        ) : null}
+      </div>
+
+      <div style={{
+        padding: '0.875rem 1.5rem 1.25rem',
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: '0.78rem',
+        textAlign: 'center',
+        flexShrink: 0,
+      }}>
+        {humanSize(file.size)} · {file.type || 'unknown type'}
+      </div>
+    </div>
+  );
+}
+
 /* ── Segmented pill option (CapCut-style) ───────────────── */
 
 function PillSetting({
@@ -349,22 +570,17 @@ function PillSetting({
   return (
     <div style={{ marginBottom: '1.25rem' }}>
       <div style={{
-        fontSize: '0.78rem',
-        fontWeight: 700,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        opacity: 0.55,
-        marginBottom: '0.5rem',
+        fontSize: '0.78rem', fontWeight: 700,
+        letterSpacing: '0.06em', textTransform: 'uppercase',
+        opacity: 0.55, marginBottom: '0.5rem',
       }}>
         {setting.label}
       </div>
 
       {setting.type === 'select' && setting.options && (
         <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          overflowX: 'auto',
-          paddingBottom: '0.25rem',
+          display: 'flex', gap: '0.5rem',
+          overflowX: 'auto', paddingBottom: '0.25rem',
           scrollbarWidth: 'none',
         }}>
           {setting.options.map((opt) => {
@@ -380,19 +596,13 @@ function PillSetting({
                   flexShrink: 0,
                   padding: '0.65rem 1rem',
                   borderRadius: '999px',
-                  border: active
-                    ? 'none'
-                    : '1px solid var(--line, rgba(148,163,184,0.35))',
-                  background: active
-                    ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)'
-                    : 'var(--bg-elev, #fff)',
+                  border: active ? 'none' : '1px solid var(--line, rgba(148,163,184,0.35))',
+                  background: active ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)' : 'var(--bg-elev, #fff)',
                   color: active ? '#fff' : 'inherit',
                   fontSize: '0.85rem',
                   fontWeight: active ? 700 : 600,
                   cursor: 'pointer',
-                  boxShadow: active
-                    ? '0 6px 14px rgba(2,132,199,0.35)'
-                    : '0 1px 2px rgba(0,0,0,0.04)',
+                  boxShadow: active ? '0 6px 14px rgba(2,132,199,0.35)' : '0 1px 2px rgba(0,0,0,0.04)',
                   transition: 'all 140ms ease-out',
                 }}
               >
@@ -406,8 +616,7 @@ function PillSetting({
       {setting.type === 'range' && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '0.75rem',
-          padding: '0.5rem 0.75rem',
-          borderRadius: '1rem',
+          padding: '0.5rem 0.75rem', borderRadius: '1rem',
           background: 'var(--bg-soft, rgba(241,245,249,0.6))',
         }}>
           <input
@@ -418,10 +627,7 @@ function PillSetting({
             onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))}
             style={{ flex: 1 }}
           />
-          <span style={{
-            minWidth: '52px', textAlign: 'center',
-            fontWeight: 800, fontSize: '0.9rem',
-          }}>
+          <span style={{ minWidth: '52px', textAlign: 'center', fontWeight: 800, fontSize: '0.9rem' }}>
             {value}
           </span>
         </div>
@@ -435,10 +641,8 @@ function PillSetting({
           value={Number(value)}
           onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))}
           style={{
-            width: '100%',
-            padding: '0.875rem 1rem',
-            fontSize: '1rem',
-            fontWeight: 700,
+            width: '100%', padding: '0.875rem 1rem',
+            fontSize: '1rem', fontWeight: 700,
             borderRadius: '1rem',
             border: '1px solid var(--line, rgba(148,163,184,0.35))',
             background: 'var(--bg-elev, #fff)',
@@ -477,9 +681,12 @@ function ProgressRing({ percent }: { percent: number }) {
   );
 }
 
-/* ── Main component ─────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   INNER COMPONENT — all hooks + logic live here.
+   Only rendered when `tool` is guaranteed present.
+   ══════════════════════════════════════════════════════════ */
 
-export default function ToolScreen({ tool }: Props) {
+function ToolScreenInner({ tool }: { tool: Tool }) {
   const [state, setState] = useState<State>('idle');
   const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState(0);
@@ -496,6 +703,10 @@ export default function ToolScreen({ tool }: Props) {
   const [successOpen, setSuccessOpen] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [fileWarning, setFileWarning] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<Record<string, string | number>>(() => {
     const initial: Record<string, string | number> = {};
@@ -521,19 +732,14 @@ export default function ToolScreen({ tool }: Props) {
     return '*/*';
   }, [tool.from]);
 
-  /* ── Ask for notification permission on first mount (native only) ── */
   useEffect(() => {
-    if (native) {
-      ensureNotificationPermission();
-    }
+    if (native) ensureNotificationPermission();
   }, [native]);
 
-  /* ── Cleanup preview URL when it changes ── */
   useEffect(() => {
     return () => { if (resultUrl) URL.revokeObjectURL(resultUrl); };
   }, [resultUrl]);
 
-  /* ── Warn on tab close while processing ── */
   useEffect(() => {
     if (state !== 'processing') return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -548,6 +754,15 @@ export default function ToolScreen({ tool }: Props) {
 
   function addFiles(arr: File[]) {
     if (arr.length === 0) return;
+
+    const first = arr[0];
+    const check = validateFileForTool(first, tool);
+    if (!check.ok && check.reason) {
+      setFileWarning(check.reason);
+    } else {
+      setFileWarning(null);
+    }
+
     const next = multi ? [...files, ...arr] : [arr[0]];
     setFiles(next);
     setState('ready');
@@ -586,7 +801,8 @@ export default function ToolScreen({ tool }: Props) {
         if (!f.data) continue;
         const ext = (f.name.split('.').pop() || tool.from || 'bin').toLowerCase();
         const mime = f.mimeType || mimeForExt(ext);
-        picked.push(base64ToFile(f.data, f.name, mime));
+        const friendlyName = cleanFileName(f.name);
+        picked.push(base64ToFile(f.data, friendlyName, mime));
       }
       addFiles(picked);
     } catch (err) {
@@ -598,7 +814,14 @@ export default function ToolScreen({ tool }: Props) {
   function handlePickWeb() { inputRef.current?.click(); }
   function onWebInput(e: Event) {
     const list = (e.target as HTMLInputElement).files;
-    if (list && list.length > 0) addFiles(Array.from(list));
+    if (list && list.length > 0) {
+      const cleaned = Array.from(list).map((f) => {
+        const n = cleanFileName(f.name);
+        if (n === f.name) return f;
+        try { return new File([f], n, { type: f.type }); } catch { return f; }
+      });
+      addFiles(cleaned);
+    }
   }
   function handlePick() { if (native) handlePickNative(); else handlePickWeb(); }
 
@@ -606,7 +829,7 @@ export default function ToolScreen({ tool }: Props) {
     setFiles((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       if (next.length === 0) {
-        setState('idle'); setPromo(null); setBypassPromo(false);
+        setState('idle'); setPromo(null); setBypassPromo(false); setFileWarning(null);
       } else {
         const totalMB = next.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
         if (native && totalMB > MAX_NATIVE_MB) setPromo({ reason: 'native-limit', totalMB });
@@ -626,11 +849,18 @@ export default function ToolScreen({ tool }: Props) {
     setFiles([]); setState('idle'); setErrorMsg(''); setResultBlob(null); setResultName('');
     setPromo(null); setBypassPromo(false);
     setSuccessOpen(false); setErrorOpen(false); setOptionsOpen(false);
+    setFileWarning(null);
     if (inputRef.current) inputRef.current.value = '';
     haptic();
   }
 
   function handleTryAnyway() { setBypassPromo(true); }
+
+  function openPreview(file: File) {
+    haptic();
+    setPreviewFile(file);
+    setPreviewOpen(true);
+  }
 
   /* ── Processing ───────────────────────────────────────── */
 
@@ -671,13 +901,8 @@ export default function ToolScreen({ tool }: Props) {
 
       const name = makeOutputName(tool.slug, files[0].name, outputFormat);
 
-      // ── Auto-save (settings-gated) ──
       if (getSettings().autoDownload) {
-        try {
-          await saveBlob(blob, name);
-        } catch (err) {
-          console.warn('[auto-save] Failed:', err);
-        }
+        try { await saveBlob(blob, name); } catch (err) { console.warn('[auto-save] Failed:', err); }
       }
 
       setResultBlob(blob);
@@ -686,20 +911,15 @@ export default function ToolScreen({ tool }: Props) {
       setState('done');
       setPromo(null);
 
-      // Build preview URL for result
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
-
-      // Show success sheet
       setSuccessOpen(true);
-
-      // Fire completion notification (settings-gated internally)
-      notifyJobDone(tool.name, files[0].name);
+      notifyJobDone(tool.name, name);
 
       try {
         addRecent({
           tool: tool.slug, toolName: tool.name, icon: tool.icon,
-          fileName: files[0].name, fileSize: blob.size,
+          fileName: name, fileSize: blob.size,
         });
       } catch {}
 
@@ -834,6 +1054,7 @@ export default function ToolScreen({ tool }: Props) {
                 file={f}
                 tool={tool}
                 onRemove={() => removeFile(i)}
+                onPreview={() => openPreview(f)}
               />
             ))}
           </div>
@@ -856,7 +1077,6 @@ export default function ToolScreen({ tool }: Props) {
       flexDirection: 'column',
       position: 'relative',
     }}>
-      {/* Hero */}
       <div class="d-tool__hero">
         <div class="d-tool__hero-icon" aria-hidden="true">{tool.icon}</div>
         <div class="d-tool__hero-body">
@@ -865,7 +1085,6 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       </div>
 
-      {/* Hidden web input */}
       <input
         ref={inputRef}
         type="file"
@@ -876,10 +1095,8 @@ export default function ToolScreen({ tool }: Props) {
         onChange={onWebInput}
       />
 
-      {/* Scrollable body */}
       <div style={{ flex: 1, paddingBottom: '124px' }}>
 
-        {/* Idle — pick a file */}
         {state === 'idle' && (
           <button
             type="button"
@@ -919,7 +1136,6 @@ export default function ToolScreen({ tool }: Props) {
           </button>
         )}
 
-        {/* Selected files — full names */}
         {files.length > 0 && state !== 'idle' && state !== 'processing' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {files.map((f, i) => (
@@ -928,6 +1144,7 @@ export default function ToolScreen({ tool }: Props) {
                 file={f}
                 tool={tool}
                 onRemove={state === 'ready' ? () => removeFile(i) : undefined}
+                onPreview={() => openPreview(f)}
               />
             ))}
             {multi && state === 'ready' && (
@@ -950,7 +1167,27 @@ export default function ToolScreen({ tool }: Props) {
           </div>
         )}
 
-        {/* Options trigger */}
+        {fileWarning && state === 'ready' && (
+          <div style={{
+            marginTop: '0.75rem',
+            padding: '0.875rem 1rem',
+            borderRadius: '1rem',
+            background: 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(239,68,68,0.08))',
+            border: '1px solid rgba(251,146,60,0.45)',
+            fontSize: '0.85rem',
+            lineHeight: 1.5,
+            display: 'flex',
+            gap: '0.625rem',
+            alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: '1.15rem', lineHeight: 1, flexShrink: 0 }} aria-hidden="true">⚠️</span>
+            <div>
+              <strong style={{ display: 'block', marginBottom: '0.15rem' }}>Wrong file type</strong>
+              <span style={{ opacity: 0.85 }}>{fileWarning}</span>
+            </div>
+          </div>
+        )}
+
         {state === 'ready' && hasSettings && (
           <button
             type="button"
@@ -982,24 +1219,31 @@ export default function ToolScreen({ tool }: Props) {
           </button>
         )}
 
-        {/* Processing hint */}
         {state === 'processing' && (
           <div style={{
-            padding: '1rem',
+            padding: '1rem 1.1rem',
             borderRadius: '1rem',
-            background: 'rgba(56,189,248,0.08)',
-            border: '1px solid rgba(56,189,248,0.25)',
-            fontSize: '0.82rem',
-            lineHeight: 1.5,
-            opacity: 0.8,
+            background: 'linear-gradient(135deg, rgba(251,146,60,0.14), rgba(239,68,68,0.10))',
+            border: '1.5px solid rgba(251,146,60,0.45)',
+            fontSize: '0.85rem',
+            lineHeight: 1.55,
+            marginTop: '1rem',
+            display: 'flex',
+            gap: '0.75rem',
+            alignItems: 'flex-start',
           }}>
-            <strong>Processing on your device.</strong> Keep the app open — you'll get a
-            notification when it finishes. Leaving the app pauses processing.
+            <span style={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0 }} aria-hidden="true">⚠️</span>
+            <div>
+              <strong style={{ display: 'block', marginBottom: '0.2rem' }}>Don't close the app</strong>
+              <span style={{ opacity: 0.85 }}>
+                Processing runs on your device. Closing the app, locking the screen,
+                or switching away for a long time will pause the job.
+              </span>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Sticky bottom CTA */}
       {state === 'ready' && files.length > 0 && (
         <div style={{
           position: 'sticky', bottom: 0,
@@ -1008,7 +1252,7 @@ export default function ToolScreen({ tool }: Props) {
           background: 'linear-gradient(to top, var(--bg, #fff) 55%, transparent)',
           zIndex: 20,
         }}>
-          <PremiumButton variant="primary" onClick={start}>
+          <PremiumButton variant="primary" onClick={start} disabled={!!fileWarning}>
             {multi ? `Merge ${files.length} files` : `Start ${tool.name}`}
           </PremiumButton>
           {totalSize > 0 && (
@@ -1022,7 +1266,6 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       )}
 
-      {/* Processing overlay */}
       {state === 'processing' && (
         <div role="status" aria-live="polite" style={{
           position: 'fixed', inset: 0, zIndex: 90,
@@ -1044,7 +1287,6 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       )}
 
-      {/* Toast feedback */}
       {saveFeedback && (
         <div style={{
           position: 'fixed',
@@ -1065,7 +1307,12 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       )}
 
-      {/* ── Options bottom sheet ─────────────────────── */}
+      <FilePreview
+        file={previewFile}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      />
+
       <BottomSheet open={optionsOpen} onClose={() => setOptionsOpen(false)}>
         <div style={{ padding: '0.5rem 1.25rem 0' }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Options</h2>
@@ -1095,7 +1342,6 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       </BottomSheet>
 
-      {/* ── Success bottom sheet ─────────────────────── */}
       <BottomSheet
         open={successOpen && !!resultBlob}
         onClose={() => setSuccessOpen(false)}
@@ -1131,7 +1377,6 @@ export default function ToolScreen({ tool }: Props) {
           )}
         </div>
 
-        {/* Inline preview */}
         {resultUrl && (
           <div style={{
             margin: '1rem 1.25rem 0',
@@ -1142,22 +1387,13 @@ export default function ToolScreen({ tool }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {isVideoMime(outputMime) ? (
-              <video
-                src={resultUrl}
-                controls
-                playsInline
-                style={{ width: '100%', maxHeight: '260px', display: 'block' }}
-              />
+              <video src={resultUrl} controls playsInline style={{ width: '100%', maxHeight: '260px', display: 'block' }} />
             ) : isAudioMime(outputMime) ? (
               <div style={{ padding: '1rem', width: '100%' }}>
                 <audio src={resultUrl} controls style={{ width: '100%' }} />
               </div>
             ) : isImageMime(outputMime) ? (
-              <img
-                src={resultUrl}
-                alt="Preview"
-                style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', display: 'block' }}
-              />
+              <img src={resultUrl} alt="Preview" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', display: 'block' }} />
             ) : null}
           </div>
         )}
@@ -1178,7 +1414,6 @@ export default function ToolScreen({ tool }: Props) {
         </div>
       </BottomSheet>
 
-      {/* ── Error bottom sheet ───────────────────────── */}
       <BottomSheet
         open={errorOpen && state === 'error'}
         onClose={() => { setErrorOpen(false); setState('ready'); }}
@@ -1221,6 +1456,29 @@ export default function ToolScreen({ tool }: Props) {
       </BottomSheet>
     </div>
   );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PUBLIC WRAPPER — SSR-safe.
+   Astro bundles every `client:load` component for a route into
+   one shared chunk. When that chunk is evaluated on a page that
+   doesn't actually render ToolScreen (like /app/tools), the
+   inner component must never be invoked with a missing prop.
+   This wrapper guards against that — zero hooks, zero risk.
+   ══════════════════════════════════════════════════════════ */
+
+export default function ToolScreen(props: Props) {
+  if (!props || !props.tool || typeof props.tool !== 'object') {
+    return (
+      <div
+        class="d-tool"
+        style={{ padding: '3rem 1.5rem', textAlign: 'center', opacity: 0.6 }}
+      >
+        <p style={{ fontSize: '0.9rem', margin: 0 }}>No tool selected.</p>
+      </div>
+    );
+  }
+  return <ToolScreenInner tool={props.tool} />;
 }
 
 /* ── Helper: one-line settings summary ──────────────────── */

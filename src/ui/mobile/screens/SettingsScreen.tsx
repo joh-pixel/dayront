@@ -17,8 +17,7 @@ import { blogHref } from '../blog';
 import { haptic } from '../haptic';
 
 /* ── Supported languages ───────────────────────────────────
-   Add more entries here to enable the language picker.
-   When this array has 2+ items, the Language row appears. */
+   Add more entries here to enable the language picker. */
 const LANGUAGES = [
   { code: 'en', label: 'English' },
   // { code: 'es', label: 'Español' },
@@ -46,6 +45,41 @@ function isNativeApp(): boolean {
   if (typeof window === 'undefined') return false;
   const w = window as any;
   return w.Capacitor?.isNativePlatform?.() === true || w.__TAURI__ !== undefined;
+}
+
+/* ── Share Dayront — professional message ─────────────── */
+
+const SHARE_URL = 'https://download.dayront.com';
+const SHARE_TITLE = 'Dayront — private media tools';
+const SHARE_TEXT =
+  'Dayront — 73+ media tools that run entirely on your device.\n' +
+  'No uploads, no accounts, no tracking.\n\n' +
+  '🎬 Compress, trim, and merge video\n' +
+  '🎵 Cut, boost, and convert audio\n' +
+  '🤖 AI captions & background removal\n\n' +
+  'Works offline · 5 GB files in the Android app';
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {}
+  // Legacy fallback
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 export default function SettingsScreen() {
@@ -90,8 +124,6 @@ export default function SettingsScreen() {
     setSettings((s) => ({ ...s, lang: code }));
     haptic(8);
 
-    // Navigate to the localized URL prefix. If we're already inside
-    // a locale-prefixed path, replace the prefix; otherwise prepend.
     const path = window.location.pathname;
     const supported = LANGUAGES.map((l) => l.code);
     const segments = path.split('/').filter(Boolean);
@@ -99,7 +131,7 @@ export default function SettingsScreen() {
     const suffix = '/' + (hadLocale ? segments.slice(1) : segments).join('/');
     const cleanSuffix = suffix === '/' ? '' : suffix;
     const target = code === 'en'
-      ? `/app${cleanSuffix}`          // English = no prefix
+      ? `/app${cleanSuffix}`
       : `/${code}/app${cleanSuffix}`;
     window.location.href = target;
   }
@@ -147,15 +179,53 @@ export default function SettingsScreen() {
     setTimeout(() => { window.location.href = '/app'; }, 800);
   }
 
-  function shareApp() {
-    const url = 'https://download.dayront.com';
-    const text = 'Dayront — private media tools that never upload your files.';
-    if (typeof navigator !== 'undefined' && (navigator as any).share) {
-      (navigator as any).share({ title: 'Dayront', text, url }).catch(() => {});
-    } else {
-      window.open(url, '_blank');
+  /* ── Share Dayront ─────────────────────────────────────
+     Order of preference:
+       1. @capacitor/share (native Android/iOS) — real share sheet
+       2. navigator.share (web) — native browser share
+       3. Copy link to clipboard — fallback for old browsers
+  ────────────────────────────────────────────────────── */
+  async function shareApp() {
+    haptic(12);
+
+    /* 1. Native share sheet */
+    if (native) {
+      try {
+        const mod: any = await import(/* @vite-ignore */ '@capacitor/share');
+        const { Share } = mod;
+        await Share.share({
+          title: SHARE_TITLE,
+          text: SHARE_TEXT,
+          url: SHARE_URL,
+          dialogTitle: 'Share Dayront with a friend',
+        });
+        return;
+      } catch (err: any) {
+        const msg = String(err?.message || err || '').toLowerCase();
+        if (msg.includes('cancel') || msg.includes('abort')) return;
+        console.warn('[share] Native share failed, falling back:', err);
+      }
     }
-    haptic(10);
+
+    /* 2. Web Share API (Chrome Android, Safari iOS 15+) */
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({
+          title: SHARE_TITLE,
+          text: SHARE_TEXT,
+          url: SHARE_URL,
+        });
+        return;
+      } catch (err: any) {
+        const msg = String(err?.message || err || '').toLowerCase();
+        if (msg.includes('cancel') || msg.includes('abort')) return;
+        // Fall through to copy
+      }
+    }
+
+    /* 3. Copy link fallback */
+    const copied = await copyText(`${SHARE_TEXT}\n\n${SHARE_URL}`);
+    flash(copied ? 'Link copied — paste in any app' : 'Could not open share');
   }
 
   if (!mounted) return <div class="d-settings" />;
@@ -168,7 +238,6 @@ export default function SettingsScreen() {
       <section class="d-settings__group">
         <h2 class="d-settings__group-title">Appearance</h2>
         <div class="d-settings__list">
-          {/* Theme */}
           <button
             type="button"
             class="d-settings__row"
@@ -194,7 +263,6 @@ export default function SettingsScreen() {
             </span>
           </button>
 
-          {/* Language — only shown when 2+ languages are registered */}
           {showLanguagePicker && (
             <div class="d-settings__row d-settings__row--static">
               <span class="d-settings__row-icon" aria-hidden="true">
