@@ -36,12 +36,13 @@ android {
 repositories {
     google()
     mavenCentral()
-    maven { url 'https://jitpack.io' } // Fallback for FFmpegKit
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
-    // FFmpegKit Full-GPL — includes libx264, libmp3lame, and everything Dayront needs
-    implementation 'com.arthenica:ffmpeg-kit-full-gpl:6.0-2'
+    // ★ FFmpegKit Full-GPL — maintained fork of the retired com.arthenica release.
+    // Same Java package (com.arthenica.ffmpegkit.*), same Kotlin API, same
+    // libx264 + libmp3lame + libass + everything Dayront needs.
+    implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-full-gpl:8.1.7'
 }
