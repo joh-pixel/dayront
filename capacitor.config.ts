@@ -18,12 +18,23 @@ const config: CapacitorConfig = {
       'dayront.com',
       '*.dayront.com',
     ],
+    /**
+     * ★ Branded error page instead of Chrome's ERR_TIMED_OUT.
+     * Served from `dist/client/error.html` (built from `public/error.html`).
+     * Shown when the WebView can't reach the server on cold start.
+     */
+    errorPath: 'error.html',
   },
 
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: true, // ← turn OFF after debugging
+    /**
+     * Debug-only WebView inspector.
+     * Set to `true` to open chrome://inspect while developing.
+     * Keep `false` for production — no console access for end users.
+     */
+    webContentsDebuggingEnabled: false,
     backgroundColor: '#2CB5F0',
   },
 

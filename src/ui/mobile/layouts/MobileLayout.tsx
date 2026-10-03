@@ -2,12 +2,12 @@
  * src/ui/mobile/layouts/MobileLayout.tsx
  * ----------------------------------------------------------------------------
  * Native-app shell with:
- *   • Client-side navigation via Astro ClientRouter (instant tab switches)
+ *   • Client-side navigation via Astro ClientRouter
  *   • Horizontal swipe between bottom-nav tabs (velocity-aware)
- *   • History guard so the app never closes from a back-swipe at root
+ *   • History guard that only re-arms at ROOT tabs — never blocks real back nav
+ *   • Native Android back-button interceptor (app never closes at a root tab)
  *   • Direction-aware View Transitions
  *   • iOS-style peek indicator
- *   • Shared haptic feedback (respects Settings toggle)
  *   • Deep link handling (dayront://…) — cold and warm start
  *
  * NOTE: Header + bottom nav are pinned during View Transitions via CSS
@@ -37,6 +37,9 @@ const TAB_URLS: Record<TabKey, string> = {
   settings: '/app/settings',
 };
 
+/** Root routes — the back button is swallowed here. */
+const ROOT_PATHS = new Set(['/', '/tools', '/recent', '/settings']);
+
 /** Distance threshold (fraction of viewport width) to commit a swipe. */
 const SWIPE_DISTANCE_RATIO = 0.22;
 
@@ -55,6 +58,16 @@ function isNativeApp(): boolean {
   if (typeof window === 'undefined') return false;
   const w = window as any;
   return w.Capacitor?.isNativePlatform?.() === true || w.__TAURI__ !== undefined;
+}
+
+/**
+ * Normalize the current URL path to a root slug, or 'other' when it's
+ * a detail page (like /app/tool/xxx). Used by both the history guard
+ * and the back-button handler to decide whether back is a real navigation.
+ */
+function currentRoot(): string {
+  const clean = location.pathname.replace(/\/$/, '').replace(/^\/app/, '') || '/';
+  return ROOT_PATHS.has(clean) ? clean : 'other';
 }
 
 /**
@@ -145,29 +158,25 @@ export default function MobileLayout({
 }: Props) {
   const contentRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
-  const [dragging, setDragging] = useState(false);
   const [peek, setPeek] = useState<{ side: 'left' | 'right'; intensity: number } | null>(null);
 
-  /* ── History guard: prevent the app from closing on swipe-back at root ── */
+  /* ── History guard: only re-arm at ROOT tabs ──
+     On detail pages (/app/tool/xxx), we let the back button do a real
+     navigation. On root tabs, we swallow it and nudge the UI. */
   useEffect(() => {
     if (hideNav) return;
 
-    // Push a synthetic entry so there's always "somewhere to go back to".
-    if (history.state?.dayrontGuard !== true) {
-      history.pushState(
-        { dayrontGuard: true, ts: Date.now() },
-        '',
-        location.href,
-      );
+    // Push a synthetic entry ONLY at a root tab — otherwise let real back nav work.
+    if (currentRoot() !== 'other' && history.state?.dayrontGuard !== true) {
+      history.pushState({ dayrontGuard: true, ts: Date.now() }, '', location.href);
     }
 
     const onPop = () => {
-      // If we're still at a root tab, silently re-arm and nudge the UI.
-      history.pushState(
-        { dayrontGuard: true, ts: Date.now() },
-        '',
-        location.href,
-      );
+      // On a detail page → let the browser's back navigation happen naturally.
+      if (currentRoot() === 'other') return;
+
+      // At a root tab → re-arm the guard and nudge the UI.
+      history.pushState({ dayrontGuard: true, ts: Date.now() }, '', location.href);
       haptic(4);
 
       const el = contentRef.current;
@@ -187,7 +196,7 @@ export default function MobileLayout({
     return () => window.removeEventListener('popstate', onPop);
   }, [hideNav]);
 
-  /* ── Deep links (dayront://…)
+  /* ── Native Android back button + deep links ──
      Only runs inside the native app shell. On web, it's a no-op. */
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -201,25 +210,55 @@ export default function MobileLayout({
         const App = mod.App;
         if (!App || cancelled) return;
 
-        // Cold start: the URL that launched the app (if any)
+        // ── Native back button ──
+        // At a root tab  → swallow (app stays open)
+        // On a detail pg → real back navigation
+        let backHandle: any;
         try {
-          const launch = await App.getLaunchUrl();
-          if (launch?.url && !cancelled) {
-            handleDeepLink(launch.url);
-          }
+          backHandle = await App.addListener('backButton', (info: any) => {
+            if (currentRoot() === 'other') {
+              if (info?.canGoBack !== false) {
+                window.history.back();
+              }
+              return;
+            }
+
+            // Root tab: nudge UI, do NOT let the app close
+            haptic(4);
+            const el = contentRef.current;
+            if (el) {
+              el.animate(
+                [
+                  { transform: 'translateX(0)' },
+                  { transform: 'translateX(10px)' },
+                  { transform: 'translateX(0)' },
+                ],
+                { duration: 240, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+              );
+            }
+          });
         } catch {}
 
-        // Warm start: listen for new links while the app runs
+        // ── Cold start deep link ──
         try {
-          const handle = await App.addListener('appUrlOpen', (event: any) => {
+          const launch = await App.getLaunchUrl();
+          if (launch?.url && !cancelled) handleDeepLink(launch.url);
+        } catch {}
+
+        // ── Warm start deep link ──
+        let urlHandle: any;
+        try {
+          urlHandle = await App.addListener('appUrlOpen', (event: any) => {
             if (event?.url) handleDeepLink(event.url);
           });
-          cleanup = () => {
-            try { handle.remove(); } catch {}
-          };
         } catch {}
+
+        cleanup = () => {
+          try { backHandle?.remove(); } catch {}
+          try { urlHandle?.remove(); } catch {}
+        };
       } catch {
-        // Plugin not installed — deep links simply don't fire. No harm done.
+        // Plugin not installed — deep links + back intercept simply don't fire.
       }
     })();
 
@@ -229,24 +268,32 @@ export default function MobileLayout({
     };
   }, []);
 
-  /* ── Swipe between tabs ── */
+  /* ── Swipe between tabs ──
+     NOTE: `dragging` state is intentionally NOT in the deps array —
+     putting it there re-runs the effect mid-gesture and kills the swipe. */
   useEffect(() => {
     const el = contentRef.current;
     if (!el || hideNav) return;
 
     const idx = TAB_ORDER.indexOf(current);
     const canGoPrev = idx > 0;
-    const canGoNext = idx < TAB_ORDER.length - 1;
+    const canGoNext = idx >= 0 && idx < TAB_ORDER.length - 1;
 
     let startX = 0;
     let startY = 0;
-    let startT = 0;
     let lastX = 0;
     let lastT = 0;
     let velocity = 0;
     let locked: 'none' | 'horizontal' | 'vertical' = 'none';
     let committed = false;
     let active = false;
+    let draggingLocal = false;
+
+    const setDraggingClass = (on: boolean) => {
+      if (draggingLocal === on) return;
+      draggingLocal = on;
+      el.classList.toggle('d-app__content--dragging', on);
+    };
 
     const setOffset = (
       x: number,
@@ -265,7 +312,7 @@ export default function MobileLayout({
       const t = e.touches[0];
       startX = lastX = t.clientX;
       startY = t.clientY;
-      startT = lastT = performance.now();
+      lastT = performance.now();
       velocity = 0;
       locked = 'none';
       committed = false;
@@ -286,7 +333,7 @@ export default function MobileLayout({
       if (locked !== 'horizontal') return;
 
       e.preventDefault();
-      if (!dragging) setDragging(true);
+      setDraggingClass(true);
 
       // Track velocity
       const now = performance.now();
@@ -322,7 +369,7 @@ export default function MobileLayout({
       active = false;
 
       if (locked !== 'horizontal') {
-        setDragging(false);
+        setDraggingClass(false);
         return;
       }
 
@@ -334,10 +381,9 @@ export default function MobileLayout({
       const passedDistance = dist > threshold;
       const passedVelocity =
         Math.abs(velocity) > SWIPE_VELOCITY_THRESHOLD &&
-        // Velocity must agree with the drag direction
         Math.sign(velocity) === Math.sign(dx);
 
-      setDragging(false);
+      setDraggingClass(false);
       setOffset(0, null, 0);
 
       if (dx > 0 && canGoPrev && (passedDistance || passedVelocity)) {
@@ -361,8 +407,9 @@ export default function MobileLayout({
       el.removeEventListener('touchcancel', onEnd);
       el.style.setProperty('--drag-x', '0px');
       el.style.setProperty('--drag-peek', '0');
+      el.classList.remove('d-app__content--dragging');
     };
-  }, [current, hideNav, dragging]);
+  }, [current, hideNav]);
 
   /* ── Bottom-nav tap handler — uses the same navigateTo helper ── */
   const handleNavTap = (tab: TabKey) => {
@@ -403,7 +450,7 @@ export default function MobileLayout({
 
       <main
         ref={contentRef}
-        class={`d-app__content ${dragging ? 'd-app__content--dragging' : ''}`}
+        class="d-app__content"
       >
         {children}
       </main>
