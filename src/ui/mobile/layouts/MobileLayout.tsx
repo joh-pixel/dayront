@@ -9,6 +9,10 @@
  *   • iOS-style peek indicator
  *   • Shared haptic feedback (respects Settings toggle)
  *   • Deep link handling (dayront://…) — cold and warm start
+ *
+ * NOTE: Header + bottom nav are pinned during View Transitions via CSS
+ * `view-transition-name` (see mobile.css). Do NOT add `transition:persist`
+ * here — that directive is Astro-only and breaks the Preact JSX parser.
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -95,8 +99,6 @@ function navigateTo(tab: TabKey, direction: 'forward' | 'back') {
  *   dayront://settings             → /app/settings
  *   dayront://home                 → /app
  *   dayront://anything-else        → /app
- *
- * Anything that doesn't match lands on Home — never a broken route.
  */
 function handleDeepLink(rawUrl: string) {
   if (!rawUrl) return;
@@ -108,7 +110,6 @@ function handleDeepLink(rawUrl: string) {
       return;
     }
 
-    // Split path + query (query is preserved if present)
     const [pathPart, queryPart] = afterScheme.split('?');
     const segments = pathPart.split('/').filter(Boolean);
     const first = segments[0];
@@ -186,7 +187,7 @@ export default function MobileLayout({
     return () => window.removeEventListener('popstate', onPop);
   }, [hideNav]);
 
-  /* ── Deep links (dayront://…) ──
+  /* ── Deep links (dayront://…)
      Only runs inside the native app shell. On web, it's a no-op. */
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -377,7 +378,7 @@ export default function MobileLayout({
       class={`d-app ${hideNav ? 'd-app--no-nav' : ''}`}
       data-shell="mobile"
     >
-      <header class="d-app__header" transition:persist="app-header">
+      <header class="d-app__header">
         {backTo && (
           <a href={backTo} class="d-app__back" aria-label="Back">
             <svg
@@ -451,9 +452,7 @@ export default function MobileLayout({
       )}
 
       {!hideNav && (
-        <div transition:persist="bottom-nav">
-          <BottomNav current={current} onNavigate={handleNavTap} />
-        </div>
+        <BottomNav current={current} onNavigate={handleNavTap} />
       )}
     </div>
   );

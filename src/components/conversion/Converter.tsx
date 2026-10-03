@@ -25,6 +25,13 @@ import {
   extractAudio,
 } from '../../lib/ffmpeg';
 
+import {
+  checkWebCapacity,
+  isMemoryError,
+  ToolFallbackError,
+  type FallbackReason,
+} from '../../core/toolRunner';
+
 import { saveFile } from '../../lib/db';
 import { formatBytes } from '../../lib/utils';
 
@@ -50,13 +57,25 @@ type ToolType =
   | 'convert-video'
   | 'resolution-convert';
 
-interface SettingDef {
+/* ── Friendly option type ─────────────────────────────────
+   A setting option can be either:
+     - a plain string  → "192k"
+     - a friendly pair → { value: 192, label: "High (192 kbps)" }
+   The `value` is what FFmpeg receives; the `label` is what the user sees.
+   ─────────────────────────────────────────────────────────── */
+export interface SettingOption {
+  value: string | number;
+  label: string;
+}
+
+export interface SettingDef {
   name: string;
   label: string;
   type: 'range' | 'number' | 'select';
   min?: number;
   max?: number;
-  options?: string[];
+  /** Plain strings OR { value, label } objects */
+  options?: Array<string | SettingOption>;
   default: string | number;
 }
 
@@ -164,6 +183,147 @@ function getAllowedExtensions(config: ToolConfig): string[] {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   NATIVE APP PROMO
+   ─────────────────────────────────────────────────────────────
+   Shown when the browser can't handle the job:
+     • file is too large for WASM
+     • WASM crashed with an out-of-memory error
+     • tool is desktop-only (unified with the same look)
+   ══════════════════════════════════════════════════════════════ */
+
+const APP_DOWNLOAD_URL = 'https://download.dayront.com';
+
+function reasonToHeadline(reason: FallbackReason | 'desktop-only'): string {
+  switch (reason) {
+    case 'file-too-large':
+      return 'This file needs the app';
+    case 'out-of-memory':
+      return 'Your browser ran out of memory';
+    case 'timeout':
+      return 'This job is taking too long in the browser';
+    case 'desktop-only':
+      return 'Best on the Dayront App';
+    default:
+      return 'Use the Dayront App for this file';
+  }
+}
+
+function reasonToBody(
+  reason: FallbackReason | 'desktop-only',
+  totalMB: number,
+  isMobile: boolean,
+): string {
+  const sizeLabel = totalMB >= 1024
+    ? `${(totalMB / 1024).toFixed(2)} GB`
+    : `${Math.round(totalMB)} MB`;
+
+  switch (reason) {
+    case 'file-too-large':
+      return `Your file is ${sizeLabel}. Browsers cap out around ${
+        isMobile ? '250 MB' : '500 MB'
+      } because they rely on WebAssembly. The Dayront App uses a native engine — no caps, no crashes.`;
+    case 'out-of-memory':
+      return `The browser tab ran out of memory while working on your ${sizeLabel} file. The Dayront App ships a native FFmpeg engine with no memory limits and processes up to 5 GB at 10× the speed.`;
+    case 'timeout':
+      return `Processing a ${sizeLabel} file in the browser can take minutes and sometimes stalls. The Dayront App does the same job in seconds — fully offline.`;
+    case 'desktop-only':
+      return `This tool needs more processing power than a mobile browser can give. For the best experience, use the Dayront App (Android) for native speed, or a desktop computer with 8 GB+ RAM.`;
+    default:
+      return 'The Dayront App handles large files, runs 10× faster, and works fully offline.';
+  }
+}
+
+export function NativeAppPromo({
+  reason,
+  totalMB,
+  isMobile,
+  onTryAnyway,
+  canBypass,
+}: {
+  reason: FallbackReason | 'desktop-only';
+  totalMB: number;
+  isMobile: boolean;
+  onTryAnyway?: () => void;
+  canBypass: boolean;
+}) {
+  return (
+    <div class="w-full overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white shadow-sm dark:border-sky-900/60 dark:from-sky-950/50 dark:to-gray-900">
+      {/* Header strip */}
+      <div class="flex items-center gap-2 border-b border-sky-100 bg-sky-500/10 px-5 py-2.5 dark:border-sky-900/60">
+        <span class="h-2 w-2 rounded-full bg-sky-500 animate-pulse" aria-hidden="true" />
+        <span class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+          Recommended: Dayront App
+        </span>
+      </div>
+
+      <div class="p-6">
+        {/* Icon + headline */}
+        <div class="flex items-start gap-4">
+          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-2xl shadow-md">
+            📱
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+              {reasonToHeadline(reason)}
+            </h3>
+            <p class="mt-1.5 text-sm leading-6 text-gray-700 dark:text-gray-300">
+              {reasonToBody(reason, totalMB, isMobile)}
+            </p>
+          </div>
+        </div>
+
+        {/* Feature bullets */}
+        <ul class="mt-5 grid gap-2 sm:grid-cols-3">
+          <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
+            <span aria-hidden="true">⚡</span> 10× faster
+          </li>
+          <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
+            <span aria-hidden="true">📁</span> Up to 5 GB files
+          </li>
+          <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
+            <span aria-hidden="true">🔒</span> 100% offline
+          </li>
+        </ul>
+
+        {/* CTAs */}
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <a
+            href={APP_DOWNLOAD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-sky-600 active:scale-[0.98]"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="M7 10l5 5 5-5" />
+              <path d="M12 15V3" />
+            </svg>
+            Download the App
+          </a>
+
+          {canBypass && onTryAnyway && (
+            <button
+              type="button"
+              onClick={onTryAnyway}
+              class="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Try anyway in browser
+            </button>
+          )}
+        </div>
+
+        {/* Platform hint */}
+        <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          Android available now · iOS, Windows, macOS &amp; Linux coming soon.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+
 export default function Converter({
   toolConfig,
 }: {
@@ -176,6 +336,11 @@ export default function Converter({
   const [outputFilename, setOutputFilename] = useState('');
   const [privacy, setPrivacy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [promo, setPromo] = useState<
+    { reason: FallbackReason | 'desktop-only'; totalMB: number } | null
+  >(null);
+  const [bypassPromo, setBypassPromo] = useState(false);
 
   const [settingsState, setSettingsState] = useState<Record<string, string | number>>(() => {
     const initial: Record<string, string | number> = {};
@@ -191,9 +356,8 @@ export default function Converter({
   const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
 
   const isMobile = useIsMobile();
-  const isBlockedOnMobile = isMobile && toolConfig.requiresDesktop === true;
+  const isDesktopOnlyTool = isMobile && toolConfig.requiresDesktop === true;
 
-  // Smooth animated progress (auto-creeps + eases toward real target)
   const smoothProgress = useSmoothProgress(progress);
 
   useEffect(() => {
@@ -231,19 +395,35 @@ export default function Converter({
 
   function handleFiles(selected: File[]) {
     if (processing) return;
+
     setFiles(selected);
     setResultBlob(null);
     setOutputFilename('');
     setError(null);
     setProgress(0);
+    setBypassPromo(false);
+
+    const capacity = checkWebCapacity(selected, isMobile);
+    if (capacity) {
+      setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
+    } else {
+      setPromo(null);
+    }
+
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
     }
   }
 
+  function handleTryAnyway() {
+    setBypassPromo(true);
+  }
+
   async function startConversion() {
     if (files.length === 0 || processing) return;
+
+    if (promo && !bypassPromo) return;
 
     setProcessing(true);
     setProgress(0);
@@ -414,9 +594,19 @@ export default function Converter({
       setResultBlob(output);
       setOutputFilename(filename);
       setProgress(100);
+      setPromo(null);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      setError(message || 'An error occurred while processing your file.');
+      if (e instanceof ToolFallbackError) {
+        setPromo({ reason: e.reason, totalMB: e.fileSizeMB });
+        setBypassPromo(false);
+      } else if (isMemoryError(e)) {
+        const totalMB = files.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
+        setPromo({ reason: 'out-of-memory', totalMB });
+        setBypassPromo(false);
+      } else {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message || 'An error occurred while processing your file.');
+      }
     } finally {
       setProcessing(false);
     }
@@ -441,6 +631,8 @@ export default function Converter({
     setError(null);
     setProgress(0);
     setProcessing(false);
+    setPromo(null);
+    setBypassPromo(false);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -459,9 +651,10 @@ export default function Converter({
     'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
   ].join(' ');
 
+  /* Bigger tap target on mobile-friendly selects */
   const selectClass = [
-    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
-    'outline-none transition',
+    'w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-900',
+    'outline-none transition appearance-none cursor-pointer',
     'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
     'dark:border-gray-600 dark:bg-gray-950 dark:text-white',
     'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
@@ -471,8 +664,6 @@ export default function Converter({
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
 
-  /* ─────────── Loading stage label ─────────── */
-  // Provides clearer feedback while FFmpeg is loading (especially on mobile)
   function getLoadingLabel(): string {
     if (progress > 0) return 'Processing your file…';
     if (smoothProgress < 4) return 'Downloading FFmpeg engine…';
@@ -481,32 +672,72 @@ export default function Converter({
     return 'Still loading FFmpeg…';
   }
 
-  if (isBlockedOnMobile) {
+  /* ─────────── Blocking states ─────────── */
+
+  // 1. Desktop-only tools on mobile → unified NativeAppPromo (app-first)
+  if (isDesktopOnlyTool) {
     return (
       <div class="w-full">
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800/50 dark:bg-amber-950/30">
-          <div class="flex gap-4">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl dark:bg-amber-900/50">
-              📱
-            </div>
-            <div>
-              <h2 class="text-lg font-bold text-amber-900 dark:text-amber-100">
-                Desktop recommended
-              </h2>
-              <p class="mt-2 text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
-                This resolution requires significant processing power and memory that
-                most mobile browsers cannot allocate. For best results, please use a
-                desktop computer with 8GB+ RAM.
-              </p>
-              <p class="mt-3 text-xs text-amber-700 dark:text-amber-400">
-                Attempting this conversion on mobile may freeze your browser or crash the tab.
-              </p>
-            </div>
-          </div>
-        </div>
+        <NativeAppPromo
+          reason="desktop-only"
+          totalMB={files.reduce((s, f) => s + f.size, 0) / (1024 * 1024)}
+          isMobile={true}
+          canBypass={false}
+        />
       </div>
     );
   }
+
+  // 2. Capacity warning on selected files → NativeAppPromo with bypass
+  if (promo && !bypassPromo && !resultBlob) {
+    return (
+      <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
+        <NativeAppPromo
+          reason={promo.reason}
+          totalMB={promo.totalMB}
+          isMobile={isMobile}
+          canBypass={true}
+          onTryAnyway={handleTryAnyway}
+        />
+
+        {files.length > 0 && (
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
+              <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
+              <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                {files.length} {files.length === 1 ? 'file' : 'files'}
+              </span>
+            </div>
+            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+              {files.map((file) => (
+                <li
+                  key={`${file.name}-${file.size}-${file.lastModified}`}
+                  class="flex items-center justify-between gap-4 px-5 py-3"
+                >
+                  <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {file.name}
+                  </span>
+                  <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {formatBytes(file.size)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={resetAll}
+          class="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-3 font-semibold text-gray-800 transition hover:bg-gray-200 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+        >
+          Choose different files
+        </button>
+      </div>
+    );
+  }
+
+  /* ─────────── Main UI ─────────── */
 
   return (
     <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
@@ -571,22 +802,34 @@ export default function Converter({
                         {setting.label}
                       </label>
 
+                      {/* ── Select with friendly labels + custom arrow ── */}
                       {setting.type === 'select' && (
-                        <select
-                          id={`setting-${setting.name}`}
-                          value={String(value)}
-                          disabled={processing}
-                          class={selectClass}
-                          onChange={(event) =>
-                            updateSetting(setting.name, event.currentTarget.value)
-                          }
-                        >
-                          {setting.options?.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
+                        <div class="relative">
+                          <select
+                            id={`setting-${setting.name}`}
+                            value={String(value)}
+                            disabled={processing}
+                            class={selectClass}
+                            onChange={(event) =>
+                              updateSetting(setting.name, event.currentTarget.value)
+                            }
+                          >
+                            {setting.options?.map((option) => {
+                              const val = typeof option === 'string' ? option : option.value;
+                              const lbl = typeof option === 'string' ? option : option.label;
+                              return (
+                                <option key={String(val)} value={val}>
+                                  {lbl}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
                       )}
 
                       {setting.type === 'range' && (
@@ -697,7 +940,6 @@ export default function Converter({
             )}
           </button>
 
-          {/* Smooth progress card with stage-aware labels */}
           {processing && (
             <div
               class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"

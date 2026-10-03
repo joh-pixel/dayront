@@ -8,18 +8,33 @@ export interface HowToStep {
   text: string;
 }
 
+/* --------------------------------------------------------------------------
+   ★ FRIENDLY SETTING OPTIONS
+   --------------------------------------------------------------------------
+   A dropdown option can be:
+     - a plain string   → "192k"
+     - a friendly pair  → { value: '192k', label: 'High — 192 kbps' }
+   `value` is what FFmpeg receives; `label` is what the user sees.
+-------------------------------------------------------------------------- */
+
+export interface SettingOption {
+  value: string | number;
+  label: string;
+}
+
 export interface SettingDef {
   name: string;
   label: string;
   type: 'range' | 'number' | 'select';
   min?: number;
   max?: number;
-  options?: string[];
+  /** Plain strings OR { value, label } pairs for user-friendly dropdowns */
+  options?: Array<string | SettingOption>;
   default: string | number;
 }
 
 /* --------------------------------------------------------------------------
-   ★ NEW: PLATFORM TYPES
+   ★ PLATFORM TYPES
 -------------------------------------------------------------------------- */
 
 export type ToolTier = 'light' | 'medium' | 'heavy';
@@ -59,7 +74,6 @@ export interface Tool {
   type?: string;
   outputFormat?: string;
   settings?: SettingDef[];
-  // ★ Resolution converter support
   presetWidth?: number;
   presetHeight?: number;
   requiresDesktop?: boolean;
@@ -67,7 +81,6 @@ export interface Tool {
   howTo: HowToStep[];
   relatedTools: string[];
 
-  // ★ Platform intelligence (optional — auto-filled by defaults/overrides)
   tier?: ToolTier;
   engine?: ToolEngine;
   webMaxMB?: number;
@@ -76,9 +89,39 @@ export interface Tool {
 }
 
 /* --------------------------------------------------------------------------
-   BASE TOOLS (manually maintained)
-   NOTE: This is no longer exported directly. The final `tools` export below
-   combines these with the auto-generated resolution converters.
+   REUSABLE FRIENDLY OPTION SETS
+   (Kept here so every tool uses the exact same labels.)
+-------------------------------------------------------------------------- */
+
+const AUDIO_BITRATE_OPTIONS: SettingOption[] = [
+  { value: '128k', label: 'Standard — 128 kbps' },
+  { value: '192k', label: 'High — 192 kbps (recommended)' },
+  { value: '256k', label: 'Very High — 256 kbps' },
+  { value: '320k', label: 'Best — 320 kbps' },
+];
+
+const VIDEO_CODEC_OPTIONS: SettingOption[] = [
+  { value: 'libx264', label: 'H.264 — Best compatibility (recommended)' },
+  { value: 'copy',    label: 'Copy — No re-encoding (fastest)' },
+];
+
+const AUDIO_CODEC_OPTIONS: SettingOption[] = [
+  { value: 'aac', label: 'AAC — Best compatibility (recommended)' },
+  { value: 'copy', label: 'Copy — No re-encoding (fastest)' },
+];
+
+const WEBM_VIDEO_CODEC_OPTIONS: SettingOption[] = [
+  { value: 'libvpx', label: 'VP8 — Best compatibility (recommended)' },
+  { value: 'copy',   label: 'Copy — No re-encoding (fastest)' },
+];
+
+const WEBM_AUDIO_CODEC_OPTIONS: SettingOption[] = [
+  { value: 'libvorbis', label: 'Vorbis — Best compatibility (recommended)' },
+  { value: 'copy',      label: 'Copy — No re-encoding (fastest)' },
+];
+
+/* --------------------------------------------------------------------------
+   BASE TOOLS
 -------------------------------------------------------------------------- */
 
 const baseTools: Tool[] = [
@@ -94,8 +137,8 @@ const baseTools: Tool[] = [
     type: 'cut',
     outputFormat: 'mp3',
     settings: [
-      { name: 'start', label: 'Start time (seconds)', type: 'number', min: 0, default: 0 },
-      { name: 'duration', label: 'Duration (seconds)', type: 'number', min: 1, default: 30 },
+      { name: 'start',    label: 'Start time', type: 'number', min: 0, default: 0 },
+      { name: 'duration', label: 'Duration',   type: 'number', min: 1, default: 30 },
     ],
     faq: [
       { question: 'Is it really free?', answer: 'Yes, completely free.' },
@@ -142,7 +185,18 @@ const baseTools: Tool[] = [
     type: 'compress',
     outputFormat: 'mp3',
     settings: [
-      { name: 'quality', label: 'Quality (0 best, 9 smallest)', type: 'range', min: 0, max: 9, default: 3 },
+      {
+        name: 'quality',
+        label: 'Compression Level',
+        type: 'select',
+        default: 3,
+        options: [
+          { value: 0, label: 'Best Quality — largest file' },
+          { value: 3, label: 'Balanced — recommended' },
+          { value: 6, label: 'Smaller File' },
+          { value: 9, label: 'Smallest File — lowest quality' },
+        ],
+      },
     ],
     faq: [
       { question: 'Will quality suffer?', answer: 'Smart compression keeps audio clear.' },
@@ -167,7 +221,18 @@ const baseTools: Tool[] = [
     type: 'boost',
     outputFormat: 'mp3',
     settings: [
-      { name: 'gain', label: 'Gain (dB)', type: 'number', min: 1, max: 20, default: 6 },
+      {
+        name: 'gain',
+        label: 'Volume Boost',
+        type: 'select',
+        default: 6,
+        options: [
+          { value: 3,  label: 'Subtle — +3 dB' },
+          { value: 6,  label: 'Medium — +6 dB (recommended)' },
+          { value: 10, label: 'Loud — +10 dB' },
+          { value: 15, label: 'Very Loud — +15 dB' },
+        ],
+      },
     ],
     faq: [
       { question: 'Will it distort?', answer: 'No, we prevent clipping.' },
@@ -192,11 +257,25 @@ const baseTools: Tool[] = [
     type: 'speed',
     outputFormat: 'mp3',
     settings: [
-      { name: 'factor', label: 'Speed factor', type: 'number', min: 0.25, max: 4, default: 1.5 },
+      {
+        name: 'factor',
+        label: 'Playback Speed',
+        type: 'select',
+        default: 1.5,
+        options: [
+          { value: 0.5,  label: '0.5× — Half Speed' },
+          { value: 0.75, label: '0.75× — Slightly Slower' },
+          { value: 1,    label: '1× — Normal' },
+          { value: 1.25, label: '1.25× — Slightly Faster' },
+          { value: 1.5,  label: '1.5× — Faster' },
+          { value: 2,    label: '2× — Double Speed' },
+          { value: 3,    label: '3× — Triple Speed' },
+        ],
+      },
     ],
     faq: [
       { question: 'Does it affect pitch?', answer: 'We preserve original pitch.' },
-      { question: 'What speeds?', answer: 'From 0.25× to 4×.' },
+      { question: 'What speeds?', answer: 'From 0.5× to 3×.' },
       { question: 'Is it free?', answer: 'Yes, completely free.' },
     ],
     howTo: [
@@ -285,7 +364,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'How much smaller?', answer: '5-10× smaller than WAV.' },
@@ -310,7 +389,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'Why convert?', answer: 'MP3 is more widely supported.' },
@@ -357,7 +436,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'Will I lose quality?', answer: 'High-quality 320kbps encoding.' },
@@ -382,7 +461,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'Why convert?', answer: 'MP3 is more widely supported.' },
@@ -429,7 +508,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [],
     howTo: [
@@ -450,7 +529,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [],
     howTo: [
@@ -471,7 +550,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [],
     howTo: [
@@ -492,7 +571,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [],
     howTo: [
@@ -513,7 +592,7 @@ const baseTools: Tool[] = [
     icon: '🎵',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [],
     howTo: [
@@ -536,7 +615,7 @@ const baseTools: Tool[] = [
     icon: '🎬',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Audio bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'HD videos?', answer: 'Yes, any MP4 with audio.' },
@@ -561,7 +640,7 @@ const baseTools: Tool[] = [
     icon: '🎬',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'iPhone videos?', answer: 'Yes, fully compatible.' },
@@ -586,7 +665,7 @@ const baseTools: Tool[] = [
     icon: '🎬',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'Multi-channel?', answer: 'Downmixed to stereo.' },
@@ -611,7 +690,7 @@ const baseTools: Tool[] = [
     icon: '🎬',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'All AVI files?', answer: 'Yes, with audio track.' },
@@ -636,7 +715,7 @@ const baseTools: Tool[] = [
     icon: '🎬',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [
       { question: 'Audio-only?', answer: 'Yes, works.' },
@@ -705,7 +784,7 @@ const baseTools: Tool[] = [
     icon: '🎬',
     type: 'convert',
     settings: [
-      { name: 'bitrate', label: 'Bitrate', type: 'select', options: ['128k','192k','256k','320k'], default: '192k' },
+      { name: 'bitrate', label: 'Audio Quality', type: 'select', options: AUDIO_BITRATE_OPTIONS, default: '192k' },
     ],
     faq: [],
     howTo: [
@@ -729,8 +808,8 @@ const baseTools: Tool[] = [
     type: 'convert-video',
     outputFormat: 'mp4',
     settings: [
-      { name: 'vcodec', label: 'Video Codec', type: 'select', options: ['libx264','copy'], default: 'libx264' },
-      { name: 'acodec', label: 'Audio Codec', type: 'select', options: ['aac','copy'], default: 'aac' },
+      { name: 'vcodec', label: 'Video Codec', type: 'select', options: VIDEO_CODEC_OPTIONS, default: 'libx264' },
+      { name: 'acodec', label: 'Audio Codec', type: 'select', options: AUDIO_CODEC_OPTIONS, default: 'aac' },
     ],
     faq: [],
     howTo: [
@@ -752,8 +831,8 @@ const baseTools: Tool[] = [
     type: 'convert-video',
     outputFormat: 'webm',
     settings: [
-      { name: 'vcodec', label: 'Video Codec', type: 'select', options: ['libvpx','copy'], default: 'libvpx' },
-      { name: 'acodec', label: 'Audio Codec', type: 'select', options: ['libvorbis','copy'], default: 'libvorbis' },
+      { name: 'vcodec', label: 'Video Codec', type: 'select', options: WEBM_VIDEO_CODEC_OPTIONS, default: 'libvpx' },
+      { name: 'acodec', label: 'Audio Codec', type: 'select', options: WEBM_AUDIO_CODEC_OPTIONS, default: 'libvorbis' },
     ],
     faq: [],
     howTo: [
@@ -776,11 +855,33 @@ const baseTools: Tool[] = [
     type: 'video-compress',
     outputFormat: 'mp4',
     settings: [
-      { name: 'crf', label: 'Quality (0 best, 51 worst)', type: 'range', min: 0, max: 51, default: 23 },
-      { name: 'preset', label: 'Encoding Speed', type: 'select', options: ['ultrafast','superfast','veryfast','faster','fast','medium','slow'], default: 'medium' },
+      {
+        name: 'crf',
+        label: 'Output Quality',
+        type: 'select',
+        default: 23,
+        options: [
+          { value: 18, label: 'High Quality — larger file' },
+          { value: 23, label: 'Balanced — recommended' },
+          { value: 28, label: 'Smaller File' },
+          { value: 32, label: 'Smallest File — lowest quality' },
+        ],
+      },
+      {
+        name: 'preset',
+        label: 'Encoding Speed',
+        type: 'select',
+        default: 'medium',
+        options: [
+          { value: 'ultrafast', label: 'Fastest — lower quality' },
+          { value: 'veryfast',  label: 'Fast' },
+          { value: 'medium',    label: 'Balanced — recommended' },
+          { value: 'slow',      label: 'Slowest — best quality' },
+        ],
+      },
     ],
     faq: [
-      { question: 'Will quality be lost?', answer: 'Yes, but you can control the trade‑off with the CRF slider. Lower CRF = better quality, larger file.' },
+      { question: 'Will quality be lost?', answer: 'Yes, but you can control the trade‑off with the quality dropdown. Lower quality = smaller file.' },
       { question: 'Is it really free?', answer: 'Yes, unlimited use.' },
     ],
     howTo: [
@@ -801,8 +902,8 @@ const baseTools: Tool[] = [
     type: 'video-cut',
     outputFormat: 'mp4',
     settings: [
-      { name: 'start', label: 'Start time (seconds)', type: 'number', min: 0, default: 0 },
-      { name: 'duration', label: 'Duration (seconds)', type: 'number', min: 1, default: 30 },
+      { name: 'start',    label: 'Start time', type: 'number', min: 0, default: 0 },
+      { name: 'duration', label: 'Duration',   type: 'number', min: 1, default: 30 },
     ],
     faq: [
       { question: 'Does it re‑encode?', answer: 'No, we use stream copy for speed and no quality loss.' },
@@ -846,8 +947,30 @@ const baseTools: Tool[] = [
     type: 'video-to-gif',
     outputFormat: 'gif',
     settings: [
-      { name: 'fps', label: 'Frames per second', type: 'number', min: 1, max: 30, default: 10 },
-      { name: 'width', label: 'Width (pixels)', type: 'number', min: 100, max: 800, default: 320 },
+      {
+        name: 'fps',
+        label: 'Smoothness',
+        type: 'select',
+        default: 10,
+        options: [
+          { value: 5,  label: 'Low — 5 fps (smallest file)' },
+          { value: 10, label: 'Medium — 10 fps (recommended)' },
+          { value: 15, label: 'Smooth — 15 fps' },
+          { value: 24, label: 'Very Smooth — 24 fps (largest file)' },
+        ],
+      },
+      {
+        name: 'width',
+        label: 'GIF Width',
+        type: 'select',
+        default: 320,
+        options: [
+          { value: 240, label: 'Small — 240 px' },
+          { value: 320, label: 'Medium — 320 px (recommended)' },
+          { value: 480, label: 'Large — 480 px' },
+          { value: 640, label: 'Very Large — 640 px' },
+        ],
+      },
     ],
     faq: [
       { question: 'Will it loop?', answer: 'Yes, GIFs loop infinitely.' },
@@ -891,15 +1014,41 @@ const baseTools: Tool[] = [
     type: 'resize-video',
     outputFormat: 'mp4',
     settings: [
-      { name: 'width', label: 'Width (pixels)', type: 'number', min: 100, max: 7680, default: 1280 },
-      { name: 'height', label: 'Height (pixels)', type: 'number', min: 100, max: 4320, default: 720 },
+      {
+        name: 'width',
+        label: 'Width',
+        type: 'select',
+        default: 1280,
+        options: [
+          { value: 640,  label: '640 px — Small' },
+          { value: 854,  label: '854 px — 480p SD' },
+          { value: 1280, label: '1280 px — 720p HD (recommended)' },
+          { value: 1920, label: '1920 px — 1080p Full HD' },
+          { value: 2560, label: '2560 px — 2K QHD' },
+          { value: 3840, label: '3840 px — 4K UHD' },
+        ],
+      },
+      {
+        name: 'height',
+        label: 'Height',
+        type: 'select',
+        default: 720,
+        options: [
+          { value: 360,  label: '360 px — Small' },
+          { value: 480,  label: '480 px — 480p SD' },
+          { value: 720,  label: '720 px — 720p HD (recommended)' },
+          { value: 1080, label: '1080 px — 1080p Full HD' },
+          { value: 1440, label: '1440 px — 2K QHD' },
+          { value: 2160, label: '2160 px — 4K UHD' },
+        ],
+      },
     ],
     faq: [
-      { question: 'Will it keep aspect ratio?', answer: 'No, it will stretch to the exact dimensions. To maintain aspect ratio, set only width or height and leave the other blank (advanced mode coming soon).' },
+      { question: 'Will it keep aspect ratio?', answer: 'Pick matching width and height (e.g. 1280×720) to keep the aspect ratio. Mismatched pairs will stretch the video.' },
     ],
     howTo: [
       { title: 'Upload video', text: 'Choose a file.' },
-      { title: 'Enter new dimensions', text: 'Set width and height.' },
+      { title: 'Pick new dimensions', text: 'Choose width and height.' },
       { title: 'Download resized video', text: 'Get the video at the new size.' },
     ],
     relatedTools: ['crop-video', 'video-compressor', 'video-cutter'],
@@ -915,10 +1064,10 @@ const baseTools: Tool[] = [
     type: 'crop-video',
     outputFormat: 'mp4',
     settings: [
-      { name: 'x', label: 'X offset', type: 'number', min: 0, default: 0 },
-      { name: 'y', label: 'Y offset', type: 'number', min: 0, default: 0 },
-      { name: 'w', label: 'Width', type: 'number', min: 1, default: 640 },
-      { name: 'h', label: 'Height', type: 'number', min: 1, default: 480 },
+      { name: 'x', label: 'X offset (px)', type: 'number', min: 0, default: 0 },
+      { name: 'y', label: 'Y offset (px)', type: 'number', min: 0, default: 0 },
+      { name: 'w', label: 'Width (px)',    type: 'number', min: 1, default: 640 },
+      { name: 'h', label: 'Height (px)',   type: 'number', min: 1, default: 480 },
     ],
     faq: [],
     howTo: [
@@ -939,12 +1088,23 @@ const baseTools: Tool[] = [
     type: 'change-fps',
     outputFormat: 'mp4',
     settings: [
-      { name: 'fps', label: 'New FPS', type: 'number', min: 1, max: 60, default: 30 },
+      {
+        name: 'fps',
+        label: 'Frame Rate',
+        type: 'select',
+        default: 30,
+        options: [
+          { value: 15, label: '15 fps — Cinematic' },
+          { value: 24, label: '24 fps — Film standard' },
+          { value: 30, label: '30 fps — Standard (recommended)' },
+          { value: 60, label: '60 fps — Smooth motion' },
+        ],
+      },
     ],
     faq: [],
     howTo: [
       { title: 'Upload video', text: 'Select a video.' },
-      { title: 'Choose new frame rate', text: 'Enter FPS.' },
+      { title: 'Choose new frame rate', text: 'Pick from the dropdown.' },
       { title: 'Download video', text: 'Get the video with the new frame rate.' },
     ],
     relatedTools: ['video-compressor', 'speed-changer', 'video-cutter'],
@@ -979,7 +1139,20 @@ const baseTools: Tool[] = [
     type: 'extract-audio',
     outputFormat: 'mp3',
     settings: [
-      { name: 'format', label: 'Output Format', type: 'select', options: ['mp3','wav','m4a','ogg','flac','aac'], default: 'mp3' },
+      {
+        name: 'format',
+        label: 'Output Format',
+        type: 'select',
+        default: 'mp3',
+        options: [
+          { value: 'mp3',  label: 'MP3 — most compatible (recommended)' },
+          { value: 'wav',  label: 'WAV — lossless, larger file' },
+          { value: 'm4a',  label: 'M4A — Apple-friendly' },
+          { value: 'ogg',  label: 'OGG — open format' },
+          { value: 'flac', label: 'FLAC — lossless, smaller than WAV' },
+          { value: 'aac',  label: 'AAC — high efficiency' },
+        ],
+      },
     ],
     faq: [],
     howTo: [
@@ -1073,18 +1246,16 @@ const baseTools: Tool[] = [
 ];
 
 /* --------------------------------------------------------------------------
-   ★ AUTO-GENERATED: RESOLUTION CONVERTERS (30 entries)
-   These automatically appear in the /tools listing and link to /convert/...
-   because their `from` and `to` fields trigger the /convert/ URL logic.
+   ★ AUTO-GENERATED: RESOLUTION CONVERTERS
 -------------------------------------------------------------------------- */
 
 const RESOLUTION_PRESETS = [
-  { key: '480p',  label: '480p SD',         w: 854,  h: 480,  tier: 1 },
-  { key: '720p',  label: '720p HD',         w: 1280, h: 720,  tier: 2 },
-  { key: '1080p', label: '1080p Full HD',   w: 1920, h: 1080, tier: 3 },
-  { key: '2k',    label: '2K QHD',          w: 2560, h: 1440, tier: 4 },
-  { key: '4k',    label: '4K UHD',          w: 3840, h: 2160, tier: 5 },
-  { key: '8k',    label: '8K UHD',          w: 7680, h: 4320, tier: 6 },
+  { key: '480p',  label: '480p SD',       w: 854,  h: 480,  tier: 1 },
+  { key: '720p',  label: '720p HD',       w: 1280, h: 720,  tier: 2 },
+  { key: '1080p', label: '1080p Full HD', w: 1920, h: 1080, tier: 3 },
+  { key: '2k',    label: '2K QHD',        w: 2560, h: 1440, tier: 4 },
+  { key: '4k',    label: '4K UHD',        w: 3840, h: 2160, tier: 5 },
+  { key: '8k',    label: '8K UHD',        w: 7680, h: 4320, tier: 6 },
 ];
 
 const resolutionTools: Tool[] = [];
@@ -1100,7 +1271,6 @@ for (const from of RESOLUTION_PRESETS) {
     const is8k = to.key === '8k';
     const is4kPlus = to.tier >= 5;
 
-    // ★ Platform tier: 8K and 4K+ outputs are heavy, upscales are medium, downscales are light.
     const tier: ToolTier = is4kPlus ? 'heavy' : isUpscale ? 'medium' : 'light';
     const webMaxMB = is8k ? 100 : is4kPlus ? 150 : isUpscale ? 200 : 250;
     const recommendApp = is8k || is4kPlus;
@@ -1120,7 +1290,6 @@ for (const from of RESOLUTION_PRESETS) {
       presetWidth: to.w,
       presetHeight: to.h,
       requiresDesktop,
-      // ★ Platform fields
       tier,
       engine: 'wasm',
       webMaxMB,
@@ -1136,7 +1305,7 @@ for (const from of RESOLUTION_PRESETS) {
             {
               question: 'Can I convert to 8K on mobile?',
               answer:
-                'No. 8K requires more memory than most mobile browsers can allocate. Use a desktop with 16GB+ RAM.',
+                'No. 8K requires more memory than most mobile browsers can allocate. Use a desktop with 16GB+ RAM, or the Dayront app for the best results.',
             },
             {
               question: 'How long does 8K conversion take?',
@@ -1189,9 +1358,6 @@ for (const from of RESOLUTION_PRESETS) {
 
 /* ==========================================================================
  * ★ PLATFORM DEFAULTS
- * --------------------------------------------------------------------------
- * Applied to every tool by `type` (preferred) or `category` (fallback).
- * Individual tools can override any of these via PLATFORM_OVERRIDES below.
  * ========================================================================== */
 
 const DEFAULT_LIMITS = {
@@ -1203,7 +1369,6 @@ const DEFAULT_LIMITS = {
   ai: 20,
 } as const;
 
-/** Defaults keyed by `type` (falls back to `category`). */
 const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   // ── Audio utility ────────────────────────
   cut:              { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
@@ -1247,7 +1412,7 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
 };
 
 /* ==========================================================================
- * ★ PLATFORM OVERRIDES — hand-tuned settings for the most demanding tools
+ * ★ PLATFORM OVERRIDES
  * ========================================================================== */
 
 const PLATFORM_OVERRIDES: Record<string, Partial<Tool>> = {
@@ -1255,7 +1420,7 @@ const PLATFORM_OVERRIDES: Record<string, Partial<Tool>> = {
     tier: 'heavy',
     webMaxMB: 300,
     recommendApp: true,
-    webNote: 'Merging re-encodes video. For files over 300MB, the Dayront app is much faster.',
+    webNote: 'Merging re-encodes video. For files over 300 MB, the Dayront app is much faster.',
   },
   'video-compressor': {
     tier: 'heavy',
@@ -1274,14 +1439,14 @@ const PLATFORM_OVERRIDES: Record<string, Partial<Tool>> = {
     engine: 'ai',
     webMaxMB: 20,
     recommendApp: true,
-    webNote: 'AI captioning needs ~1GB free RAM. For longer videos, use the Dayront app.',
+    webNote: 'AI captioning needs ~1 GB free RAM. For longer videos, use the Dayront app.',
   },
   'ai-background-remover': {
     tier: 'heavy',
     engine: 'ai',
     webMaxMB: 20,
     recommendApp: true,
-    webNote: 'First run downloads a ~40MB AI model. The app comes pre-bundled.',
+    webNote: 'First run downloads a ~40 MB AI model. The app comes pre-bundled.',
   },
   'ai-photo-editor': {
     tier: 'heavy',
@@ -1327,15 +1492,10 @@ export const tools: Tool[] = [...baseTools, ...resolutionTools].map(enrichTool);
  * ★ PUBLIC HELPERS
  * ========================================================================== */
 
-/** Look up a tool by its URL slug. */
 export function getToolBySlug(slug: string): Tool | undefined {
   return tools.find((t) => t.slug === slug);
 }
 
-/**
- * Check whether a file is safe for a given tool on the current platform.
- * Native apps get a much larger allowance (5GB vs web limits).
- */
 export function isFileSafeForTool(
   tool: Tool,
   fileSizeMB: number,
@@ -1345,7 +1505,6 @@ export function isFileSafeForTool(
   return fileSizeMB <= limit;
 }
 
-/** Group tools by category, useful for listings and dashboards. */
 export function getToolsByCategory(): Record<Tool['category'], Tool[]> {
   return tools.reduce(
     (acc, tool) => {
@@ -1356,12 +1515,10 @@ export function getToolsByCategory(): Record<Tool['category'], Tool[]> {
   );
 }
 
-/** Filter to only tools recommended for app-first / app-only usage. */
 export function getAppRecommendedTools(): Tool[] {
   return tools.filter((t) => t.recommendApp);
 }
 
-/** Count tools by tier — useful for a dashboard/status page. */
 export function getTierCounts(): Record<ToolTier, number> {
   return tools.reduce(
     (acc, t) => {
@@ -1373,12 +1530,10 @@ export function getTierCounts(): Record<ToolTier, number> {
   );
 }
 
-/** Get all tools with a specific tier (light / medium / heavy). */
 export function getToolsByTier(tier: ToolTier): Tool[] {
   return tools.filter((t) => (t.tier ?? 'medium') === tier);
 }
 
-/** Get all tools that use a specific engine (wasm / native / ai). */
 export function getToolsByEngine(engine: ToolEngine): Tool[] {
   return tools.filter((t) => (t.engine ?? 'wasm') === engine);
 }
@@ -1387,10 +1542,6 @@ export function getToolsByEngine(engine: ToolEngine): Tool[] {
  * ★ PLATFORM DETECTION (client-side runtime)
  * ========================================================================== */
 
-/**
- * Detects the current runtime environment. Call this from the browser
- * (returns 'server' if run during SSR/build).
- */
 export function detectPlatform(): PlatformInfo {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return { type: 'server', label: 'Server', engine: 'wasm', maxMB: 0 };
@@ -1411,7 +1562,8 @@ export function detectPlatform(): PlatformInfo {
     return { type: 'desktop-native', label: 'Desktop App', engine: 'native', maxMB: 5000 };
   }
   if (isCapacitor) {
-    return { type: 'mobile-native', label: 'Mobile App', engine: 'native', maxMB: 2000 };
+    // ★ Aligned with the marketing promise: 5 GB on native mobile.
+    return { type: 'mobile-native', label: 'Mobile App', engine: 'native', maxMB: 5000 };
   }
   if (isExtension) {
     return { type: 'extension', label: 'Browser Extension', engine: 'wasm', maxMB: 50 };

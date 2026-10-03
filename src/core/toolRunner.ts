@@ -9,6 +9,12 @@
  *   2. Otherwise fall back to WASM FFmpeg (web).
  *
  * ToolScreen calls runTool() and gets back a Blob. No UI logic here.
+ *
+ * ── Smart fallback ──────────────────────────────────────────────────────
+ * When the browser is asked to do something it clearly can't handle
+ * (huge files, out-of-memory WASM crashes), we throw a ToolFallbackError
+ * instead of a generic Error. Callers can then render the NativeAppPromo
+ * card pointing to download.dayront.com instead of a scary red error box.
  */
 
 import {
@@ -52,6 +58,100 @@ export interface RunnerOptions {
   /** Settings values keyed by setting name. */
   settings: Record<string, string | number>;
   onProgress?: (percent: number) => void;
+}
+
+/* ── Fallback signalling ─────────────────────────────────── */
+
+export type FallbackReason =
+  | 'file-too-large'
+  | 'out-of-memory'
+  | 'timeout'
+  | 'unknown';
+
+/**
+ * Thrown when we know the browser can't do the job and the native app
+ * (or a desktop) is the right answer. The UI catches this and shows the
+ * "Get the Dayront App" promo card instead of a generic error.
+ */
+export class ToolFallbackError extends Error {
+  reason: FallbackReason;
+  fileSizeMB: number;
+
+  constructor(message: string, reason: FallbackReason, fileSizeMB = 0) {
+    super(message);
+    this.name = 'ToolFallbackError';
+    this.reason = reason;
+    this.fileSizeMB = fileSizeMB;
+  }
+}
+
+/* ── Size + environment detection ────────────────────────── */
+
+const VIDEO_EXTENSIONS = new Set([
+  'mp4', 'mov', 'mkv', 'avi', 'webm', 'flv', 'm4v', 'wmv', '3gp', 'mpg', 'mpeg',
+]);
+
+function isVideoFile(file: File): boolean {
+  const ext = file.name.toLowerCase().split('.').pop() ?? '';
+  if (VIDEO_EXTENSIONS.has(ext)) return true;
+  return file.type.startsWith('video/');
+}
+
+/**
+ * Rough capacity limits for WASM FFmpeg in a browser tab.
+ *
+ * These are deliberately conservative. Native FFmpeg (in the Dayront App)
+ * handles 5 GB without breaking a sweat, so nudging users earlier is
+ * strictly better UX than letting their tab crash at 90%.
+ */
+export const WEB_LIMITS_MB = {
+  audio: { mobile: 100, desktop: 300 },
+  video: { mobile: 250, desktop: 500 },
+} as const;
+
+/**
+ * Check whether the current files are likely too big for the browser.
+ * Returns null if they're fine, or a reason to nudge the user to the app.
+ */
+export function checkWebCapacity(
+  files: File[],
+  isMobile: boolean,
+): { reason: FallbackReason; totalMB: number; isVideo: boolean } | null {
+  if (!files.length) return null;
+
+  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+  const totalMB = totalBytes / (1024 * 1024);
+  const hasVideo = files.some(isVideoFile);
+
+  const limit = hasVideo
+    ? (isMobile ? WEB_LIMITS_MB.video.mobile : WEB_LIMITS_MB.video.desktop)
+    : (isMobile ? WEB_LIMITS_MB.audio.mobile : WEB_LIMITS_MB.audio.desktop);
+
+  if (totalMB > limit) {
+    return { reason: 'file-too-large', totalMB, isVideo: hasVideo };
+  }
+  return null;
+}
+
+/**
+ * Detect whether an error thrown by WASM FFmpeg is likely caused by
+ * memory pressure. WASM OOM errors surface as any of a dozen different
+ * messages depending on the browser, so we cast a wide net.
+ */
+export function isMemoryError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes('out of memory') ||
+    msg.includes('out-of-memory') ||
+    msg.includes('oom') ||
+    msg.includes('cannot enlarge memory') ||
+    msg.includes('allocation failed') ||
+    msg.includes('runtimeerror') ||
+    msg.includes('aborted') ||
+    msg.includes('abort(') ||
+    msg.includes('memory access out of bounds') ||
+    msg.includes('maximum call stack')
+  );
 }
 
 /* ── Multi-file tool registry ────────────────────────────── */
@@ -118,9 +218,26 @@ export async function runTool(
     }
   }
 
-  /* ── WASM fallback (web) ─────────────────────────────── */
+  /* ── WASM fallback (web) ───────────────────────────────
+     Wrap the WASM path so we can convert memory/OOM crashes into
+     a ToolFallbackError, which the UI knows how to present as a
+     "use the app instead" recommendation. */
+  try {
+    return await runWasm(tool, files, settings, format, onProgress);
+  } catch (err) {
+    if (err instanceof ToolFallbackError) throw err;
 
-  return runWasm(tool, files, settings, format, onProgress);
+    if (isMemoryError(err)) {
+      const totalMB =
+        files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
+      throw new ToolFallbackError(
+        'The browser ran out of memory while processing this file.',
+        'out-of-memory',
+        totalMB,
+      );
+    }
+    throw err;
+  }
 }
 
 /* ── WASM implementation ─────────────────────────────────── */
