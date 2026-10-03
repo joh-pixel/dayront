@@ -40,6 +40,16 @@ jobs:
           fi
           echo "✅ File picker plugin present"
 
+      # ── Verify deep-link plugin is installed ────────────────
+      - name: Verify @capacitor/app is installed
+        run: |
+          if [ ! -d "node_modules/@capacitor/app" ]; then
+            echo "❌ @capacitor/app missing"
+            echo "Run: npm install @capacitor/app"
+            exit 1
+          fi
+          echo "✅ @capacitor/app present"
+
       - name: Install local FFmpeg plugin
         run: |
           if [ ! -d "plugins/ffmpeg" ]; then
@@ -71,6 +81,49 @@ jobs:
       - name: Generate Android project
         run: node ./node_modules/@capacitor/cli/bin/capacitor add android
 
+      # ══════════════════════════════════════════════════════════
+      #  REGISTER dayront:// DEEP LINK SCHEME
+      #  Runs right after cap add android generates the manifest.
+      #  Injects an <intent-filter> so Android opens the app when
+      #  a dayront://... link is tapped.
+      # ══════════════════════════════════════════════════════════
+      - name: Register dayront:// deep link scheme
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "❌ AndroidManifest.xml missing"
+            exit 1
+          fi
+
+          if grep -q 'android:scheme="dayront"' "$MANIFEST"; then
+            echo "✅ Deep link scheme already present"
+            exit 0
+          fi
+
+          # Write the intent-filter snippet to a temp file
+          cat > /tmp/dayront-intent.xml << 'XMLEOF'
+                      <!-- DAYRONT DEEP LINK SCHEME -->
+                      <intent-filter android:autoVerify="false">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="dayront" />
+                      </intent-filter>
+          XMLEOF
+
+          # Insert the snippet just before the first </activity> tag
+          awk '
+            /<\/activity>/ && !done {
+              while ((getline line < "/tmp/dayront-intent.xml") > 0) print line;
+              close("/tmp/dayront-intent.xml");
+              done = 1;
+            }
+            { print }
+          ' "$MANIFEST" > "${MANIFEST}.tmp" && mv "${MANIFEST}.tmp" "$MANIFEST"
+
+          echo "── Deep link snippet verified ──"
+          grep -A 5 "DAYRONT DEEP LINK" "$MANIFEST" || echo "⚠️  Marker not found after patch"
+
       # ── Force SDK versions + write override.gradle ────────────
       - name: Force SDK versions and native library overrides
         run: |
@@ -100,8 +153,6 @@ jobs:
           cat > android/override.gradle << 'GRADLE'
           android {
               packagingOptions {
-                  // Multiple deps bundle their own libc++_shared.so and FFmpeg .so files
-                  // Pick the first one found instead of failing on the duplicate
                   pickFirst '**/libc++_shared.so'
                   pickFirst '**/libavcodec.so'
                   pickFirst '**/libavdevice.so'
@@ -116,7 +167,6 @@ jobs:
               }
               defaultConfig {
                   ndk {
-                      // ffmpegkit-maintained publishes only these two ABIs
                       abiFilters 'arm64-v8a', 'x86_64'
                   }
               }

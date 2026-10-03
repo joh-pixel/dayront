@@ -1,9 +1,19 @@
 /**
  * src/ui/mobile/screens/ToolsScreen.tsx
- * Searchable grid of all tools.
+ * ----------------------------------------------------------------------------
+ * Mobile-first tool browser with:
+ *   • Sticky search + scroll-aware header
+ *   • Category pills with live counts
+ *   • Smart intake suggestion (clipboard watcher)
+ *   • "Recommended for your device" featured strip
+ *   • Compact dense grid (12+ tools per screen)
+ *   • Premium card styling with tier badges
+ *   • Shared haptic feedback (respects Settings toggle)
  */
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { pushRecentTool } from '../../../core/storage';
+import { haptic } from '../haptic';
+import IntakeSuggestor from '../components/IntakeSuggestor';
 
 interface Tool {
   slug: string;
@@ -14,10 +24,14 @@ interface Tool {
   to?: string;
   category: string;
   tier?: 'light' | 'medium' | 'heavy';
+  recommendApp?: boolean;
+  engine?: 'wasm' | 'native' | 'ai';
 }
 
 interface Props {
   tools: Tool[];
+  /** Optional: recently used slugs, newest first. */
+  recentSlugs?: string[];
 }
 
 type Category = 'all' | 'audio' | 'video' | 'convert' | 'ai';
@@ -29,6 +43,8 @@ const CHIPS: Array<{ key: Category; label: string }> = [
   { key: 'convert', label: 'Convert' },
   { key: 'ai', label: 'AI' },
 ];
+
+/* ── Helpers ─────────────────────────────────────────────── */
 
 function toolUrl(tool: Tool): string {
   return `/app/tool/${tool.slug}`;
@@ -44,13 +60,16 @@ function matchesCategory(tool: Tool, cat: Category): boolean {
   return false;
 }
 
-function haptic(ms = 6) {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try { navigator.vibrate(ms); } catch {}
-  }
+function tierBadge(tier: Tool['tier']): { label: string; cls: string } | null {
+  if (tier === 'light') return { label: '⚡ Fast', cls: 'light' };
+  if (tier === 'heavy') return { label: '🔥 Pro', cls: 'heavy' };
+  // Medium intentionally has no badge — keeps the grid clean.
+  return null;
 }
 
-export default function ToolsScreen({ tools }: Props) {
+/* ── Component ───────────────────────────────────────────── */
+
+export default function ToolsScreen({ tools, recentSlugs }: Props) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('all');
   const [scrolled, setScrolled] = useState(false);
@@ -63,6 +82,22 @@ export default function ToolsScreen({ tools }: Props) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const hasQuery = query.trim().length > 0;
+
+  /* ── Category counts (computed once per tools array) ── */
+  const counts = useMemo(() => {
+    const c: Record<Category, number> = { all: 0, audio: 0, video: 0, convert: 0, ai: 0 };
+    for (const t of tools) {
+      c.all += 1;
+      if (matchesCategory(t, 'audio')) c.audio += 1;
+      if (matchesCategory(t, 'video')) c.video += 1;
+      if (matchesCategory(t, 'convert')) c.convert += 1;
+      if (matchesCategory(t, 'ai')) c.ai += 1;
+    }
+    return c;
+  }, [tools]);
+
+  /* ── Filtered list ── */
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tools.filter((t) => {
@@ -78,7 +113,23 @@ export default function ToolsScreen({ tools }: Props) {
     });
   }, [tools, query, category]);
 
-  const hasQuery = query.trim().length > 0;
+  /* ── Featured strip: only on "All" tab without a search ── */
+  const featured = useMemo(() => {
+    if (category !== 'all' || hasQuery) return [];
+    return tools
+      .filter((t) => t.recommendApp || t.engine === 'ai')
+      .slice(0, 6);
+  }, [tools, category, hasQuery]);
+
+  /* ── Recently used strip: only on "All" tab without search ── */
+  const recent = useMemo(() => {
+    if (category !== 'all' || hasQuery || !recentSlugs?.length) return [];
+    const map = new Map(tools.map((t) => [t.slug, t]));
+    return recentSlugs
+      .map((slug) => map.get(slug))
+      .filter(Boolean)
+      .slice(0, 6) as Tool[];
+  }, [tools, category, hasQuery, recentSlugs]);
 
   function openTool(slug: string) {
     haptic();
@@ -87,6 +138,14 @@ export default function ToolsScreen({ tools }: Props) {
 
   return (
     <div class="d-tools">
+      {/* ── Smart intake suggestion ───────────────────────
+          Watches the clipboard for URLs (YouTube, TikTok, etc.)
+          and suggests the best tool. Auto-hides after 8s. */}
+      <div style={{ marginBottom: '0.75rem' }}>
+        <IntakeSuggestor />
+      </div>
+
+      {/* ── Sticky search + chips ─────────────────────── */}
       <div class={`d-tools__searchwrap ${scrolled ? 'd-tools__searchwrap--scrolled' : ''}`}>
         <div class="d-tools__search">
           <span class="d-tools__searchicon" aria-hidden="true">
@@ -99,7 +158,7 @@ export default function ToolsScreen({ tools }: Props) {
             ref={inputRef}
             type="search"
             class="d-tools__input"
-            placeholder="Search tools…"
+            placeholder="Search 73 tools…"
             value={query}
             onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
             autoComplete="off"
@@ -140,25 +199,85 @@ export default function ToolsScreen({ tools }: Props) {
               }}
             >
               {c.label}
+              <span
+                aria-hidden="true"
+                style={{
+                  marginLeft: '0.4rem',
+                  fontSize: '0.72em',
+                  opacity: category === c.key ? 0.85 : 0.55,
+                  fontWeight: 700,
+                }}
+              >
+                {counts[c.key]}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
+      {/* ── Featured strip ─────────────────────────────── */}
+      {featured.length > 0 && (
+        <section class="d-tools__featured" aria-labelledby="d-featured-title">
+          <h2 id="d-featured-title" class="d-tools__section-title">
+            Recommended for your device
+          </h2>
+          <div class="d-tools__featured-row">
+            {featured.map((tool) => (
+              <a
+                key={tool.slug}
+                href={toolUrl(tool)}
+                class="d-featurecard"
+                onClick={() => openTool(tool.slug)}
+              >
+                <span class="d-featurecard__icon" aria-hidden="true">
+                  {tool.icon}
+                </span>
+                <span class="d-featurecard__name">{tool.name}</span>
+                <span class="d-featurecard__pill">In app</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Recently used strip ───────────────────────── */}
+      {recent.length > 0 && (
+        <section class="d-tools__featured" aria-labelledby="d-recent-title">
+          <h2 id="d-recent-title" class="d-tools__section-title">
+            Pick up where you left off
+          </h2>
+          <div class="d-tools__featured-row">
+            {recent.map((tool) => (
+              <a
+                key={tool.slug}
+                href={toolUrl(tool)}
+                class="d-featurecard d-featurecard--recent"
+                onClick={() => openTool(tool.slug)}
+              >
+                <span class="d-featurecard__icon" aria-hidden="true">
+                  {tool.icon}
+                </span>
+                <span class="d-featurecard__name">{tool.name}</span>
+                <span class="d-featurecard__pill d-featurecard__pill--recent">
+                  Recently
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Meta line ─────────────────────────────────── */}
       <div class="d-tools__meta">
         {filtered.length} {filtered.length === 1 ? 'tool' : 'tools'}
         {hasQuery ? ` matching "${query}"` : ''}
       </div>
 
+      {/* ── Grid / empty state ────────────────────────── */}
       {filtered.length > 0 ? (
         <div class="d-tools__grid">
           {filtered.map((tool) => {
-            const tier = tool.tier ?? 'medium';
-            const tierLabel =
-              tier === 'light' ? '⚡ Fast' :
-              tier === 'heavy' ? '📱 App' :
-              null;
-
+            const badge = tierBadge(tool.tier);
             return (
               <a
                 key={tool.slug}
@@ -166,12 +285,13 @@ export default function ToolsScreen({ tools }: Props) {
                 class="d-toolcard"
                 onClick={() => openTool(tool.slug)}
               >
-                <span class="d-toolcard__icon" aria-hidden="true">{tool.icon}</span>
+                <span class="d-toolcard__icon" aria-hidden="true">
+                  {tool.icon}
+                </span>
                 <span class="d-toolcard__name">{tool.name}</span>
-                <span class="d-toolcard__desc">{tool.description}</span>
-                {tierLabel && (
-                  <span class={`d-toolcard__badge d-toolcard__badge--${tier}`}>
-                    {tierLabel}
+                {badge && (
+                  <span class={`d-toolcard__badge d-toolcard__badge--${badge.cls}`}>
+                    {badge.label}
                   </span>
                 )}
               </a>

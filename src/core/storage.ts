@@ -1,11 +1,11 @@
 /**
  * src/core/storage.ts
  * ----------------------------------------------------------------------------
- * Unified storage helpers.
+ * Unified storage + settings for the Dayront app.
  *
- * On web and extension: uses localStorage (fast, synchronous).
+ * On web:       uses localStorage (fast, synchronous).
  * On Capacitor: prefers @capacitor/preferences (native, survives OS clear).
- * On Tauri: uses the tauri-plugin-store when available.
+ * On Tauri:     uses the tauri-plugin-store when available.
  *
  * All methods are safe on the server (return null / no-op).
  * All keys are automatically namespaced with "dayront:" prefix.
@@ -111,28 +111,161 @@ export function dumpAll(): Record<string, string> {
   return out;
 }
 
-/* ── Higher-level helpers used across the app ─────────────── */
+/* ══════════════════════════════════════════════════════════════
+   ★ UNIFIED SETTINGS STORE
+   ══════════════════════════════════════════════════════════════
+   One source of truth for every user preference.
+   Every toggle in SettingsScreen reads/writes here.
 
-/* Theme preference: 'auto' | 'light' | 'dark' */
-export function getTheme(): 'auto' | 'light' | 'dark' {
-  return (readString('theme') as any) ?? 'auto';
+   Migration: if the old separate keys exist (theme, lang, dayront-lang),
+   their values are folded into the new store on first read.
+*/
+
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
+export interface AppSettings {
+  /** auto · light · dark */
+  theme: ThemeMode;
+  /** BCP-47 language code */
+  lang: string;
+  /** Vibrate on taps and gestures */
+  haptics: boolean;
+  /** Local notification when a job finishes */
+  notifications: boolean;
+  /** Prevent the screen from sleeping during processing (native only) */
+  keepAwake: boolean;
+  /** Auto-save the result file after processing */
+  autoDownload: boolean;
+  /** Default output format for conversion tools */
+  defaultFormat: string;
+  /** Anonymous page-view analytics */
+  analytics: boolean;
 }
 
-export function setTheme(theme: 'auto' | 'light' | 'dark'): void {
-  if (theme === 'auto') remove('theme');
-  else writeString('theme', theme);
+const SETTINGS_KEY = 'settings:v1';
+
+const DEFAULT_SETTINGS: AppSettings = {
+  theme: 'auto',
+  lang: 'en',
+  haptics: true,
+  notifications: true,
+  keepAwake: true,
+  autoDownload: false,
+  defaultFormat: 'mp3',
+  analytics: true,
+};
+
+/** Read all settings, applying defaults for anything missing. */
+export function getSettings(): AppSettings {
+  const stored = read<Partial<AppSettings>>(SETTINGS_KEY);
+  if (!stored) {
+    return { ...DEFAULT_SETTINGS };
+  }
+
+  // Migration: fold old separate keys into the new store
+  const migrated: Partial<AppSettings> = {};
+  const legacyTheme = readString('theme');
+  if (legacyTheme && !stored.theme) {
+    migrated.theme = (legacyTheme as ThemeMode) ?? 'auto';
+  }
+  const legacyLang = readString('dayront-lang') ?? readString('lang');
+  if (legacyLang && !stored.lang) {
+    migrated.lang = legacyLang;
+  }
+
+  return { ...DEFAULT_SETTINGS, ...migrated, ...stored };
 }
 
-/* Language preference */
+/** Update a single setting key. Broadcasts a change event. */
+export function updateSetting<K extends keyof AppSettings>(
+  key: K,
+  value: AppSettings[K],
+): void {
+  const current = getSettings();
+  const next = { ...current, [key]: value };
+  write(SETTINGS_KEY, next);
+
+  if (hasWindow()) {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('dayront:settings-changed', {
+          detail: { key, value },
+        }),
+      );
+    } catch {}
+  }
+}
+
+/** Wipe every Dayront key from localStorage + clear all caches. */
+export async function clearAllData(): Promise<void> {
+  clearAll();
+  if (hasWindow() && 'caches' in window) {
+    try {
+      const names = await caches.keys();
+      await Promise.all(names.map((n) => caches.delete(n)));
+    } catch {}
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME
+   ══════════════════════════════════════════════════════════════ */
+
+/** Apply a theme value to <html>. Safe on server. */
+export function applyThemeToDom(theme: ThemeMode): void {
+  if (typeof document === 'undefined') return;
+
+  const prefersDark =
+    typeof window !== 'undefined' &&
+    !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+
+  const isDark = theme === 'dark' || (theme === 'auto' && prefersDark);
+  document.documentElement.classList.toggle('dark', isDark);
+}
+
+export function getTheme(): ThemeMode {
+  return getSettings().theme;
+}
+
+export function setTheme(theme: ThemeMode): void {
+  updateSetting('theme', theme);
+  applyThemeToDom(theme);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LANGUAGE
+   ══════════════════════════════════════════════════════════════ */
+
 export function getLang(): string {
-  return readString('dayront-lang') ?? readString('lang') ?? 'en';
+  return getSettings().lang;
 }
 
 export function setLang(code: string): void {
+  updateSetting('lang', code);
+  // Keep legacy keys in sync for any component still reading them
   writeString('lang', code);
-  // Keep the original key too (some components read it)
   writeString('dayront-lang', code);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   BOOT: apply theme immediately + watch system changes
+   ══════════════════════════════════════════════════════════════ */
+
+if (typeof window !== 'undefined') {
+  // Apply stored theme before paint (best effort)
+  applyThemeToDom(getTheme());
+
+  // When theme is 'auto', follow system changes live
+  window
+    .matchMedia?.('(prefers-color-scheme: dark)')
+    .addEventListener?.('change', () => {
+      if (getTheme() === 'auto') applyThemeToDom('auto');
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WELCOME · RECENT · NOTIFY (existing features)
+   ══════════════════════════════════════════════════════════════ */
 
 /* Welcome toast seen? */
 export function hasSeenWelcome(): boolean {
@@ -196,14 +329,13 @@ export function markNotifySubmitted(): void {
   writeString('notify-submitted', Date.now().toString());
 }
 
-/* ── Optional async API for native platforms ─────────────── */
+/* ══════════════════════════════════════════════════════════════
+   ASYNC API (native platforms)
+   ══════════════════════════════════════════════════════════════ */
 
 /**
  * Async getter that uses Capacitor Preferences when available.
  * Falls back to synchronous localStorage on web.
- *
- * The dynamic import is wrapped with @vite-ignore so Rollup won't try
- * to resolve it at build time (the package only exists in native builds).
  */
 export async function getAsync(key: string): Promise<string | null> {
   if (hasNative()) {
@@ -218,9 +350,7 @@ export async function getAsync(key: string): Promise<string | null> {
   return readString(key);
 }
 
-/**
- * Async setter that uses Capacitor Preferences when available.
- */
+/** Async setter that uses Capacitor Preferences when available. */
 export async function setAsync(key: string, value: string): Promise<void> {
   if (hasNative()) {
     try {
@@ -234,7 +364,9 @@ export async function setAsync(key: string, value: string): Promise<void> {
   writeString(key, value);
 }
 
-/* ── Storage estimate (for the Settings screen) ──────────── */
+/* ══════════════════════════════════════════════════════════════
+   STORAGE ESTIMATE (Settings screen)
+   ══════════════════════════════════════════════════════════════ */
 
 export async function estimateUsage(): Promise<{
   usedMB: number;

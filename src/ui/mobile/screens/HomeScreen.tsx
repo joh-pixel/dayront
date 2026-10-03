@@ -1,9 +1,11 @@
 /**
  * src/ui/mobile/screens/HomeScreen.tsx
  * Mobile home — hero, quick actions, recents.
+ * Uses shared haptic feedback (respects Settings toggle).
  */
 import { useEffect, useState } from 'preact/hooks';
 import { getRecentTools, pushRecentTool } from '../../../core/storage';
+import { haptic } from '../haptic';
 
 interface Tool {
   slug: string;
@@ -29,12 +31,6 @@ const QUICK_SLUGS = [
   'mp4-to-mp3',
   'audio-cutter',
 ];
-
-function haptic() {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try { navigator.vibrate(6); } catch {}
-  }
-}
 
 export default function HomeScreen({ tools }: Props) {
   const [recentSlugs, setRecentSlugs] = useState<string[]>([]);
@@ -68,7 +64,7 @@ export default function HomeScreen({ tools }: Props) {
       <a
         href="/app/tools"
         class="d-home__search"
-        onClick={haptic}
+        onClick={() => haptic()}
         aria-label="Search all tools"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -125,7 +121,7 @@ export default function HomeScreen({ tools }: Props) {
         <a
           href="/app/tools"
           class="d-home__browse"
-          onClick={haptic}
+          onClick={() => haptic()}
         >
           <span>Browse all tools</span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

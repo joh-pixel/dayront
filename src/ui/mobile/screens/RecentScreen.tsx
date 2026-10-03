@@ -1,15 +1,11 @@
 /**
  * src/ui/mobile/screens/RecentScreen.tsx
  * Recently processed files. Reads from src/core/storage.ts.
+ * Uses shared haptic feedback (respects Settings toggle).
  */
 import { useEffect, useState } from 'preact/hooks';
 import { getRecent, clearRecent, type RecentEntry } from '../../../core/storage';
-
-function haptic(ms = 8) {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try { navigator.vibrate(ms); } catch {}
-  }
-}
+import { haptic } from '../haptic';
 
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts;

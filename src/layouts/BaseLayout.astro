@@ -4,10 +4,11 @@ import Footer from '../components/layout/Footer.astro';
 import SeoHead from '../components/shared/SeoHead.astro';
 import AdSlot from '../components/layout/AdSlot.astro';
 import SearchModal from '../components/ui/SearchModal.astro';
+import { ClientRouter } from 'astro:transitions';
 import { getCollection } from 'astro:content';
 import { tools } from '../lib/tools';
 import Analytics from '@vercel/analytics/astro';
-import SpeedInsights from "@vercel/speed-insights/astro";
+import SpeedInsights from '@vercel/speed-insights/astro';
 
 export interface Props {
   title: string;
@@ -15,7 +16,6 @@ export interface Props {
   ogImage?: string;
   canonicalURL?: string;
   lang?: string;
-  // ★ SEO pass-through
   toolSlug?: string;
   publishedAt?: string;
   author?: string;
@@ -39,7 +39,7 @@ const lang = propLang || Astro.params.locale || 'en';
 let blogItems: any[] = [];
 try {
   const blogPosts = await getCollection('blog', (entry) => entry.id.startsWith(`${lang}/`));
-  blogItems = blogPosts.map(post => ({
+  blogItems = blogPosts.map((post) => ({
     title: post.data.title,
     description: post.data.description,
     url: `/blog/${lang}/${post.id.replace(/\.mdx$/, '').replace(new RegExp(`^${lang}\/`), '')}`,
@@ -50,7 +50,7 @@ try {
   blogItems = [];
 }
 
-const toolItems = tools.map(tool => ({
+const toolItems = tools.map((tool) => ({
   title: tool.name,
   description: tool.description,
   url: tool.from && tool.to ? `/convert/${tool.slug}` : `/tools/${tool.slug}`,
@@ -78,7 +78,9 @@ const allSearchItems = [...toolItems, ...blogItems];
       noindex={noindex}
     />
 
-    <!-- ★ IMPORT MAP — resolves bare module specifiers for CDN-loaded libs ★ -->
+    <!-- ★ ASTRO CLIENT ROUTER — instant client-side navigation + View Transitions -->
+    <ClientRouter />
+
     <script type="importmap">
     {
       "imports": {
@@ -91,17 +93,47 @@ const allSearchItems = [...toolItems, ...blogItems];
       }
     }
     </script>
-    <!-- ★ END IMPORT MAP ★ -->
 
-    <!-- Theme – device preference only -->
+    <!-- ═══════════════════════════════════════════════════════════
+         THEME BOOT — runs before first paint, reads the user's
+         saved theme from the unified settings store.
+         Prevents the "flash of wrong theme" on every page load.
+         ═══════════════════════════════════════════════════════════ -->
     <script is:inline>
       (() => {
-        const mq = window.matchMedia('(prefers-color-scheme: dark)');
-        const apply = (e) => {
-          document.documentElement.classList.toggle('dark', e.matches);
-        };
-        apply(mq);
-        mq.addEventListener('change', apply);
+        const SETTINGS_KEY = 'dayront:settings:v1';
+        let theme = 'auto';
+
+        try {
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.theme === 'string') {
+              theme = parsed.theme;
+            }
+          }
+        } catch {}
+
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = theme === 'dark' || (theme === 'auto' && prefersDark);
+        document.documentElement.classList.toggle('dark', isDark);
+
+        // Follow system changes only when theme is 'auto'
+        try {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            let current = 'auto';
+            try {
+              const raw = localStorage.getItem(SETTINGS_KEY);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed.theme === 'string') current = parsed.theme;
+              }
+            } catch {}
+            if (current === 'auto') {
+              document.documentElement.classList.toggle('dark', e.matches);
+            }
+          });
+        } catch {}
       })();
     </script>
 
@@ -111,10 +143,6 @@ const allSearchItems = [...toolItems, ...blogItems];
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-
-    <!-- ════════════════════════════════════════════════════
-         PWA — expanded icon set, manifest, theme colors
-         ════════════════════════════════════════════════════ -->
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon-48.png" />
@@ -138,21 +166,46 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <script src="/i18n.js" defer></script>
 
+    <!-- ═══════════════════════════════════════════════════════════
+         LANGUAGE BOOT — reads from the unified settings store,
+         falls back to legacy keys, then to 'en'.
+         ═══════════════════════════════════════════════════════════ -->
     <script is:inline>
       (() => {
-        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const SETTINGS_KEY = 'dayront:settings:v1';
         const supportedLocales = ['en', 'es', 'pt', 'de', 'fr', 'ja'];
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+
         let lang = 'en';
 
+        // 1. URL prefix takes priority
         if (supportedLocales.includes(pathSegments[0])) {
           lang = pathSegments[0];
         } else {
-          lang = localStorage.getItem('dayront-lang') || 'en';
+          // 2. Unified settings store
+          try {
+            const raw = localStorage.getItem(SETTINGS_KEY);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && typeof parsed.lang === 'string' && supportedLocales.includes(parsed.lang)) {
+                lang = parsed.lang;
+              }
+            }
+          } catch {}
+
+          // 3. Legacy keys (in case settings store is empty)
+          if (lang === 'en') {
+            try {
+              const legacy = localStorage.getItem('dayront:dayront-lang')
+                || localStorage.getItem('dayront:lang');
+              if (legacy && supportedLocales.includes(legacy)) lang = legacy;
+            } catch {}
+          }
         }
 
         document.documentElement.lang = lang;
 
-        document.querySelectorAll('#lang-select, #lang-select-mobile').forEach(sel => {
+        document.querySelectorAll('#lang-select, #lang-select-mobile').forEach((sel) => {
           if (sel) sel.value = lang;
         });
       })();
@@ -162,7 +215,8 @@ const allSearchItems = [...toolItems, ...blogItems];
   </head>
 
   <body
-    class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased transition-colors duration-200"
+    data-shell="web"
+    class="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-black dark:text-white antialiased"
   >
     <Header lang={lang} />
 
@@ -180,10 +234,6 @@ const allSearchItems = [...toolItems, ...blogItems];
 
     <SearchModal items={allSearchItems} />
 
-    <!-- ════════════════════════════════════════════════════
-         INSTALL ARROW — compact icon button
-         Web only · tool pages only · first visit only
-         ════════════════════════════════════════════════════ -->
     <a
       id="install-arrow-btn"
       href="https://download.dayront.com"
@@ -200,9 +250,6 @@ const allSearchItems = [...toolItems, ...blogItems];
       </svg>
     </a>
 
-    <!-- ════════════════════════════════════════════════════
-         SERVICE WORKER REGISTRATION
-         ════════════════════════════════════════════════════ -->
     <script>
       (() => {
         if (!('serviceWorker' in navigator)) return;
@@ -228,63 +275,44 @@ const allSearchItems = [...toolItems, ...blogItems];
       })();
     </script>
 
-    <!-- ════════════════════════════════════════════════════
-         INSTALL ARROW — visibility logic
-         ════════════════════════════════════════════════════ -->
     <script>
       (() => {
         const btn = document.getElementById('install-arrow-btn');
         if (!btn) return;
 
-        // 1. Never show inside the native app (Capacitor/Tauri)
-        const w = window as any;
+        const w = window;
         const isNative =
           w.Capacitor?.isNativePlatform?.() === true ||
           w.__TAURI__ !== undefined;
         if (isNative) return;
 
-        // 2. Only show on tool pages
         const path = location.pathname;
-        const isToolPage =
-          path.startsWith('/tools/') ||
-          path.startsWith('/convert/');
+        const isToolPage = path.startsWith('/tools/') || path.startsWith('/convert/');
         if (!isToolPage) return;
 
-        // 3. Never show on the download page or subdomain
         if (path === '/download' || path.startsWith('/download/')) return;
         const host = location.hostname;
-        if (
-          host === 'download.dayront.com' ||
-          host === 'www.download.dayront.com'
-        ) {
+        if (host === 'download.dayront.com' || host === 'www.download.dayront.com') {
           return;
         }
 
-        // 4. First-visit-only — check localStorage
         const SEEN_KEY = 'dayront:install-arrow-seen:v1';
         let alreadySeen = false;
         try {
           alreadySeen = !!localStorage.getItem(SEEN_KEY);
-        } catch {
-          // localStorage unavailable — fall through and show anyway
-        }
+        } catch {}
         if (alreadySeen) return;
 
-        // 5. Show after a short delay so it doesn't distract from load
         setTimeout(() => {
           btn.hidden = false;
           requestAnimationFrame(() => {
             btn.setAttribute('data-visible', 'true');
           });
-
-          // 6. Mark as seen immediately — never shows again on this device
           try {
             localStorage.setItem(SEEN_KEY, Date.now().toString());
           } catch {}
         }, 2200);
 
-        // 7. On click, keep the link behavior (navigates to download subdomain)
-        //    and ensure the "seen" flag is set (already done above)
         btn.addEventListener('click', () => {
           try {
             localStorage.setItem(SEEN_KEY, Date.now().toString());
@@ -299,315 +327,101 @@ const allSearchItems = [...toolItems, ...blogItems];
 </html>
 
 <style is:global>
-  /* ════════════════════════════════════════════════════════
-     GLOBAL LAYOUT STYLES
-     ════════════════════════════════════════════════════════ */
+  body { padding-bottom: 64px; }
+  @media (min-width: 768px) { body { padding-bottom: 96px; } }
 
-  body {
-    padding-bottom: 64px;
-  }
-
-  @media (min-width: 768px) {
-    body {
-      padding-bottom: 96px;
-    }
-  }
-
-  body {
+  /* Non-mobile pages keep a subtle fade; mobile shell handles its own transitions */
+  body[data-shell="web"] {
     animation: dayront-page-fade-in 0.3s ease-out;
   }
-
   @keyframes dayront-page-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    body {
-      animation: none;
-    }
-    *,
-    *::before,
-    *::after {
+    body[data-shell="web"] { animation: none; }
+    *, *::before, *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
   }
 
-  /* ════════════════════════════════════════════════════════
-     INSTALL ARROW BUTTON
-     Compact 48px circular icon. Bottom-right, above sticky ad.
-     ════════════════════════════════════════════════════════ */
-
+  /* ── Install arrow ── */
   .install-arrow-btn {
     position: fixed;
     right: 1.25rem;
     bottom: 5.5rem;
     z-index: 45;
-
     display: flex;
     align-items: center;
     justify-content: center;
     width: 48px;
     height: 48px;
     border-radius: 999px;
-
     background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
     color: #ffffff;
     text-decoration: none;
-
-    box-shadow:
-      0 8px 20px rgba(44, 181, 240, 0.42),
-      0 2px 6px rgba(15, 23, 42, 0.12);
-
+    box-shadow: 0 8px 20px rgba(44, 181, 240, 0.42), 0 2px 6px rgba(15, 23, 42, 0.12);
     opacity: 0;
     transform: scale(0.8);
-    transition:
-      opacity 0.35s ease,
-      transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.2s ease;
-
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
     animation: install-arrow-pulse 2.6s ease-in-out infinite;
     animation-play-state: paused;
   }
-
   .install-arrow-btn[data-visible="true"] {
     opacity: 1;
     transform: scale(1);
     animation-play-state: running;
   }
-
   .install-arrow-btn:hover {
     transform: scale(1.08);
-    box-shadow:
-      0 12px 28px rgba(44, 181, 240, 0.55),
-      0 4px 10px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 12px 28px rgba(44, 181, 240, 0.55), 0 4px 10px rgba(15, 23, 42, 0.15);
     animation-play-state: paused;
   }
-
-  .install-arrow-btn:active {
-    transform: scale(0.95);
-  }
-
+  .install-arrow-btn:active { transform: scale(0.95); }
   @keyframes install-arrow-pulse {
-    0%, 100% {
-      box-shadow:
-        0 8px 20px rgba(44, 181, 240, 0.42),
-        0 2px 6px rgba(15, 23, 42, 0.12);
-    }
-    50% {
-      box-shadow:
-        0 10px 26px rgba(44, 181, 240, 0.65),
-        0 2px 6px rgba(15, 23, 42, 0.12);
-    }
+    0%, 100% { box-shadow: 0 8px 20px rgba(44, 181, 240, 0.42), 0 2px 6px rgba(15, 23, 42, 0.12); }
+    50%      { box-shadow: 0 10px 26px rgba(44, 181, 240, 0.65), 0 2px 6px rgba(15, 23, 42, 0.12); }
   }
-
   @supports (padding: max(0px)) {
-    .install-arrow-btn {
-      bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom)));
-    }
+    .install-arrow-btn { bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom))); }
   }
-
   @media (min-width: 768px) {
-    .install-arrow-btn {
-      right: 1.5rem;
-      bottom: 6.5rem;
-      width: 52px;
-      height: 52px;
-    }
+    .install-arrow-btn { right: 1.5rem; bottom: 6.5rem; width: 52px; height: 52px; }
   }
-
   @media (prefers-reduced-motion: reduce) {
-    .install-arrow-btn {
-      animation: none;
-      transition: opacity 0.2s ease;
-    }
-    .install-arrow-btn[data-visible="true"] {
-      transform: none;
-    }
-    .install-arrow-btn:hover {
-      transform: none;
-    }
+    .install-arrow-btn { animation: none; transition: opacity 0.2s ease; }
+    .install-arrow-btn[data-visible="true"] { transform: none; }
+    .install-arrow-btn:hover { transform: none; }
   }
 
-  /* ════════════════════════════════════════════════════════
-     NOTIFY FORM
-     ════════════════════════════════════════════════════════ */
-
-  .notify-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    width: 100%;
-    max-width: 520px;
-    margin: 0 auto;
-  }
-
-  .notify-form__honeypot {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-    padding: 0 !important;
-    margin: -1px !important;
-  }
-
-  .notify-form__row {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  @media (min-width: 480px) {
-    .notify-form__row { flex-wrap: nowrap; }
-  }
-
-  .notify-form__input {
-    flex: 1 1 220px;
-    min-width: 0;
-    padding: 0.75rem 1rem;
-    min-height: 48px;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #0f172a;
-    font-size: 0.95rem;
-    font-family: inherit;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
+  /* ── Notify form ── */
+  .notify-form { display: flex; flex-direction: column; gap: 0.625rem; width: 100%; max-width: 520px; margin: 0 auto; }
+  .notify-form__honeypot { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; padding: 0 !important; margin: -1px !important; }
+  .notify-form__row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  @media (min-width: 480px) { .notify-form__row { flex-wrap: nowrap; } }
+  .notify-form__input { flex: 1 1 220px; min-width: 0; padding: 0.75rem 1rem; min-height: 48px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font-size: 0.95rem; font-family: inherit; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
   .notify-form__input::placeholder { color: #94a3b8; }
-  .notify-form__input:focus {
-    outline: none;
-    border-color: #2CB5F0;
-    box-shadow: 0 0 0 3px rgba(44, 181, 240, 0.18);
-  }
-  .notify-form__input:disabled {
-    background: #f1f5f9;
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  .notify-form__button {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 0.75rem 1.5rem;
-    min-height: 48px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%);
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 0.95rem;
-    font-family: inherit;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(44, 181, 240, 0.32);
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-  .notify-form__button:hover:not(:disabled) {
-    box-shadow: 0 6px 22px rgba(44, 181, 240, 0.45);
-    transform: translateY(-1px);
-  }
+  .notify-form__input:focus { outline: none; border-color: #2CB5F0; box-shadow: 0 0 0 3px rgba(44, 181, 240, 0.18); }
+  .notify-form__input:disabled { background: #f1f5f9; opacity: 0.7; cursor: not-allowed; }
+  .notify-form__button { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem 1.5rem; min-height: 48px; border: none; border-radius: 10px; background: linear-gradient(135deg, #2CB5F0 0%, #0EA5E9 100%); color: #ffffff; font-weight: 700; font-size: 0.95rem; font-family: inherit; cursor: pointer; box-shadow: 0 4px 14px rgba(44, 181, 240, 0.32); transition: all 0.15s ease; white-space: nowrap; }
+  .notify-form__button:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(44, 181, 240, 0.45); transform: translateY(-1px); }
   .notify-form__button:active:not(:disabled) { transform: scale(0.98); }
-  .notify-form__button:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .notify-form__spinner {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-top-color: #ffffff;
-    border-radius: 50%;
-    animation: notify-spin 0.7s linear infinite;
-  }
+  .notify-form__button:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+  .notify-form__spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #ffffff; border-radius: 50%; animation: notify-spin 0.7s linear infinite; }
   @keyframes notify-spin { to { transform: rotate(360deg); } }
-
-  .notify-form__message {
-    font-size: 0.85rem;
-    line-height: 1.5;
-    padding: 0.6rem 0.85rem;
-    border-radius: 8px;
-    text-align: left;
-  }
-  .notify-form__message--success {
-    background: #DCFCE7;
-    color: #166534;
-    border: 1px solid #86EFAC;
-  }
-  .notify-form__message--error {
-    background: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FCA5A5;
-  }
-
-  .notify-form__fineprint {
-    margin: 0;
-    font-size: 0.75rem;
-    color: #64748b;
-    text-align: center;
-    line-height: 1.5;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .notify-form__input {
-      background: #0f172a;
-      color: #e2e8f0;
-      border-color: #334155;
-    }
-    .notify-form__input::placeholder { color: #64748b; }
-    .notify-form__input:focus {
-      border-color: #2CB5F0;
-      box-shadow: 0 0 0 3px rgba(44, 181, 240, 0.25);
-    }
-    .notify-form__input:disabled { background: #1e293b; }
-
-    .notify-form__button {
-      background: linear-gradient(135deg, #2CB5F0 0%, #38BDF8 100%);
-    }
-
-    .notify-form__message--success {
-      background: #052e16;
-      color: #86EFAC;
-      border-color: #166534;
-    }
-    .notify-form__message--error {
-      background: #450a0a;
-      color: #FCA5A5;
-      border-color: #991B1B;
-    }
-
-    .notify-form__fineprint { color: #94a3b8; }
-  }
+  .notify-form__message { font-size: 0.85rem; line-height: 1.5; padding: 0.6rem 0.85rem; border-radius: 8px; text-align: left; }
+  .notify-form__message--success { background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
+  .notify-form__message--error { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+  .notify-form__fineprint { margin: 0; font-size: 0.75rem; color: #64748b; text-align: center; line-height: 1.5; }
+  .dark .notify-form__input { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+  .dark .notify-form__input::placeholder { color: #64748b; }
+  .dark .notify-form__input:focus { border-color: #2CB5F0; box-shadow: 0 0 0 3px rgba(44, 181, 240, 0.25); }
+  .dark .notify-form__input:disabled { background: #1e293b; }
+  .dark .notify-form__button { background: linear-gradient(135deg, #2CB5F0 0%, #38BDF8 100%); }
+  .dark .notify-form__message--success { background: #052e16; color: #86EFAC; border-color: #166534; }
+  .dark .notify-form__message--error { background: #450a0a; color: #FCA5A5; border-color: #991B1B; }
+  .dark .notify-form__fineprint { color: #94a3b8; }
 </style>
-
-<script>
-  document.addEventListener('astro:before-swap', () => {
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.15s ease-out';
-  });
-
-  document.addEventListener('astro:after-swap', () => {
-    document.body.style.opacity = '1';
-    document.body.style.transition = 'opacity 0.15s ease-out';
-
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', isDark);
-  });
-</script>

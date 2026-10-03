@@ -1,9 +1,27 @@
-/* ══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    DAYRONT MOBILE APP — PROFESSIONAL SHELL
-   Native-app feel · gesture nav · polished surfaces
-   ══════════════════════════════════════════════════════════ */
+   ───────────────────────────────────────────────────────────────────────────
+   Native-app feel · gesture nav · polished surfaces · iOS-like interactions
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+   THEME MODEL:
+   The Settings screen toggles a `.dark` class on <html>. All dark styles
+   live under `.dark` selectors, never `@media (prefers-color-scheme: dark)`.
+   This gives the user real control — Light / Dark / Auto.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────
+   0. RESET
+   ───────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+   ───────────────────────────────────────────────────────────────── */
 
 :root {
   /* Brand */
@@ -68,33 +86,36 @@
   --drag-peek: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0A0E1A;
-    --bg-elev: #131A2A;
-    --bg-soft: #1A2233;
-    --bg-tint: #0F1622;
+/* ── Dark theme — applied by .dark class on <html> ───────── */
+.dark {
+  --bg: #0A0E1A;
+  --bg-elev: #131A2A;
+  --bg-soft: #1A2233;
+  --bg-tint: #0F1622;
 
-    --fg: #F1F5F9;
-    --fg-body: #CBD5E1;
-    --fg-muted: #8A97AA;
-    --fg-faint: #5A6478;
+  --fg: #F1F5F9;
+  --fg-body: #CBD5E1;
+  --fg-muted: #8A97AA;
+  --fg-faint: #5A6478;
 
-    --line: #1E2838;
-    --line-strong: #2D3949;
+  --line: #1E2838;
+  --line-strong: #2D3949;
 
-    --brand-soft: #0B2A42;
-    --brand-glow: rgba(44, 181, 240, 0.4);
+  --brand-soft: #0B2A42;
+  --brand-glow: rgba(44, 181, 240, 0.4);
 
-    --ok-bg: #052E16;
-    --warn-bg: #451A03;
-    --err-bg: #450A0A;
+  --ok-bg: #052E16;
+  --warn-bg: #451A03;
+  --err-bg: #450A0A;
 
-    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --sh-2: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --sh-3: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-2: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --sh-3: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   2. BASE
+   ───────────────────────────────────────────────────────────────── */
 
 html, body {
   height: 100%;
@@ -120,9 +141,45 @@ input, textarea, select, button {
   -webkit-user-select: text;
 }
 
-/* ══════════════════════════════════════════════════════════
-   APP SHELL
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   3. KEYFRAMES
+   ───────────────────────────────────────────────────────────────── */
+
+@keyframes d-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes d-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes d-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes d-pop-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes d-slide-out-left {
+  to { opacity: 0; transform: translate3d(-24px, 0, 0); }
+}
+@keyframes d-slide-in-right {
+  from { opacity: 0; transform: translate3d(24px, 0, 0); }
+}
+@keyframes d-slide-out-right {
+  to { opacity: 0; transform: translate3d(24px, 0, 0); }
+}
+@keyframes d-slide-in-left {
+  from { opacity: 0; transform: translate3d(-24px, 0, 0); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   4. APP SHELL
+   ───────────────────────────────────────────────────────────────── */
 
 .d-app {
   min-height: 100vh;
@@ -138,6 +195,7 @@ input, textarea, select, button {
 }
 
 /* ── Header ─────────────────────────────────────────────── */
+
 .d-app__header {
   position: sticky;
   top: 0;
@@ -147,15 +205,17 @@ input, textarea, select, button {
   gap: 0.5rem;
   padding: calc(var(--safe-top) + 0.4rem) 1rem 0.4rem;
   min-height: calc(var(--header-h) + var(--safe-top));
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  background: var(--bg);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   border-bottom: 0.5px solid var(--line);
+  view-transition-name: app-header;
 }
 
-/* Fallback if color-mix is unsupported */
-@supports not (background: color-mix(in srgb, red 50%, blue)) {
-  .d-app__header { background: var(--bg); }
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .d-app__header {
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+  }
 }
 
 .d-app__back {
@@ -192,20 +252,22 @@ input, textarea, select, button {
 
 .d-app__spacer { width: 40px; }
 
-/* Content wrapper — this is what translates on swipe */
+/* Content wrapper — translated during swipe gestures */
 .d-app__content {
   flex: 1;
   padding: 0 1.25rem;
   transform: translate3d(var(--drag-x), 0, 0);
   will-change: transform;
   transition: transform 0.34s var(--ease-out);
+  overscroll-behavior-x: contain;
+  touch-action: pan-y;
 }
 
 .d-app__content--dragging {
-  transition: none;
+  transition: none !important;
 }
 
-/* Peek indicator — subtle glow at edge during swipe */
+/* Peek indicator (edge glow during swipe) */
 .d-app__peek {
   position: fixed;
   top: 50%;
@@ -217,18 +279,31 @@ input, textarea, select, button {
   align-items: center;
   justify-content: center;
   color: var(--brand-500);
+  background: rgba(44, 181, 240, 0.12);
+  border-radius: 50%;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transform: scale(0.9);
+  transition: opacity 0.15s ease, transform 0.14s ease;
+  box-shadow: 0 4px 12px rgba(44, 181, 240, 0.2);
 }
 .d-app__peek--left  { left: 8px; }
 .d-app__peek--right { right: 8px; }
 
-.d-app__peek--visible { opacity: var(--drag-peek); }
+.d-app__peek--visible {
+  opacity: var(--drag-peek);
+  transform: scale(1);
+}
 
-/* ══════════════════════════════════════════════════════════
-   BOTTOM NAV — professional
-   ══════════════════════════════════════════════════════════ */
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .d-app__peek {
+    background: color-mix(in srgb, var(--brand-500) 12%, transparent);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   5. BOTTOM NAV
+   ───────────────────────────────────────────────────────────────── */
 
 .d-bottomnav {
   position: fixed;
@@ -239,14 +314,18 @@ input, textarea, select, button {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   padding: 0.5rem 0.5rem calc(0.5rem + var(--safe-bottom));
-  background: color-mix(in srgb, var(--bg-elev) 88%, transparent);
+  background: var(--bg-elev);
   backdrop-filter: saturate(180%) blur(28px);
   -webkit-backdrop-filter: saturate(180%) blur(28px);
   border-top: 0.5px solid var(--line);
+  view-transition-name: bottom-nav;
+  touch-action: manipulation;
 }
 
-@supports not (background: color-mix(in srgb, red 50%, blue)) {
-  .d-bottomnav { background: var(--bg-elev); }
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .d-bottomnav {
+    background: color-mix(in srgb, var(--bg-elev) 88%, transparent);
+  }
 }
 
 .d-bottomnav__item {
@@ -260,14 +339,11 @@ input, textarea, select, button {
   color: var(--fg-muted);
   border-radius: 14px;
   position: relative;
-  transition: color 0.2s ease, transform 0.15s var(--ease-out);
+  transition: color 0.15s ease, transform 0.1s var(--ease-out);
 }
+.d-bottomnav__item:active { transform: scale(0.88); }
 
-.d-bottomnav__item:active { transform: scale(0.94); }
-
-.d-bottomnav__item--active {
-  color: var(--brand-500);
-}
+.d-bottomnav__item--active { color: var(--brand-500); }
 
 /* Active pill indicator */
 .d-bottomnav__item--active::before {
@@ -304,13 +380,11 @@ input, textarea, select, button {
   font-weight: 600;
   letter-spacing: 0.005em;
 }
-.d-bottomnav__item--active .d-bottomnav__label {
-  font-weight: 700;
-}
+.d-bottomnav__item--active .d-bottomnav__label { font-weight: 700; }
 
-/* ══════════════════════════════════════════════════════════
-   TYPOGRAPHY
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   6. TYPOGRAPHY
+   ───────────────────────────────────────────────────────────────── */
 
 .d-eyebrow {
   font-size: 0.6875rem;
@@ -344,9 +418,9 @@ input, textarea, select, button {
   line-height: 1.5;
 }
 
-/* ══════════════════════════════════════════════════════════
-   HOME SCREEN
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   7. HOME SCREEN
+   ───────────────────────────────────────────────────────────────── */
 
 .d-home { padding: 1.5rem 0 2.5rem; }
 
@@ -364,7 +438,6 @@ input, textarea, select, button {
   max-width: 20ch;
 }
 
-/* Search pill */
 .d-home__search {
   display: flex;
   align-items: center;
@@ -389,7 +462,6 @@ input, textarea, select, button {
 
 .d-home__section { margin-bottom: 2rem; }
 
-/* Quick action cards — 2x2 grid */
 .d-home__quick {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -449,7 +521,6 @@ input, textarea, select, button {
   z-index: 1;
 }
 
-/* Recent tools list */
 .d-home__list {
   display: grid;
   gap: 0.5rem;
@@ -503,7 +574,6 @@ input, textarea, select, button {
   font-weight: 300;
 }
 
-/* Browse all CTA */
 .d-home__browse {
   display: flex;
   align-items: center;
@@ -525,9 +595,9 @@ input, textarea, select, button {
   box-shadow: 0 4px 12px rgba(44, 181, 240, 0.4);
 }
 
-/* ══════════════════════════════════════════════════════════
-   TOOLS SCREEN
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   8. TOOLS SCREEN
+   ───────────────────────────────────────────────────────────────── */
 
 .d-tools { padding-bottom: 2rem; }
 
@@ -537,7 +607,7 @@ input, textarea, select, button {
   z-index: 20;
   margin: 0 -1.25rem;
   padding: 0.875rem 1.25rem 0.5rem;
-  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  background: var(--bg);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   transition: box-shadow 0.2s ease;
@@ -545,8 +615,10 @@ input, textarea, select, button {
 .d-tools__searchwrap--scrolled {
   box-shadow: 0 1px 0 var(--line);
 }
-@supports not (background: color-mix(in srgb, red 50%, blue)) {
-  .d-tools__searchwrap { background: var(--bg); }
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .d-tools__searchwrap {
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+  }
 }
 
 .d-tools__search {
@@ -613,6 +685,10 @@ input, textarea, select, button {
 
 .d-chip {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
   padding: 0.5rem 0.95rem;
   border-radius: var(--r-full);
   border: 1px solid var(--line);
@@ -641,85 +717,217 @@ input, textarea, select, button {
   color: var(--fg-faint);
 }
 
-.d-tools__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  padding-top: 0.25rem;
+/* ── Featured + Recent strips ────────────────────────────── */
+
+.d-tools__featured {
+  margin: 0.5rem -1.25rem 0.25rem;
+  padding: 0 1.25rem;
 }
 
-.d-toolcard {
+.d-tools__section-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin: 0.5rem 0 0.5rem;
+}
+
+.d-tools__featured-row {
+  display: flex;
+  gap: 0.7rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.d-tools__featured-row::-webkit-scrollbar { display: none; }
+
+.d-featurecard {
+  flex: 0 0 auto;
+  width: 156px;
+  min-height: 132px;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  padding: 1rem 1rem 0.875rem;
-  background: var(--bg-elev);
+  gap: 0.5rem;
+  padding: 0.95rem 0.95rem 0.85rem;
+  border-radius: 1.15rem;
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+    linear-gradient(160deg, #e0f2fe 0%, #ffffff 62%);
   color: inherit;
   text-decoration: none;
-  text-align: left;
-  box-shadow: var(--sh-1);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.18s var(--ease-out);
+  transition: transform 140ms var(--ease-out);
 }
-.d-toolcard:active {
-  transform: scale(0.96);
-  border-color: var(--brand-300);
-  box-shadow: var(--sh-2);
+.d-featurecard:active { transform: scale(0.97); }
+
+.dark .d-featurecard {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(56, 189, 248, 0.22), transparent 55%),
+    linear-gradient(160deg, #0B2A42 0%, #131A2A 62%);
 }
 
-.d-toolcard__icon {
-  font-size: 1.75rem;
+.d-featurecard--recent {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(168, 85, 247, 0.15), transparent 55%),
+    linear-gradient(160deg, #f3e8ff 0%, #ffffff 62%);
+}
+.dark .d-featurecard--recent {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(168, 85, 247, 0.22), transparent 55%),
+    linear-gradient(160deg, #2A0B42 0%, #131A2A 62%);
+}
+
+.d-featurecard__icon {
+  font-size: 1.7rem;
   line-height: 1;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--brand-soft);
-  border-radius: 12px;
 }
-.d-toolcard__name {
-  font-size: 0.9375rem;
-  font-weight: 700;
+
+.d-featurecard__name {
+  font-size: 0.9rem;
+  font-weight: 800;
   line-height: 1.25;
-  letter-spacing: -0.015em;
-  color: var(--fg);
-}
-.d-toolcard__desc {
-  font-size: 0.75rem;
-  color: var(--fg-muted);
-  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.d-toolcard__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
+.d-featurecard__pill {
   align-self: flex-start;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--r-full);
-  font-size: 0.625rem;
-  font-weight: 700;
+  margin-top: auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-full);
+  background: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
 }
-.d-toolcard__badge--light  { background: rgba(34, 197, 94, 0.14); color: #16a34a; }
-.d-toolcard__badge--medium { background: rgba(44, 181, 240, 0.14); color: var(--brand-600); }
-.d-toolcard__badge--heavy  { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+.d-featurecard__pill--recent {
+  background: rgba(168, 85, 247, 0.16);
+  color: #6d28d9;
+}
+.dark .d-featurecard__pill {
+  background: rgba(56, 189, 248, 0.22);
+  color: #7DD3FC;
+}
+.dark .d-featurecard__pill--recent {
+  background: rgba(168, 85, 247, 0.22);
+  color: #C4B5FD;
+}
 
-@media (prefers-color-scheme: dark) {
-  .d-toolcard__badge--light  { background: rgba(34, 197, 94, 0.2); color: #86efac; }
-  .d-toolcard__badge--medium { background: rgba(44, 181, 240, 0.2); color: var(--brand-300); }
-  .d-toolcard__badge--heavy  { background: rgba(245, 158, 11, 0.2); color: #FCD34D; }
+/* ── Compact tool cards ──────────────────────────────────── */
+
+.d-tools__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+  padding-bottom: 1.5rem;
 }
+
+.d-toolcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 130px;
+  padding: 0.95rem 0.95rem 0.9rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--sh-1);
+  overflow: hidden;
+  transition: transform 0.16s var(--ease-out),
+              border-color 0.16s ease,
+              box-shadow 0.16s ease;
+}
+.d-toolcard:active {
+  transform: scale(0.965);
+  border-color: var(--brand-300);
+  box-shadow: var(--sh-2);
+}
+
+.d-toolcard::after {
+  content: '';
+  position: absolute;
+  top: -44px;
+  right: -44px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(44, 181, 240, 0.10), transparent 70%);
+  pointer-events: none;
+}
+
+.d-toolcard::before {
+  content: '';
+  position: absolute;
+  top: 0.95rem;
+  right: 0.95rem;
+  width: 18px;
+  height: 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.65;
+  z-index: 1;
+}
+
+.d-toolcard__icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  background: var(--brand-soft);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.06);
+  position: relative;
+  z-index: 1;
+}
+
+.d-toolcard__name {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: -0.018em;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.d-toolcard__desc { display: none; }
+
+.d-toolcard__badge {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--r-full);
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 1;
+}
+.d-toolcard__badge--light  { background: rgba(34, 197, 94, 0.14);  color: #15803d; }
+.d-toolcard__badge--medium { background: rgba(44, 181, 240, 0.14); color: var(--brand-600); }
+.d-toolcard__badge--heavy  { background: rgba(239, 68, 68, 0.14);  color: #b91c1c; }
+
+.dark .d-toolcard__badge--light  { background: rgba(34, 197, 94, 0.2);  color: #86efac; }
+.dark .d-toolcard__badge--medium { background: rgba(44, 181, 240, 0.2); color: var(--brand-300); }
+.dark .d-toolcard__badge--heavy  { background: rgba(239, 68, 68, 0.2);  color: #fca5a5; }
 
 .d-empty {
   padding: 4rem 1.5rem;
@@ -734,9 +942,9 @@ input, textarea, select, button {
 }
 .d-empty__sub { font-size: 0.875rem; color: var(--fg-muted); }
 
-/* ══════════════════════════════════════════════════════════
-   TOOL SCREEN
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   9. TOOL SCREEN
+   ───────────────────────────────────────────────────────────────── */
 
 .d-tool {
   padding: 1.25rem 0 3rem;
@@ -780,6 +988,8 @@ input, textarea, select, button {
   line-height: 1.4;
 }
 
+/* ── File picker (idle state) ────────────────────────────── */
+
 .d-tool__file {
   position: relative;
   display: flex;
@@ -787,8 +997,8 @@ input, textarea, select, button {
   align-items: center;
   justify-content: center;
   gap: 0.875rem;
-  min-height: 200px;
-  padding: 2rem 1.5rem;
+  min-height: 220px;
+  padding: 2.5rem 1.5rem;
   background: var(--bg-elev);
   border: 2px dashed var(--line-strong);
   border-radius: var(--r-xl);
@@ -804,9 +1014,9 @@ input, textarea, select, button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   background: linear-gradient(135deg, var(--brand-400), var(--brand-500));
   color: #ffffff;
   box-shadow: var(--sh-brand);
@@ -830,9 +1040,11 @@ input, textarea, select, button {
   cursor: pointer;
 }
 
+/* ── File chip ───────────────────────────────────────────── */
+
 .d-tool__fileinfo {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.875rem;
   padding: 0.95rem 1.1rem;
   background: var(--bg-elev);
@@ -840,15 +1052,25 @@ input, textarea, select, button {
   border-radius: var(--r-md);
   box-shadow: var(--sh-1);
 }
-.d-tool__fileinfo-icon { font-size: 1.5rem; flex-shrink: 0; }
+.d-tool__fileinfo-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-soft);
+  border-radius: 12px;
+}
 .d-tool__fileinfo-body { flex: 1; min-width: 0; }
 .d-tool__fileinfo-name {
   font-size: 0.9375rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 .d-tool__fileinfo-size {
   font-size: 0.75rem;
@@ -891,6 +1113,8 @@ input, textarea, select, button {
   border-color: var(--brand-400);
   background: var(--brand-soft);
 }
+
+/* ── Options (inline) ────────────────────────────────────── */
 
 .d-tool__options {
   display: flex;
@@ -988,6 +1212,52 @@ input, textarea, select, button {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Pill setting (CapCut-style) ─────────────────────────── */
+
+.d-pill-setting {
+  margin-bottom: 1.25rem;
+}
+.d-pill-setting__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-bottom: 0.5rem;
+}
+.d-pill-setting__row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+.d-pill-setting__row::-webkit-scrollbar { display: none; }
+
+.d-pill {
+  flex-shrink: 0;
+  padding: 0.65rem 1rem;
+  border-radius: var(--r-full);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: var(--bg-elev);
+  color: var(--fg-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.d-pill:active { transform: scale(0.96); }
+.d-pill--active {
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-500));
+  color: #ffffff;
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(2, 132, 199, 0.35);
+}
+
+/* ── Start button ────────────────────────────────────────── */
+
 .d-tool__start {
   display: flex;
   align-items: center;
@@ -1002,7 +1272,7 @@ input, textarea, select, button {
   font-weight: 800;
   letter-spacing: -0.01em;
   border: none;
-  border-radius: var(--r-lg);
+  border-radius: var(--r-full);
   cursor: pointer;
   box-shadow: var(--sh-brand);
   transition: transform 0.15s var(--ease-out), box-shadow 0.2s ease;
@@ -1016,6 +1286,96 @@ input, textarea, select, button {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ── Premium curved button ───────────────────────────────── */
+
+.d-btn-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border-radius: var(--r-full);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  border: none;
+}
+.d-btn-premium--primary {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  color: #ffffff;
+  box-shadow:
+    0 10px 24px rgba(2, 132, 199, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.d-btn-premium--primary:active {
+  transform: scale(0.985);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+.d-btn-premium--secondary {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: var(--fg);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.dark .d-btn-premium--secondary {
+  background: linear-gradient(135deg, #1A2233 0%, #131A2A 100%);
+  color: var(--fg);
+}
+.d-btn-premium--secondary:active {
+  transform: scale(0.985);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+.d-btn-premium--ghost {
+  background: transparent;
+  color: var(--fg-body);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: none;
+}
+.d-btn-premium--ghost:active {
+  transform: scale(0.985);
+  background: var(--bg-soft);
+}
+
+/* ── Processing overlay ──────────────────────────────────── */
+
+.d-processing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  padding: 2rem;
+}
+.d-processing-overlay__title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 1.5rem 0 0.5rem;
+}
+.d-processing-overlay__sub {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0;
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.5;
+}
+.d-processing-overlay__bar {
+  width: 100%;
+  max-width: 280px;
+  margin-top: 1.5rem;
+}
+
+/* ── Progress (inline legacy) ────────────────────────────── */
 
 .d-tool__progress {
   display: flex;
@@ -1041,7 +1401,6 @@ input, textarea, select, button {
   animation: d-spin 0.9s linear infinite;
   flex-shrink: 0;
 }
-@keyframes d-spin { to { transform: rotate(360deg); } }
 .d-tool__progress-title {
   font-size: 0.9375rem;
   font-weight: 700;
@@ -1051,6 +1410,8 @@ input, textarea, select, button {
   font-size: 0.8125rem;
   color: var(--fg-muted);
 }
+
+/* ── Success ─────────────────────────────────────────────── */
 
 .d-tool__success {
   display: flex;
@@ -1120,6 +1481,8 @@ input, textarea, select, button {
   color: var(--fg-body);
 }
 
+/* ── Error ───────────────────────────────────────────────── */
+
 .d-tool__error {
   display: flex;
   flex-direction: column;
@@ -1145,9 +1508,80 @@ input, textarea, select, button {
   max-width: 32rem;
 }
 
-/* ══════════════════════════════════════════════════════════
-   RECENT SCREEN
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   10. BOTTOM SHEET
+   ───────────────────────────────────────────────────────────────── */
+
+.d-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.d-sheet__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: d-fade-in 180ms ease-out;
+}
+.d-sheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-elev);
+  color: var(--fg);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+  animation: d-slide-up 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+.d-sheet__handle {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  padding-bottom: 4px;
+}
+.d-sheet__handle-bar {
+  width: 42px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: rgba(120, 120, 120, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   11. TOAST FEEDBACK
+   ───────────────────────────────────────────────────────────────── */
+
+.d-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  padding: 0.65rem 1.15rem;
+  border-radius: var(--r-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 200;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  animation: d-slide-up 200ms ease-out;
+  pointer-events: none;
+  max-width: 90vw;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   12. RECENT SCREEN
+   ───────────────────────────────────────────────────────────────── */
 
 .d-recent { padding: 1.25rem 0 2rem; }
 
@@ -1223,9 +1657,9 @@ input, textarea, select, button {
   color: var(--err);
 }
 
-/* ══════════════════════════════════════════════════════════
-   SETTINGS SCREEN
-   ══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────
+   13. SETTINGS SCREEN
+   ───────────────────────────────────────────────────────────────── */
 
 .d-settings { padding: 1.25rem 0 2rem; }
 
@@ -1285,6 +1719,10 @@ input, textarea, select, button {
   background: var(--err-bg);
   color: var(--err);
 }
+.d-settings__row-icon--danger-strong {
+  background: var(--err-bg);
+  color: var(--err);
+}
 
 .d-settings__row-body { flex: 1; min-width: 0; }
 .d-settings__row-title {
@@ -1292,6 +1730,9 @@ input, textarea, select, button {
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--fg);
+}
+.d-settings__row-title--danger {
+  color: var(--err);
 }
 .d-settings__row-sub {
   font-size: 0.75rem;
@@ -1331,6 +1772,11 @@ input, textarea, select, button {
   transition: background 0.25s var(--ease-out);
   flex-shrink: 0;
   display: block;
+  cursor: pointer;
+}
+.d-settings__toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .d-settings__toggle--on {
   background: linear-gradient(135deg, var(--brand-400), var(--brand-500));
@@ -1363,55 +1809,36 @@ input, textarea, select, button {
   font-weight: 700;
 }
 
-/* ══════════════════════════════════════════════════════════
-   VIEW TRANSITIONS
-   Direction-aware. The navigation code sets --nav-dir
-   ('forward' | 'back' | 'none') before navigating.
-   ══════════════════════════════════════════════════════════ */
-
-@view-transition {
-  navigation: auto;
-}
+/* ─────────────────────────────────────────────────────────────────
+   14. VIEW TRANSITIONS (ClientRouter-aware)
+   ───────────────────────────────────────────────────────────────── */
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.28s;
+  animation-duration: 0.26s;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-html[data-nav-dir="forward"]::view-transition-old(root) {
+html[data-nav-dir='forward']::view-transition-old(root) {
   animation-name: d-slide-out-left;
 }
-html[data-nav-dir="forward"]::view-transition-new(root) {
+html[data-nav-dir='forward']::view-transition-new(root) {
   animation-name: d-slide-in-right;
 }
 
-html[data-nav-dir="back"]::view-transition-old(root) {
+html[data-nav-dir='back']::view-transition-old(root) {
   animation-name: d-slide-out-right;
 }
-html[data-nav-dir="back"]::view-transition-new(root) {
+html[data-nav-dir='back']::view-transition-new(root) {
   animation-name: d-slide-in-left;
 }
 
-@keyframes d-slide-out-left {
-  to { opacity: 0; transform: translate3d(-24px, 0, 0); }
-}
-@keyframes d-slide-in-right {
-  from { opacity: 0; transform: translate3d(24px, 0, 0); }
-}
-@keyframes d-slide-out-right {
-  to { opacity: 0; transform: translate3d(24px, 0, 0); }
-}
-@keyframes d-slide-in-left {
-  from { opacity: 0; transform: translate3d(-24px, 0, 0); }
-}
-
-/* Bottom nav stays pinned during transitions */
-.d-bottomnav {
-  view-transition-name: bottom-nav;
-}
-.d-app__header {
-  view-transition-name: app-header;
+/* Persistent header + nav — freeze them during transitions */
+::view-transition-old(app-header),
+::view-transition-new(app-header),
+::view-transition-old(bottom-nav),
+::view-transition-new(bottom-nav) {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1419,4 +1846,18 @@ html[data-nav-dir="back"]::view-transition-new(root) {
   ::view-transition-new(root) {
     animation: none;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   15. MOTION PREFERENCES
+   ───────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .d-app__peek { transition: none; }
+  .d-app__content { transition: none !important; }
 }
