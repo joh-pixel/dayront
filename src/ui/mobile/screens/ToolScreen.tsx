@@ -13,6 +13,8 @@
  *   • Auto-save result (settings-gated)
  *   • Shared haptic feedback (settings-gated)
  *   • Prominent "don't close" warning while processing
+ *   • Silent navigation guard — blocks back nav while processing
+ *     WITHOUT the ugly native "Confirm Navigation" dialog.
  *
  * SSR NOTE: the default export is a thin wrapper. Astro bundles all
  * `client:load` components for a route into a single shared chunk; when
@@ -39,6 +41,7 @@ import {
 import { addRecent, pushRecentTool, getSettings } from '../../../core/storage';
 import { NativeAppPromo, type SettingOption } from '../../../components/conversion/Converter';
 import { haptic } from '../haptic';
+import { setNavigationGuard, clearNavigationGuard } from '../navigation-guard';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -740,14 +743,24 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
     return () => { if (resultUrl) URL.revokeObjectURL(resultUrl); };
   }, [resultUrl]);
 
+  /* ── Silent navigation guard ──
+     Registers a guard with MobileLayout while a job is processing.
+     The native back-button listener checks the guard BEFORE calling
+     history.back() or exiting, so the browser's "Confirm Navigation"
+     dialog NEVER appears. Replaces the previous `beforeunload` handler
+     which produced that ugly native Android alert. */
   useEffect(() => {
-    if (state !== 'processing') return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
+    if (state !== 'processing') {
+      clearNavigationGuard();
+      return;
+    }
+
+    // Return false → block navigation (MobileLayout will silently swallow).
+    setNavigationGuard(() => false);
+
+    return () => {
+      clearNavigationGuard();
     };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
   }, [state]);
 
   /* ── File picking ─────────────────────────────────────── */

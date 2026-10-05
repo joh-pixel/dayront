@@ -6,21 +6,21 @@
  *   • Horizontal swipe between bottom-nav tabs
  *   • History guard + native back-button interceptor
  *   • Double-press back to exit (standard Android pattern)
+ *   • Navigation guard (blocks back while a tool is processing)
  *   • Last-route memory — reopens where you left off
  *   • Deep link handling (dayront://…)
  *
  * IMPORTANT: rendered with `client:load` in every parent .astro file.
- * Without it, no useEffect runs → no gestures, no back-button handling.
  *
  * IMPORTANT: `@capacitor/app` is loaded via a DYNAMIC import inside a
  * useEffect — NOT a static top-level import. A static import breaks the
- * web bundle because the browser tries to resolve the bare specifier
- * `@capacitor/app` as a URL and fails, killing the entire module.
+ * web bundle because the browser tries to resolve the bare specifier.
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import BottomNav from '../components/BottomNav';
 import { haptic } from '../haptic';
+import { canNavigate } from '../navigation-guard';
 
 type TabKey = 'home' | 'tools' | 'recent' | 'settings';
 
@@ -179,9 +179,7 @@ export default function MobileLayout({
 
   /* ── Native back button + deep links ──
      Loads @capacitor/app DYNAMICALLY so the browser never sees the bare
-     specifier at module parse time. In the browser this import rejects;
-     the try/catch swallows it and the history guard above takes over.
-     In the native app it resolves and everything works. */
+     specifier at parse time. The try/catch swallows the browser's failure. */
   useEffect(() => {
     let cancelled = false;
     let backHandle: any;
@@ -194,14 +192,26 @@ export default function MobileLayout({
         const App = (mod as any).App;
         if (!App || cancelled) return;
 
-        // ── Back button ──
+        /* ── Back button ──
+           Order of checks:
+             1. Tool is processing → swallow entirely (no dialog, no exit)
+             2. Detail page         → real back navigation
+             3. Root tab            → double-press to exit */
         try {
           backHandle = await App.addListener('backButton', () => {
+            // ★ Navigation guard — ToolScreen registers this while processing
+            if (!canNavigate()) {
+              haptic(4);
+              return;  // silently ignore the back press
+            }
+
+            // Detail page → real back navigation
             if (currentRoot() === 'other') {
               window.history.back();
               return;
             }
 
+            // Root tab → double-press to exit
             const now = Date.now();
             if (now - lastBackPress < EXIT_CONFIRM_MS) {
               try { App.exitApp(); } catch {}
@@ -226,20 +236,20 @@ export default function MobileLayout({
           console.warn('[MobileLayout] backButton listener failed:', err);
         }
 
-        // ── Cold-start deep link ──
+        /* ── Cold-start deep link ── */
         try {
           const launch = await App.getLaunchUrl();
           if (launch?.url && !cancelled) handleDeepLink(launch.url);
         } catch {}
 
-        // ── Warm-start deep link ──
+        /* ── Warm-start deep link ── */
         try {
           urlHandle = await App.addListener('appUrlOpen', (event: any) => {
             if (event?.url) handleDeepLink(event.url);
           });
         } catch {}
       } catch {
-        // Not running inside Capacitor — the history guard above handles it.
+        // Not running inside Capacitor — history guard handles it.
       }
     })();
 
