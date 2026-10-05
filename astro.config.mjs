@@ -18,21 +18,40 @@ const AI_EXTERNALS = [
 ];
 
 /**
- * ★ Capacitor packages that must NOT be bundled.
- * They only exist inside the native mobile app, not on web.
- * Loaded lazily at runtime only when running in the app shell
- * (see src/core/storage.ts and src/core/ffmpeg-native.ts).
+ * ★ Capacitor packages that must NOT be bundled by Vite/Rollup.
+ *
+ * Two reasons:
+ *   1. They only exist inside the native mobile app shell (Capacitor 8.x)
+ *      — bundling them for the web build would produce a broken bundle.
+ *   2. They are loaded lazily at runtime only when running in the app
+ *      (see src/core/storage.ts and src/core/ffmpeg-native.ts).
  *
  * The dynamic imports in those files use `/* @vite-ignore *\/` so Vite
- * doesn't try to resolve them, and this externals list tells Rollup
- * to skip them in the production build.
+ * doesn't try to resolve them at build time, and this externals list
+ * tells Rollup to skip them in the production build.
+ *
+ * IMPORTANT: @capacitor/app is now STATICALLY imported by
+ * src/ui/mobile/layouts/MobileLayout.tsx (needed for the back-button
+ * listener and deep links). It MUST be in this list, otherwise
+ * Rollup fails to resolve it during the SSR pass of static generation.
  */
 const CAPACITOR_EXTERNALS = [
+  // Core + platform
   "@capacitor/core",
+  "@capacitor/android",
+  "@capacitor/cli",
+
+  // Native APIs used across the app
+  "@capacitor/app",
   "@capacitor/preferences",
   "@capacitor/filesystem",
   "@capacitor/share",
+  "@capacitor/local-notifications",
+
+  // Community + third-party plugins
+  "@capacitor-community/keep-awake",
   "@capacitor-community/ffmpeg",
+  "@capawesome/capacitor-file-picker",
 ];
 
 /** Merged list — used across build / worker / ssr / optimizeDeps. */
@@ -55,7 +74,6 @@ export default defineConfig({
     preact({ compat: true }),
     mdx(),
     sitemap({
-      // ★ Exclude noise + duplicated download URL
       filter: (page) =>
         !page.includes("?lang=") &&
         !page.includes("/tag/") &&
@@ -90,9 +108,8 @@ export default defineConfig({
       },
     },
 
-    // ★ Client-side build — THIS was the missing piece.
-    // Without this, Rollup still tries to resolve @capacitor/* during
-    // the client bundle, even though ssr.external already lists them.
+    // ★ Client-side build — tells Rollup not to try bundling the
+    // Capacitor + AI packages, they'll be resolved at runtime.
     build: {
       rollupOptions: {
         external: ALL_EXTERNALS,
@@ -107,7 +124,7 @@ export default defineConfig({
       },
     },
 
-    // ★ Server-side render (Astro SSR pass)
+    // ★ Server-side render (build-time render pass for static output)
     ssr: {
       external: ALL_EXTERNALS,
     },
