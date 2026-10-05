@@ -4,7 +4,7 @@
  * Mobile-first tool screen with:
  *   • Real file thumbnails (video poster / image / audio icon)
  *   • Tap-to-preview full screen before processing
- *   • Wrong-file-type warning
+ *   • Wrong-file-type warning (checks category when `from` is missing)
  *   • Sanitized filenames (strips Android cache hashes)
  *   • Segmented pill options (CapCut-style)
  *   • Inline preview of the result before saving
@@ -133,32 +133,53 @@ function fileKind(file: File): 'video' | 'audio' | 'image' | 'unknown' {
   return 'unknown';
 }
 
-/** Validate a picked file against the tool's `from` field */
+/**
+ * Validate a picked file against the tool's expected input type.
+ *
+ * Prefers the explicit `tool.from` field. When it's missing (many
+ * tools like Audio Compressor don't set it), we fall back to the
+ * tool's category:
+ *   audio-utility / audio-conversion    → expects audio
+ *   video-utility / video-to-audio / video-conversion → expects video
+ *   ai                                  → accepts any (images, videos, etc.)
+ */
 function validateFileForTool(file: File, tool: Tool): { ok: boolean; reason?: string } {
-  const from = tool.from;
-  if (!from) return { ok: true };
-
   const kind = fileKind(file);
   const audioFormats = ['mp3','wav','m4a','aac','ogg','opus','flac','aiff','amr','ape'];
   const videoFormats = ['mp4','mov','mkv','avi','webm','flv','m4v'];
   const imageFormats = ['gif','png','jpg','jpeg','webp'];
 
-  const fromLower = from.toLowerCase();
+  // What does this tool expect?
+  let expects: 'audio' | 'video' | 'image' | 'any' = 'any';
 
-  if (audioFormats.includes(fromLower)) {
-    if (kind === 'audio') return { ok: true };
-    return { ok: false, reason: `This tool expects an audio file (${from.toUpperCase()}). You picked a ${kind}.` };
-  }
-  if (videoFormats.includes(fromLower)) {
-    if (kind === 'video') return { ok: true };
-    return { ok: false, reason: `This tool expects a video file (${from.toUpperCase()}). You picked a ${kind}.` };
-  }
-  if (imageFormats.includes(fromLower)) {
-    if (kind === 'image') return { ok: true };
-    return { ok: false, reason: `This tool expects an image file (${from.toUpperCase()}). You picked a ${kind}.` };
+  if (tool.from) {
+    const f = tool.from.toLowerCase();
+    if (audioFormats.includes(f)) expects = 'audio';
+    else if (videoFormats.includes(f)) expects = 'video';
+    else if (imageFormats.includes(f)) expects = 'image';
+  } else {
+    const cat = (tool.category || '').toLowerCase();
+    if (cat === 'audio-utility' || cat === 'audio-conversion') {
+      expects = 'audio';
+    } else if (
+      cat === 'video-utility' ||
+      cat === 'video-to-audio' ||
+      cat === 'video-conversion'
+    ) {
+      expects = 'video';
+    }
+    // AI tools accept anything — leave as 'any'
   }
 
-  return { ok: true };
+  if (expects === 'any') return { ok: true };
+  if (kind === expects) return { ok: true };
+  if (kind === 'unknown') return { ok: true }; // can't classify → let it through
+
+  const label = expects.charAt(0).toUpperCase() + expects.slice(1);
+  return {
+    ok: false,
+    reason: `This tool expects ${label.toLowerCase()} files. You picked a ${kind}. Tap the × to remove it and choose the correct file.`,
+  };
 }
 
 /* ── Native integrations (lazy, safe on web, settings-gated) ── */
