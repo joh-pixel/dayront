@@ -9,18 +9,16 @@
  *   • Last-route memory — reopens where you left off
  *   • Deep link handling (dayront://…)
  *
- * IMPORTANT: this component MUST be rendered with `client:load` in every
- * parent .astro file. Without it, no useEffect runs → no gestures, no
- * back-button handling, no route memory.
+ * IMPORTANT: rendered with `client:load` in every parent .astro file.
+ * Without it, no useEffect runs → no gestures, no back-button handling.
  *
- * The `@capacitor/app` import is STATIC on purpose. The dynamic
- * `import(/* @vite-ignore *\/ '@capacitor/app')` pattern silently fails at
- * runtime inside the Capacitor WebView — the module never resolves, the
- * backButton listener never registers, and the OS closes the app on swipe.
+ * IMPORTANT: `@capacitor/app` is loaded via a DYNAMIC import inside a
+ * useEffect — NOT a static top-level import. A static import breaks the
+ * web bundle because the browser tries to resolve the bare specifier
+ * `@capacitor/app` as a URL and fails, killing the entire module.
  */
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { App as CapacitorApp } from '@capacitor/app';
 import BottomNav from '../components/BottomNav';
 import { haptic } from '../haptic';
 
@@ -49,13 +47,8 @@ const SWIPE_VELOCITY_THRESHOLD = 0.55;
 const DIRECTION_LOCK_PX = 4;
 const EDGE_RESISTANCE = 0.28;
 
-/** localStorage key for the last visited route. */
 const ROUTE_KEY = 'dayront:last-route';
-
-/** sessionStorage flag — only restore the last route once per cold start. */
 const SESSION_BOOT_KEY = 'dayront:session-boot';
-
-/** How long "press back again to exit" stays armed (ms). */
 const EXIT_CONFIRM_MS = 2000;
 
 /* ── Environment ─────────────────────────────────────────── */
@@ -74,17 +67,11 @@ function currentRoot(): string {
 /* ── Route memory ────────────────────────────────────────── */
 
 function saveLastRoute(path: string): void {
-  try {
-    localStorage.setItem(ROUTE_KEY, path);
-  } catch {}
+  try { localStorage.setItem(ROUTE_KEY, path); } catch {}
 }
 
 function getLastRoute(): string | null {
-  try {
-    return localStorage.getItem(ROUTE_KEY);
-  } catch {
-    return null;
-  }
+  try { return localStorage.getItem(ROUTE_KEY); } catch { return null; }
 }
 
 /* ── Navigation helpers ──────────────────────────────────── */
@@ -153,9 +140,7 @@ export default function MobileLayout({
     saveLastRoute(location.pathname);
   }, [current]);
 
-  /* ── Cold-start route restore ──
-     Runs once per session (per WebView lifetime). If the app was closed
-     while on a tool page, we land back on that page instead of Home. */
+  /* ── Cold-start route restore ── */
   useEffect(() => {
     if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
 
@@ -166,18 +151,12 @@ export default function MobileLayout({
     const saved = (getLastRoute() || '').replace(/\/$/, '');
     if (!saved) return;
 
-    // Only auto-restore if we landed on Home.
-    // If the user intentionally opened a tool URL, don't override it.
     if (here === '/app' && saved !== '/app') {
-      // `replace` so back button goes to Home, not to the redirect itself.
       window.location.replace(saved);
     }
   }, []);
 
-  /* ── History guard (web fallback) ──
-     On web we can't intercept the back button, so we arm a synthetic
-     history entry at root tabs. On native, the backButton listener
-     below handles it — the guard is harmless there too. */
+  /* ── History guard (web fallback) ── */
   useEffect(() => {
     if (hideNav) return;
 
@@ -186,10 +165,8 @@ export default function MobileLayout({
     }
 
     const onPop = () => {
-      // Detail page → let the browser handle it naturally.
       if (currentRoot() === 'other') return;
 
-      // At a root tab → re-arm the guard so the next back press doesn't leave.
       if (history.state?.dayrontGuard !== true) {
         history.pushState({ dayrontGuard: true, ts: Date.now() }, '', location.href);
       }
@@ -201,66 +178,70 @@ export default function MobileLayout({
   }, [hideNav]);
 
   /* ── Native back button + deep links ──
-     Static import of `@capacitor/app` guarantees the plugin is bundled.
-     Web shim provides safe no-ops when running in a browser. */
+     Loads @capacitor/app DYNAMICALLY so the browser never sees the bare
+     specifier at module parse time. In the browser this import rejects;
+     the try/catch swallows it and the history guard above takes over.
+     In the native app it resolves and everything works. */
   useEffect(() => {
+    let cancelled = false;
     let backHandle: any;
     let urlHandle: any;
-    let cancelled = false;
     let lastBackPress = 0;
 
-    /* Back button — Android only (no-op on web). */
     (async () => {
       try {
-        backHandle = await CapacitorApp.addListener('backButton', () => {
-          // Detail page → real back navigation
-          if (currentRoot() === 'other') {
-            window.history.back();
-            return;
-          }
+        const mod = await import('@capacitor/app');
+        const App = (mod as any).App;
+        if (!App || cancelled) return;
 
-          // Root tab → "press back twice to exit"
-          const now = Date.now();
-          if (now - lastBackPress < EXIT_CONFIRM_MS) {
-            try { CapacitorApp.exitApp(); } catch {}
-            return;
-          }
-          lastBackPress = now;
-
-          // First press: nudge the UI so the user gets feedback.
-          haptic(6);
-          const el = contentRef.current;
-          if (el) {
-            el.animate(
-              [
-                { transform: 'translateX(0)' },
-                { transform: 'translateX(10px)' },
-                { transform: 'translateX(0)' },
-              ],
-              { duration: 240, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
-            );
-          }
-        });
-      } catch (err) {
-        console.warn('[MobileLayout] backButton listener failed:', err);
-      }
-    })();
-
-    /* Deep links */
-    if (isNativeApp()) {
-      (async () => {
+        // ── Back button ──
         try {
-          const launch = await CapacitorApp.getLaunchUrl();
+          backHandle = await App.addListener('backButton', () => {
+            if (currentRoot() === 'other') {
+              window.history.back();
+              return;
+            }
+
+            const now = Date.now();
+            if (now - lastBackPress < EXIT_CONFIRM_MS) {
+              try { App.exitApp(); } catch {}
+              return;
+            }
+            lastBackPress = now;
+
+            haptic(6);
+            const el = contentRef.current;
+            if (el) {
+              el.animate(
+                [
+                  { transform: 'translateX(0)' },
+                  { transform: 'translateX(10px)' },
+                  { transform: 'translateX(0)' },
+                ],
+                { duration: 240, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+              );
+            }
+          });
+        } catch (err) {
+          console.warn('[MobileLayout] backButton listener failed:', err);
+        }
+
+        // ── Cold-start deep link ──
+        try {
+          const launch = await App.getLaunchUrl();
           if (launch?.url && !cancelled) handleDeepLink(launch.url);
         } catch {}
 
+        // ── Warm-start deep link ──
         try {
-          urlHandle = await CapacitorApp.addListener('appUrlOpen', (event: any) => {
+          urlHandle = await App.addListener('appUrlOpen', (event: any) => {
             if (event?.url) handleDeepLink(event.url);
           });
         } catch {}
-      })();
-    }
+      } catch {
+        // Not running inside Capacitor — the history guard above handles it.
+      }
+    })();
 
     return () => {
       cancelled = true;
