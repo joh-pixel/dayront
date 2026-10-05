@@ -30,7 +30,7 @@ const appTools = tools.map((t) => ({
     <title>Tools — Dayront App</title>
   </head>
   <body>
-    <MobileLayout current="tools" title="Tools">
+    <MobileLayout client:load current="tools" title="Tools">
       <ToolsScreen client:load tools={appTools} />
     </MobileLayout>
   </body>

@@ -50,7 +50,7 @@ const appTool = {
     <title>{tool.name} — Dayront</title>
   </head>
   <body>
-    <MobileLayout current="tools" backTo="/app/tools" title={tool.name} hideNav={false}>
+    <MobileLayout client:load current="tools" backTo="/app/tools" title={tool.name} hideNav={false}>
       <ToolScreen client:load tool={appTool} />
     </MobileLayout>
   </body>

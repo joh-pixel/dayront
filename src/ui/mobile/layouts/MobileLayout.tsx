@@ -10,6 +10,10 @@
  *   • iOS-style peek indicator
  *   • Deep link handling (dayront://…) — cold and warm start
  *
+ * IMPORTANT: this component MUST be rendered with `client:load` in the
+ * parent .astro file. Without it, none of the useEffect hooks run and
+ * swipes, history guard, and back-button interception are all dead.
+ *
  * NOTE: Header + bottom nav are pinned during View Transitions via CSS
  * `view-transition-name` (see mobile.css). Do NOT add `transition:persist`
  * here — that directive is Astro-only and breaks the Preact JSX parser.
@@ -46,8 +50,10 @@ const SWIPE_DISTANCE_RATIO = 0.22;
 /** Velocity threshold (px/ms) — fast flicks commit sooner. */
 const SWIPE_VELOCITY_THRESHOLD = 0.55;
 
-/** Direction lock — horizontal kicks in after this much more horizontal than vertical. */
-const DIRECTION_LOCK_PX = 8;
+/** Direction lock — horizontal kicks in after this much more horizontal
+    than vertical. Deliberately small (4px) so we can intercept the
+    gesture before the browser decides it's a scroll/back gesture. */
+const DIRECTION_LOCK_PX = 4;
 
 /** Rubber band factor when swiping past the first/last tab. */
 const EDGE_RESISTANCE = 0.28;
@@ -62,8 +68,7 @@ function isNativeApp(): boolean {
 
 /**
  * Normalize the current URL path to a root slug, or 'other' when it's
- * a detail page (like /app/tool/xxx). Used by both the history guard
- * and the back-button handler to decide whether back is a real navigation.
+ * a detail page (like /app/tool/xxx).
  */
 function currentRoot(): string {
   const clean = location.pathname.replace(/\/$/, '').replace(/^\/app/, '') || '/';
@@ -72,21 +77,17 @@ function currentRoot(): string {
 
 /**
  * Navigate to a tab with correct direction + client-side routing when available.
- * Falls back to a full page load if `astro:transitions/client` isn't ready yet.
  */
 function navigateTo(tab: TabKey, direction: 'forward' | 'back') {
   const url = TAB_URLS[tab];
   if (typeof document === 'undefined') return;
 
-  // Tell the View Transition CSS which direction we're going
   document.documentElement.dataset.navDir = direction;
 
-  // Clear the direction flag once the transition is done
   setTimeout(() => {
     delete document.documentElement.dataset.navDir;
   }, 320);
 
-  // Prefer Astro's client-side navigation (instant, no white flash)
   import('astro:transitions/client')
     .then((mod) => {
       const nav = (mod as any).navigate;
@@ -97,21 +98,12 @@ function navigateTo(tab: TabKey, direction: 'forward' | 'back') {
       }
     })
     .catch(() => {
-      // Router not available (e.g. before ClientRouter is set up) — hard nav
       window.location.href = url;
     });
 }
 
 /**
  * Handle an incoming dayront:// deep link.
- *
- * Supported shapes:
- *   dayront://tool/<slug>          → /app/tool/<slug>
- *   dayront://tools                → /app/tools
- *   dayront://recent               → /app/recent
- *   dayront://settings             → /app/settings
- *   dayront://home                 → /app
- *   dayront://anything-else        → /app
  */
 function handleDeepLink(rawUrl: string) {
   if (!rawUrl) return;
@@ -128,19 +120,16 @@ function handleDeepLink(rawUrl: string) {
     const first = segments[0];
     const query = queryPart ? `?${queryPart}` : '';
 
-    // tool/<slug>
     if (first === 'tool' && segments[1]) {
       window.location.href = `/app/tool/${segments[1]}${query}`;
       return;
     }
 
-    // Known tabs
     if (first === 'tools' || first === 'recent' || first === 'settings' || first === 'home') {
       window.location.href = `/app${first === 'home' ? '' : `/${first}`}${query}`;
       return;
     }
 
-    // Fallback — land on Home
     window.location.href = `/app${query}`;
   } catch {
     window.location.href = '/app';
@@ -160,22 +149,17 @@ export default function MobileLayout({
   const offsetRef = useRef(0);
   const [peek, setPeek] = useState<{ side: 'left' | 'right'; intensity: number } | null>(null);
 
-  /* ── History guard: only re-arm at ROOT tabs ──
-     On detail pages (/app/tool/xxx), we let the back button do a real
-     navigation. On root tabs, we swallow it and nudge the UI. */
+  /* ── History guard ── */
   useEffect(() => {
     if (hideNav) return;
 
-    // Push a synthetic entry ONLY at a root tab — otherwise let real back nav work.
     if (currentRoot() !== 'other' && history.state?.dayrontGuard !== true) {
       history.pushState({ dayrontGuard: true, ts: Date.now() }, '', location.href);
     }
 
     const onPop = () => {
-      // On a detail page → let the browser's back navigation happen naturally.
       if (currentRoot() === 'other') return;
 
-      // At a root tab → re-arm the guard and nudge the UI.
       history.pushState({ dayrontGuard: true, ts: Date.now() }, '', location.href);
       haptic(4);
 
@@ -196,8 +180,7 @@ export default function MobileLayout({
     return () => window.removeEventListener('popstate', onPop);
   }, [hideNav]);
 
-  /* ── Native Android back button + deep links ──
-     Only runs inside the native app shell. On web, it's a no-op. */
+  /* ── Native Android back button + deep links ── */
   useEffect(() => {
     if (!isNativeApp()) return;
 
@@ -210,9 +193,6 @@ export default function MobileLayout({
         const App = mod.App;
         if (!App || cancelled) return;
 
-        // ── Native back button ──
-        // At a root tab  → swallow (app stays open)
-        // On a detail pg → real back navigation
         let backHandle: any;
         try {
           backHandle = await App.addListener('backButton', (info: any) => {
@@ -223,7 +203,6 @@ export default function MobileLayout({
               return;
             }
 
-            // Root tab: nudge UI, do NOT let the app close
             haptic(4);
             const el = contentRef.current;
             if (el) {
@@ -239,13 +218,11 @@ export default function MobileLayout({
           });
         } catch {}
 
-        // ── Cold start deep link ──
         try {
           const launch = await App.getLaunchUrl();
           if (launch?.url && !cancelled) handleDeepLink(launch.url);
         } catch {}
 
-        // ── Warm start deep link ──
         let urlHandle: any;
         try {
           urlHandle = await App.addListener('appUrlOpen', (event: any) => {
@@ -257,9 +234,7 @@ export default function MobileLayout({
           try { backHandle?.remove(); } catch {}
           try { urlHandle?.remove(); } catch {}
         };
-      } catch {
-        // Plugin not installed — deep links + back intercept simply don't fire.
-      }
+      } catch {}
     })();
 
     return () => {
@@ -269,8 +244,12 @@ export default function MobileLayout({
   }, []);
 
   /* ── Swipe between tabs ──
-     NOTE: `dragging` state is intentionally NOT in the deps array —
-     putting it there re-runs the effect mid-gesture and kills the swipe. */
+     KEY FIX: call preventDefault() as soon as ANY horizontal movement is
+     detected — before the direction lock is decided. Otherwise Chrome
+     commits to a scroll/back gesture and cancels our touch events.
+
+     The `.d-app__content` element also has `touch-action: pan-y` in CSS,
+     which lets the browser know we own horizontal gestures. */
   useEffect(() => {
     const el = contentRef.current;
     if (!el || hideNav) return;
@@ -317,6 +296,11 @@ export default function MobileLayout({
       locked = 'none';
       committed = false;
       active = true;
+
+      // Lock horizontal gestures on the element for the duration of this
+      // touch. This forces the browser to defer to us for horizontal pans
+      // and only handle vertical scrolls itself.
+      el.style.touchAction = 'pan-y';
     };
 
     const onMove = (e: TouchEvent) => {
@@ -325,14 +309,25 @@ export default function MobileLayout({
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
 
+      // Direction lock: decide ONCE, as early as possible.
       if (locked === 'none') {
         if (Math.abs(dx) > Math.abs(dy) + DIRECTION_LOCK_PX) locked = 'horizontal';
         else if (Math.abs(dy) > Math.abs(dx) + DIRECTION_LOCK_PX) locked = 'vertical';
       }
 
+      // Vertical → hand off to the browser, do nothing.
+      if (locked === 'vertical') return;
+
+      // If we have ANY horizontal intent, freeze the browser's gesture
+      // immediately. Without this, Chrome treats the pan as a scroll
+      // or an edge-swipe and cancels our touch sequence.
+      if (Math.abs(dx) > 1 && e.cancelable) {
+        e.preventDefault();
+      }
+
+      // Not yet locked → waiting for the tiny threshold to pass.
       if (locked !== 'horizontal') return;
 
-      e.preventDefault();
       setDraggingClass(true);
 
       // Track velocity
@@ -368,6 +363,9 @@ export default function MobileLayout({
       if (!active) return;
       active = false;
 
+      // Restore the default touch behavior for next time.
+      el.style.touchAction = '';
+
       if (locked !== 'horizontal') {
         setDraggingClass(false);
         return;
@@ -377,7 +375,6 @@ export default function MobileLayout({
       const dist = Math.abs(dx);
       const threshold = window.innerWidth * SWIPE_DISTANCE_RATIO;
 
-      // Commit if distance OR velocity crosses threshold
       const passedDistance = dist > threshold;
       const passedVelocity =
         Math.abs(velocity) > SWIPE_VELOCITY_THRESHOLD &&
@@ -395,7 +392,9 @@ export default function MobileLayout({
       }
     };
 
-    el.addEventListener('touchstart', onStart, { passive: true });
+    // touchstart is passive:false so we *could* preventDefault there if needed.
+    // touchmove MUST be passive:false so our preventDefault is honored.
+    el.addEventListener('touchstart', onStart, { passive: false });
     el.addEventListener('touchmove', onMove, { passive: false });
     el.addEventListener('touchend', onEnd);
     el.addEventListener('touchcancel', onEnd);
@@ -407,11 +406,12 @@ export default function MobileLayout({
       el.removeEventListener('touchcancel', onEnd);
       el.style.setProperty('--drag-x', '0px');
       el.style.setProperty('--drag-peek', '0');
+      el.style.touchAction = '';
       el.classList.remove('d-app__content--dragging');
     };
   }, [current, hideNav]);
 
-  /* ── Bottom-nav tap handler — uses the same navigateTo helper ── */
+  /* ── Bottom-nav tap handler ── */
   const handleNavTap = (tab: TabKey) => {
     const currentIdx = TAB_ORDER.indexOf(current);
     const targetIdx = TAB_ORDER.indexOf(tab);
@@ -448,49 +448,22 @@ export default function MobileLayout({
         <div class="d-app__spacer" />
       </header>
 
-      <main
-        ref={contentRef}
-        class="d-app__content"
-      >
+      <main ref={contentRef} class="d-app__content">
         {children}
       </main>
 
       {peek && (
         <>
           {peek.side === 'left' && (
-            <div
-              class="d-app__peek d-app__peek--left d-app__peek--visible"
-              aria-hidden="true"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
+            <div class="d-app__peek d-app__peek--left d-app__peek--visible" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </div>
           )}
           {peek.side === 'right' && (
-            <div
-              class="d-app__peek d-app__peek--right d-app__peek--visible"
-              aria-hidden="true"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
+            <div class="d-app__peek d-app__peek--right d-app__peek--visible" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 6l6 6-6 6" />
               </svg>
             </div>
@@ -498,9 +471,7 @@ export default function MobileLayout({
         </>
       )}
 
-      {!hideNav && (
-        <BottomNav current={current} onNavigate={handleNavTap} />
-      )}
+      {!hideNav && <BottomNav current={current} onNavigate={handleNavTap} />}
     </div>
   );
 }
