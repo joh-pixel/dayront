@@ -2,13 +2,9 @@
  * src/ui/mobile/tool/inner.tsx
  * ----------------------------------------------------------------------------
  * Tool screen orchestrator. Owns all state and side effects; delegates leaf
- * rendering to the other modules under tool/. Every function that was inline
- * in the original ToolScreen.tsx is preserved here verbatim — the split is
- * about file organisation, not behaviour.
+ * rendering to the other modules under tool/.
  *
  * Public API: named export ToolScreenInner({ tool }).
- * The SSR-safe wrapper lives in screens/ToolScreen.tsx (the only file Astro
- * imports directly).
  */
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import {
@@ -45,7 +41,7 @@ import {
   keepAwakeOn,
   notifyJobDone,
 } from './native';
-import { FileChip, FilePreview } from './file-ui';
+import { FileChip, FileHero, FilePreview } from './file-ui';
 import {
   ErrorSheet,
   NativeLimitPromo,
@@ -116,12 +112,8 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     return () => { if (resultUrl) URL.revokeObjectURL(resultUrl); };
   }, [resultUrl]);
 
-  /* ── Elapsed timer ── */
   useEffect(() => {
-    if (state !== 'processing') {
-      setElapsed(0);
-      return;
-    }
+    if (state !== 'processing') { setElapsed(0); return; }
     const start = Date.now();
     const t = setInterval(() => {
       setElapsed(Math.floor((Date.now() - start) / 1000));
@@ -129,52 +121,33 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     return () => clearInterval(t);
   }, [state]);
 
-  /* ── Silent navigation guard ── */
   useEffect(() => {
-    if (state !== 'processing') {
-      clearNavigationGuard();
-      return;
-    }
+    if (state !== 'processing') { clearNavigationGuard(); return; }
     setNavigationGuard(() => false);
-    return () => {
-      clearNavigationGuard();
-    };
+    return () => { clearNavigationGuard(); };
   }, [state]);
-
-  /* ── File picking ─────────────────────────────────────── */
 
   function addFiles(arr: File[]) {
     if (arr.length === 0) return;
-
     const first = arr[0];
     const check = validateFileForTool(first, tool);
-    if (!check.ok && check.reason) {
-      setFileWarning(check.reason);
-    } else {
-      setFileWarning(null);
-    }
-
+    setFileWarning(!check.ok && check.reason ? check.reason : null);
     const next = multi ? [...files, ...arr] : [arr[0]];
     setFiles(next);
     setState('ready');
     setErrorMsg('');
-
     const totalMB = next.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
     if (native) {
       if (totalMB > MAX_NATIVE_MB) {
         setPromo({ reason: 'native-limit', totalMB });
         setBypassPromo(true);
-      } else {
-        setPromo(null); setBypassPromo(false);
-      }
+      } else { setPromo(null); setBypassPromo(false); }
     } else {
       const capacity = checkWebCapacity(next, true);
       if (capacity) {
         setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
         setBypassPromo(false);
-      } else {
-        setPromo(null); setBypassPromo(false);
-      }
+      } else { setPromo(null); setBypassPromo(false); }
     }
     haptic();
   }
@@ -255,8 +228,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     setPreviewOpen(true);
   }
 
-  /* ── Processing ───────────────────────────────────────── */
-
   async function start() {
     if (files.length === 0) return;
     if (promo && !bypassPromo) return;
@@ -334,8 +305,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     }
   }
 
-  /* ── Result actions ───────────────────────────────────── */
-
   async function handleShare() {
     if (!resultBlob) return;
     haptic();
@@ -345,11 +314,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
         setSaveFeedback('Shared successfully');
         setTimeout(() => setSaveFeedback(null), 2400);
       }
-      /* ★ If !ok, the user either cancelled the share sheet or the
-       *   plugin failed. Either way we do NOT auto-save — that was
-       *   the reason the Share button looked broken: tapping it
-       *   produced a "Saved to your device" toast and no share sheet.
-       *   The user has a dedicated Download button for saving. */
     } catch (err) {
       console.error('[share] Failed:', err);
       setSaveFeedback('Could not share — use Download');
@@ -370,8 +334,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     setTimeout(() => setSaveFeedback(null), 2400);
   }
 
-  /* ── Derived values ───────────────────────────────────── */
-
   const outputMime: string = (() => {
     if (outputFormat === 'mp3') return 'audio/mpeg';
     if (['wav', 'ogg', 'opus'].includes(outputFormat)) return 'audio/' + outputFormat;
@@ -388,8 +350,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
 
   const totalSize = files.reduce((s, f) => s + f.size, 0);
   const warnLongJob = shouldWarnLongJob(tool, totalSize);
-
-  /* ── Promo views ──────────────────────────────────────── */
 
   if (native && promo?.reason === 'native-limit') {
     return (
@@ -416,7 +376,8 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     );
   }
 
-  /* ── Main render ──────────────────────────────────────── */
+  /* Single-file tools get the hero; multi-file keeps the chip row */
+  const showHero = files.length === 1 && !multi;
 
   return (
     <div class="d-tool" style={{
@@ -460,7 +421,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
               minHeight: '240px', cursor: 'pointer',
             }}
           >
-            {/* ★ Rounded-square-plus upload icon (blue gradient, white inner tile) */}
             <span aria-hidden="true" style={{
               width: '72px', height: '72px', borderRadius: '22px',
               background: 'linear-gradient(135deg,#38bdf8,#0284c7)',
@@ -490,35 +450,45 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
           </button>
         )}
 
+        {/* ★ Phase A: single-file tools get a hero; multi-file keeps chips */}
         {files.length > 0 && state !== 'idle' && state !== 'processing' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {files.map((f, i) => (
-              <FileChip
-                key={`${f.name}-${i}`}
-                file={f}
-                tool={tool}
-                onRemove={state === 'ready' ? () => removeFile(i) : undefined}
-                onPreview={() => openPreview(f)}
-              />
-            ))}
-            {multi && state === 'ready' && (
-              <button
-                type="button"
-                onClick={handlePick}
-                style={{
-                  padding: '0.75rem',
-                  borderRadius: '1rem',
-                  border: '2px dashed var(--line-strong, #cbd5e1)',
-                  background: 'transparent',
-                  color: 'inherit',
-                  fontSize: '0.9rem', fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                + Add another file
-              </button>
-            )}
-          </div>
+          showHero ? (
+            <FileHero
+              file={files[0]}
+              tool={tool}
+              onRemove={state === 'ready' ? () => removeFile(0) : undefined}
+              onPreview={() => openPreview(files[0])}
+            />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {files.map((f, i) => (
+                <FileChip
+                  key={`${f.name}-${i}`}
+                  file={f}
+                  tool={tool}
+                  onRemove={state === 'ready' ? () => removeFile(i) : undefined}
+                  onPreview={() => openPreview(f)}
+                />
+              ))}
+              {multi && state === 'ready' && (
+                <button
+                  type="button"
+                  onClick={handlePick}
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: '1rem',
+                    border: '2px dashed var(--line-strong, #cbd5e1)',
+                    background: 'transparent',
+                    color: 'inherit',
+                    fontSize: '0.9rem', fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  + Add another file
+                </button>
+              )}
+            </div>
+          )
         )}
 
         {fileWarning && state === 'ready' && (
@@ -573,7 +543,6 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
           </button>
         )}
 
-        {/* ★ Pre-processing warning for heavy jobs */}
         {state === 'ready' && files.length > 0 && !fileWarning && warnLongJob && (
           <div style={{
             marginTop: '0.875rem',
@@ -670,6 +639,7 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
         onSettingChange={(name, value) =>
           setSettings((prev) => ({ ...prev, [name]: value }))
         }
+        file={files[0] ?? null}
       />
 
       <SuccessSheet

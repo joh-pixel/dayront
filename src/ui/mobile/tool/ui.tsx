@@ -3,17 +3,35 @@
  * ----------------------------------------------------------------------------
  * Presentational primitives shared across the tool screen.
  *
- *   • BottomSheet     slide-up sheet with backdrop (opts out of page-swipe)
- *   • PremiumButton   pill button with press feedback + 3 variants
- *   • PillSetting     one setting row (select / range / number)
- *   • ProgressRing    circular SVG progress indicator
+ *   • BottomSheet       slide-up sheet with backdrop (opts out of page-swipe)
+ *   • PremiumButton     pill button with press feedback + 3 variants
+ *   • PillSetting       one setting row (select / range / number)
+ *   • AspectPairPicker  matched width/height picker (Phase D)
+ *   • ProgressRing      circular SVG progress indicator
  *
- * Everything here is stateless w.r.t. the tool workflow — no knowledge of
- * files, jobs, or the runner.
+ * Settings detection helpers (isTrimSetting, isCropSetting, isAspectPair)
+ * live here so overlays.tsx and the group renderer use the same rules.
  */
 import { useState } from 'preact/hooks';
 import { haptic } from '../haptic';
 import type { SettingDef } from './types';
+
+/* ── Detection helpers (used by OptionsSheet) ──────────── */
+
+const TRIM_NAMES = new Set(['start', 'duration', 'end', 'cut']);
+const CROP_NAMES = new Set(['x', 'y', 'w', 'h']);
+
+export function isTrimSetting(s: SettingDef): boolean {
+  return s.type === 'number' && TRIM_NAMES.has(s.name);
+}
+
+export function isCropSetting(s: SettingDef): boolean {
+  return s.type === 'number' && CROP_NAMES.has(s.name);
+}
+
+export function isAspectPair(s: SettingDef): boolean {
+  return s.type === 'select' && (s.name === 'width' || s.name === 'height');
+}
 
 /* ── Bottom sheet wrapper ───────────────────────────────── */
 
@@ -120,7 +138,7 @@ export function PremiumButton({
   );
 }
 
-/* ── Segmented pill option (CapCut-style) ───────────────── */
+/* ── Segmented pill option ──────────────────────────────── */
 
 export function PillSetting({
   setting, value, onChange,
@@ -195,29 +213,234 @@ export function PillSetting({
             style={{ flex: 1 }}
           />
           <span style={{ minWidth: '52px', textAlign: 'center', fontWeight: 800, fontSize: '0.9rem' }}>
-            {value}
+            {value}{setting.unit ?? ''}
           </span>
         </div>
       )}
 
       {setting.type === 'number' && (
-        <input
-          type="number"
-          min={setting.min}
-          max={setting.max}
-          value={Number(value)}
-          onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))}
-          style={{
-            width: '100%', padding: '0.875rem 1rem',
-            fontSize: '1rem', fontWeight: 700,
-            borderRadius: '1rem',
-            border: '1px solid var(--line, rgba(148,163,184,0.35))',
-            background: 'var(--bg-elev, #fff)',
-            color: 'inherit',
-          }}
-        />
+        <div style={{ position: 'relative' }}>
+          <input
+            type="number"
+            min={setting.min}
+            max={setting.max}
+            value={Number(value)}
+            onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))}
+            style={{
+              width: '100%', padding: '0.875rem 2.5rem 0.875rem 1rem',
+              fontSize: '1rem', fontWeight: 700,
+              borderRadius: '1rem',
+              border: '1px solid var(--line, rgba(148,163,184,0.35))',
+              background: 'var(--bg-elev, #fff)',
+              color: 'inherit',
+            }}
+          />
+          {setting.unit && (
+            <span style={{
+              position: 'absolute', right: '0.875rem', top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '0.82rem', fontWeight: 700, opacity: 0.5,
+              pointerEvents: 'none',
+            }}>
+              {setting.unit}
+            </span>
+          )}
+        </div>
+      )}
+
+      {setting.hint && (
+        <p style={{
+          fontSize: '0.72rem', opacity: 0.55,
+          margin: '0.4rem 0 0', lineHeight: 1.4,
+        }}>
+          {setting.hint}
+        </p>
       )}
     </div>
+  );
+}
+
+/* ── Aspect pair picker (Phase D) ───────────────────────── */
+
+export function AspectPairPicker({
+  widthSetting, heightSetting, width, height, onChange,
+}: {
+  widthSetting: SettingDef;
+  heightSetting: SettingDef;
+  width: number;
+  height: number;
+  onChange: (patch: { width?: number; height?: number }) => void;
+}) {
+  const ratioOf = (w: number, h: number) => (w && h ? w / h : 16 / 9);
+
+  const PRESETS: Array<{ key: string; label: string; w: number; h: number }> = [
+    { key: '9:16', label: '9:16', w: 1080, h: 1920 },
+    { key: '16:9', label: '16:9', w: 1920, h: 1080 },
+    { key: '1:1',  label: '1:1',  w: 1080, h: 1080 },
+    { key: '4:3',  label: '4:3',  w: 1440, h: 1080 },
+    { key: '2:1',  label: '2:1',  w: 1920, h: 960 },
+  ];
+
+  const activePreset = PRESETS.find((p) => p.w === width && p.h === height)?.key ?? null;
+
+  return (
+    <div style={{ marginBottom: '1rem' }}>
+      <div style={{
+        fontSize: '0.78rem', fontWeight: 700,
+        letterSpacing: '0.06em', textTransform: 'uppercase',
+        opacity: 0.55, marginBottom: '0.5rem',
+      }}>
+        Aspect ratio
+      </div>
+
+      <div
+        data-swipe-block
+        style={{
+          display: 'flex', gap: '0.5rem',
+          overflowX: 'auto', paddingBottom: '0.25rem',
+          scrollbarThin: 'none', WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-x', scrollbarWidth: 'none',
+        }}
+      >
+        {PRESETS.map((p) => {
+          const active = p.key === activePreset;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => { haptic(); onChange({ width: p.w, height: p.h }); }}
+              style={{
+                flexShrink: 0,
+                minWidth: '64px',
+                padding: '0.65rem 0.5rem',
+                borderRadius: '0.875rem',
+                border: active ? 'none' : '1px solid var(--line, rgba(148,163,184,0.35))',
+                background: active ? 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)' : 'var(--bg-elev, #fff)',
+                color: active ? '#fff' : 'inherit',
+                fontSize: '0.8rem',
+                fontWeight: active ? 700 : 600,
+                cursor: 'pointer',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: '0.35rem',
+              }}
+            >
+              <RatioGlyph ratio={ratioOf(p.w, p.h)} active={active} />
+              <span>{p.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Custom width + height */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+        <NumberField
+          label="Width"
+          value={width}
+          options={widthSetting.options}
+          onChange={(v) => onChange({ width: v })}
+        />
+        <NumberField
+          label="Height"
+          value={height}
+          options={heightSetting.options}
+          onChange={(v) => onChange({ height: v })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function NumberField({
+  label, value, options, onChange,
+}: {
+  label: string;
+  value: number;
+  options?: Array<string | { value: string | number; label: string }>;
+  onChange: (v: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const parsed = (options ?? []).map((o) =>
+    typeof o === 'string' ? { value: Number(o), label: o } : { value: Number(o.value), label: o.label },
+  );
+
+  return (
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: '0.7rem', opacity: 0.6, marginBottom: '0.3rem' }}>{label}</div>
+      <button
+        type="button"
+        onClick={() => { haptic(); setOpen((v) => !v); }}
+        style={{
+          width: '100%',
+          padding: '0.75rem 0.9rem',
+          borderRadius: '0.875rem',
+          border: '1px solid var(--line, rgba(148,163,184,0.35))',
+          background: 'var(--bg-elev, #fff)',
+          color: 'inherit',
+          fontWeight: 700,
+          fontSize: '0.92rem',
+          textAlign: 'left',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span>{value} px</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{
+          marginTop: '0.35rem',
+          borderRadius: '0.875rem',
+          border: '1px solid var(--line, rgba(148,163,184,0.35))',
+          background: 'var(--bg-elev, #fff)',
+          maxHeight: '180px',
+          overflowY: 'auto',
+        }}>
+          {parsed.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { haptic(); onChange(o.value); setOpen(false); }}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '0.55rem 0.9rem',
+                border: 'none',
+                background: o.value === value ? 'var(--brand-soft, #e0f2fe)' : 'transparent',
+                color: 'inherit',
+                textAlign: 'left',
+                fontSize: '0.85rem',
+                fontWeight: o.value === value ? 700 : 500,
+                cursor: 'pointer',
+              }}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RatioGlyph({ ratio, active }: { ratio: number; active: boolean }) {
+  const maxW = 22;
+  const maxH = 22;
+  let w = maxW;
+  let h = maxW / ratio;
+  if (h > maxH) { h = maxH; w = maxH * ratio; }
+  return (
+    <span
+      style={{
+        width: `${w}px`, height: `${h}px`,
+        border: `2px solid ${active ? '#fff' : 'currentColor'}`,
+        borderRadius: '3px',
+        display: 'inline-block',
+      }}
+    />
   );
 }
 

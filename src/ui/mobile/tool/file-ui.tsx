@@ -3,16 +3,15 @@
  * ----------------------------------------------------------------------------
  * File-aware UI:
  *
- *   • FileChip     the row shown under the picker (thumbnail + name + size)
- *   • FilePreview  full-screen preview modal (tap the chip thumbnail)
- *
- * Both render object-URL thumbnails for video / image via useFileThumbnail,
- * and fall back to a static audio icon or the tool emoji for other kinds.
- * Purely presentational — no job state, no runner, no Capacitor.
+ *   • FileHero     full-width preview (single-file tools)   ← new
+ *   • FileChip     compact chip row (multi-file, promos)
+ *   • FilePreview  full-screen preview modal
  */
 import { useFileThumbnail } from './hooks';
 import { fileKind, humanSize } from './helpers';
 import type { Tool } from './types';
+
+export { FileHero } from './FileHero';
 
 /* ── File chip with REAL thumbnail ────────────────────────── */
 

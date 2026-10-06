@@ -1,7 +1,7 @@
 /**
  * src/ui/mobile/tool/overlays.tsx
  * ----------------------------------------------------------------------------
- * Job-related UI, separated from file pickers and the tool hero:
+ * Job-related UI, separated from file pickers and the tool hero.
  *
  *   • ProcessingOverlay  fullscreen progress ring + elapsed timer
  *   • SaveToast          transient save/share confirmation pill
@@ -10,14 +10,14 @@
  *   • ErrorSheet         bottom sheet: error message + retry/clear
  *   • NativeLimitPromo   full-page state: file > 5 GB in the native app
  *   • WebPromo           full-page state: web-only fallback nudge
- *
- * None of these components own state — they receive what they need as props
- * so the screen's state machine stays in one place (inner.tsx).
  */
+import { useMemo } from 'preact/hooks';
 import { NativeAppPromo } from '../../../components/conversion/Converter';
 import type { FallbackReason } from '../../../core/toolRunner';
 import { haptic } from '../haptic';
 import { FileChip } from './file-ui';
+import { CropEditor } from './CropEditor';
+import { TrimEditor } from './TrimEditor';
 import {
   formatElapsed,
   humanSize,
@@ -26,7 +26,16 @@ import {
   isVideoMime,
 } from './helpers';
 import type { SettingDef, Tool } from './types';
-import { BottomSheet, PillSetting, PremiumButton, ProgressRing } from './ui';
+import {
+  AspectPairPicker,
+  BottomSheet,
+  PillSetting,
+  PremiumButton,
+  ProgressRing,
+  isAspectPair,
+  isCropSetting,
+  isTrimSetting,
+} from './ui';
 
 /* ── Processing fullscreen overlay ──────────────────────── */
 
@@ -92,14 +101,61 @@ export function SaveToast({ message }: { message: string }) {
 /* ── Options bottom sheet ───────────────────────────────── */
 
 export function OptionsSheet({
-  open, onClose, settings, values, onSettingChange,
+  open, onClose, settings, values, onSettingChange, file,
 }: {
   open: boolean;
   onClose: () => void;
   settings: SettingDef[];
   values: Record<string, string | number>;
   onSettingChange: (name: string, value: string | number) => void;
+  file?: File | null;
 }) {
+  /* Partition settings into groups */
+  const grouped = useMemo(() => {
+    const trim: SettingDef[] = [];
+    const crop: SettingDef[] = [];
+    const aspect: SettingDef[] = [];
+    const rest: SettingDef[] = [];
+    for (const s of settings) {
+      if (isTrimSetting(s)) trim.push(s);
+      else if (isCropSetting(s)) crop.push(s);
+      else if (isAspectPair(s)) aspect.push(s);
+      else rest.push(s);
+    }
+    return { trim, crop, aspect, rest };
+  }, [settings]);
+
+  const hasTrim = grouped.trim.length >= 1 && !!file;
+  const hasCrop = grouped.crop.length >= 4 && !!file;
+  const hasAspect = grouped.aspect.length >= 2;
+  const hasRest = grouped.rest.length > 0;
+
+  const num = (name: string, fallback: number): number => {
+    const v = values[name];
+    const n = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  /* ── Handlers for the specialized editors ── */
+
+  function onTrimChange(start: number, duration: number) {
+    // tools.ts uses `start` and `duration` names — write both
+    onSettingChange('start', start);
+    onSettingChange('duration', duration);
+  }
+
+  function onCropChange(patch: { x?: number; y?: number; w?: number; h?: number }) {
+    if (patch.x !== undefined) onSettingChange('x', patch.x);
+    if (patch.y !== undefined) onSettingChange('y', patch.y);
+    if (patch.w !== undefined) onSettingChange('w', patch.w);
+    if (patch.h !== undefined) onSettingChange('h', patch.h);
+  }
+
+  function onAspectChange(patch: { width?: number; height?: number }) {
+    if (patch.width !== undefined) onSettingChange('width', patch.width);
+    if (patch.height !== undefined) onSettingChange('height', patch.height);
+  }
+
   return (
     <BottomSheet open={open} onClose={onClose}>
       <div style={{ padding: '0.5rem 1.25rem 0' }}>
@@ -110,7 +166,41 @@ export function OptionsSheet({
       </div>
 
       <div style={{ padding: '1rem 1.25rem', overflowY: 'auto', flex: 1 }}>
-        {settings.map((s) => (
+        {/* Trim editor replaces start/duration number inputs */}
+        {hasTrim && file && (
+          <TrimEditor
+            file={file}
+            start={num('start', 0)}
+            duration={num('duration', 30)}
+            onChange={onTrimChange}
+          />
+        )}
+
+        {/* Crop editor replaces x/y/w/h number inputs */}
+        {hasCrop && file && (
+          <CropEditor
+            file={file}
+            x={num('x', 0)}
+            y={num('y', 0)}
+            w={num('w', 640)}
+            h={num('h', 480)}
+            onChange={onCropChange}
+          />
+        )}
+
+        {/* Aspect pair picker for resize-video */}
+        {hasAspect && (
+          <AspectPairPicker
+            widthSetting={grouped.aspect.find((s) => s.name === 'width')!}
+            heightSetting={grouped.aspect.find((s) => s.name === 'height')!}
+            width={num('width', 1280)}
+            height={num('height', 720)}
+            onChange={onAspectChange}
+          />
+        )}
+
+        {/* Everything else — pills, ranges, numbers */}
+        {hasRest && grouped.rest.map((s) => (
           <PillSetting
             key={s.name}
             setting={s}
@@ -118,6 +208,13 @@ export function OptionsSheet({
             onChange={(v) => onSettingChange(s.name, v)}
           />
         ))}
+
+        {/* If nothing matched any group, show generic fallback */}
+        {!hasTrim && !hasCrop && !hasAspect && !hasRest && (
+          <p style={{ fontSize: '0.85rem', opacity: 0.6, textAlign: 'center', margin: '1rem 0' }}>
+            This tool has no adjustable settings.
+          </p>
+        )}
       </div>
 
       <div style={{

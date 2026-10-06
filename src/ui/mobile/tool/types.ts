@@ -1,8 +1,7 @@
 /**
  * src/ui/mobile/tool/types.ts
  * ----------------------------------------------------------------------------
- * Shared types for the tool screen. Extracted from ToolScreen.tsx so the
- * screen's logic can be split across small, focused modules under tool/.
+ * Shared types for the tool screen.
  *
  * Nothing here has runtime side effects — this module is types + re-exports.
  */
@@ -12,8 +11,16 @@ import type { SettingOption } from '../../../components/conversion/Converter';
 export type { SettingOption };
 
 /**
- * A single user-tunable option on a tool (resolution, bitrate, format…).
- * Rendered by PillSetting inside the Options bottom sheet.
+ * A single user-tunable option on a tool.
+ *
+ * New optional fields (added for the modern settings redesign):
+ *   group     — section header shown above the control (e.g. "Encoding")
+ *   hint      — one-line helper under the control
+ *   unit      — suffix shown inside number inputs (e.g. "px", "dB", "%")
+ *   timeUnit  — enables the seconds ↔ minutes toggle on number inputs
+ *
+ * Existing tools do not need to set these. When they're absent, the UI
+ * falls back to the heuristics in ui.tsx / overlays.tsx.
  */
 export interface SettingDef {
   name: string;
@@ -23,16 +30,13 @@ export interface SettingDef {
   max?: number;
   options?: Array<string | SettingOption>;
   default: string | number;
+
+  group?: string;
+  hint?: string;
+  unit?: string;
+  timeUnit?: boolean;
 }
 
-/**
- * Shape of a tool definition as passed into the mobile ToolScreen.
- * This is a *subset* of the full catalog entry — only the fields the
- * tool screen actually reads.
- *
- * `recommendApp` is read by shouldWarnLongJob() and is present at runtime
- * on every tool definition emitted from src/core/tools.ts.
- */
 export interface Tool {
   slug: string;
   name: string;
@@ -50,18 +54,8 @@ export interface Tool {
   faq?: Array<{ question: string; answer: string }>;
 }
 
-/** Props accepted by the public ToolScreen wrapper. */
 export interface Props {
   tool: Tool;
 }
 
-/**
- * Lifecycle of a single tool screen:
- *
- *   idle        no files picked yet
- *   ready       file(s) picked, waiting for user to tap Start
- *   processing  FFmpeg running
- *   done        result blob ready, success sheet shown
- *   error       something went wrong, error sheet shown
- */
 export type State = 'idle' | 'ready' | 'processing' | 'done' | 'error';
