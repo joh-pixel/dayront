@@ -4,23 +4,20 @@
  * Mobile-first tool screen with:
  *   • Real file thumbnails (video poster / image / audio icon)
  *   • Tap-to-preview full screen before processing
- *   • Wrong-file-type warning (checks category when `from` is missing)
+ *   • Wrong-file-type warning (3-stage: format → preset → category)
  *   • Sanitized filenames (strips Android cache hashes)
+ *   • Pre-flight warning for heavy jobs ("takes time, keep app open")
+ *   • Elapsed timer during processing
  *   • Segmented pill options (CapCut-style)
  *   • Inline preview of the result before saving
  *   • Local notification when a job completes (settings-gated)
  *   • Keep-awake during processing (settings-gated)
  *   • Auto-save result (settings-gated)
- *   • Shared haptic feedback (settings-gated)
- *   • Prominent "don't close" warning while processing
- *   • Silent navigation guard — blocks back nav while processing
- *     WITHOUT the ugly native "Confirm Navigation" dialog.
+ *   • Silent navigation guard (no "Confirm Navigation" dialog)
  *
- * SSR NOTE: the default export is a thin wrapper. Astro bundles all
- * `client:load` components for a route into a single shared chunk; when
- * that chunk is evaluated on a page that doesn't render ToolScreen
- * (like /app/tools), the inner component must never be invoked. The
- * wrapper guards against a missing `tool` prop so SSR never crashes.
+ * SSR NOTE: default export is a wrapper. Astro bundles all `client:load`
+ * components for a route into one shared chunk; the inner must never run
+ * with a missing prop. The wrapper guards against that.
  */
 import { useMemo, useRef, useState, useEffect } from 'preact/hooks';
 import {
@@ -97,6 +94,14 @@ function humanSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+/** Format elapsed seconds as "45s" or "2m 15s" */
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s}s`;
+  return `${m}m ${s}s`;
+}
+
 function base64ToFile(base64: string, name: string, mime: string): File {
   const clean = base64.includes(',') ? base64.split(',')[1] : base64;
   const binary = atob(clean);
@@ -136,12 +141,17 @@ function fileKind(file: File): 'video' | 'audio' | 'image' | 'unknown' {
 /**
  * Validate a picked file against the tool's expected input type.
  *
- * Prefers the explicit `tool.from` field. When it's missing (many
- * tools like Audio Compressor don't set it), we fall back to the
- * tool's category:
- *   audio-utility / audio-conversion    → expects audio
- *   video-utility / video-to-audio / video-conversion → expects video
- *   ai                                  → accepts any (images, videos, etc.)
+ * 3-stage check:
+ *   1. If `tool.from` is a real format (mp4, mp3, jpg…), use it.
+ *   2. If `tool.from` is a resolution preset (720p, 4k…) it won't match
+ *      any format — fall through to stage 3.
+ *   3. Fall back to `tool.category`:
+ *        audio-utility / audio-conversion    → expects audio
+ *        video-utility / video-to-audio / video-conversion → expects video
+ *        ai                                  → accepts anything
+ *
+ * The `matched` flag is what makes this work. Without it, a resolution
+ * preset like '720p' short-circuits the entire validation.
  */
 function validateFileForTool(file: File, tool: Tool): { ok: boolean; reason?: string } {
   const kind = fileKind(file);
@@ -149,15 +159,19 @@ function validateFileForTool(file: File, tool: Tool): { ok: boolean; reason?: st
   const videoFormats = ['mp4','mov','mkv','avi','webm','flv','m4v'];
   const imageFormats = ['gif','png','jpg','jpeg','webp'];
 
-  // What does this tool expect?
   let expects: 'audio' | 'video' | 'image' | 'any' = 'any';
+  let matched = false;
 
+  // Stage 1: explicit format from `tool.from`
   if (tool.from) {
     const f = tool.from.toLowerCase();
-    if (audioFormats.includes(f)) expects = 'audio';
-    else if (videoFormats.includes(f)) expects = 'video';
-    else if (imageFormats.includes(f)) expects = 'image';
-  } else {
+    if (audioFormats.includes(f)) { expects = 'audio'; matched = true; }
+    else if (videoFormats.includes(f)) { expects = 'video'; matched = true; }
+    else if (imageFormats.includes(f)) { expects = 'image'; matched = true; }
+  }
+
+  // Stage 2: category fallback (runs when from is missing OR is a preset)
+  if (!matched) {
     const cat = (tool.category || '').toLowerCase();
     if (cat === 'audio-utility' || cat === 'audio-conversion') {
       expects = 'audio';
@@ -180,6 +194,15 @@ function validateFileForTool(file: File, tool: Tool): { ok: boolean; reason?: st
     ok: false,
     reason: `This tool expects ${label.toLowerCase()} files. You picked a ${kind}. Tap the × to remove it and choose the correct file.`,
   };
+}
+
+/** Detect heavy jobs that need a "keep the app open" pre-flight warning. */
+function shouldWarnLongJob(tool: Tool, totalBytes: number): boolean {
+  if (tool.recommendApp) return true;
+  const mb = totalBytes / (1024 * 1024);
+  if (mb > 100) return true;
+  if (tool.type === 'resolution-convert' && (tool.presetWidth ?? 0) >= 3840) return true;
+  return false;
 }
 
 /* ── Native integrations (lazy, safe on web, settings-gated) ── */
@@ -356,13 +379,7 @@ function useFileThumbnail(file: File | null): string | null {
   return url;
 }
 
-/* ── File chip with REAL thumbnail ──────────────────────────
-   Shows:
-     • video  → poster frame (works on most Android WebViews)
-     • image  → actual image
-     • audio  → tool icon + waveform glyph
-     • tap    → opens full preview
-   ─────────────────────────────────────────────────────────── */
+/* ── File chip with REAL thumbnail ────────────────────────── */
 
 function FileChip({
   file, tool, onRemove, onPreview,
@@ -385,7 +402,6 @@ function FileChip({
       border: '1px solid var(--line, #e2e8f0)',
       background: 'var(--bg-elev, #fff)',
     }}>
-      {/* Thumbnail slot */}
       <button
         type="button"
         onClick={onPreview}
@@ -444,7 +460,6 @@ function FileChip({
         )}
       </button>
 
-      {/* Body */}
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
           fontSize: '0.9rem',
@@ -707,7 +722,6 @@ function ProgressRing({ percent }: { percent: number }) {
 
 /* ══════════════════════════════════════════════════════════
    INNER COMPONENT — all hooks + logic live here.
-   Only rendered when `tool` is guaranteed present.
    ══════════════════════════════════════════════════════════ */
 
 function ToolScreenInner({ tool }: { tool: Tool }) {
@@ -718,6 +732,7 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [resultName, setResultName] = useState('');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
 
   const [promo, setPromo] = useState<
     { reason: FallbackReason | 'native-limit'; totalMB: number } | null
@@ -764,21 +779,26 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
     return () => { if (resultUrl) URL.revokeObjectURL(resultUrl); };
   }, [resultUrl]);
 
-  /* ── Silent navigation guard ──
-     Registers a guard with MobileLayout while a job is processing.
-     The native back-button listener checks the guard BEFORE calling
-     history.back() or exiting, so the browser's "Confirm Navigation"
-     dialog NEVER appears. Replaces the previous `beforeunload` handler
-     which produced that ugly native Android alert. */
+  /* ── Elapsed timer ── */
+  useEffect(() => {
+    if (state !== 'processing') {
+      setElapsed(0);
+      return;
+    }
+    const start = Date.now();
+    const t = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [state]);
+
+  /* ── Silent navigation guard ── */
   useEffect(() => {
     if (state !== 'processing') {
       clearNavigationGuard();
       return;
     }
-
-    // Return false → block navigation (MobileLayout will silently swallow).
     setNavigationGuard(() => false);
-
     return () => {
       clearNavigationGuard();
     };
@@ -1025,6 +1045,7 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
   })();
 
   const totalSize = files.reduce((s, f) => s + f.size, 0);
+  const warnLongJob = shouldWarnLongJob(tool, totalSize);
 
   /* ── Promo views ──────────────────────────────────────── */
 
@@ -1253,6 +1274,31 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
           </button>
         )}
 
+        {/* ★ Pre-processing warning for heavy jobs */}
+        {state === 'ready' && files.length > 0 && !fileWarning && warnLongJob && (
+          <div style={{
+            marginTop: '0.875rem',
+            padding: '1rem 1.1rem',
+            borderRadius: '1rem',
+            background: 'linear-gradient(135deg, rgba(251,146,60,0.12), rgba(239,68,68,0.08))',
+            border: '1.5px solid rgba(251,146,60,0.45)',
+            fontSize: '0.85rem',
+            lineHeight: 1.55,
+            display: 'flex',
+            gap: '0.75rem',
+            alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0 }} aria-hidden="true">⏳</span>
+            <div>
+              <strong style={{ display: 'block', marginBottom: '0.2rem' }}>This job takes time</strong>
+              <span style={{ opacity: 0.85 }}>
+                Keep the app open while it runs. Switching apps, locking the screen,
+                or closing the app will pause processing.
+              </span>
+            </div>
+          </div>
+        )}
+
         {state === 'processing' && (
           <div style={{
             padding: '1rem 1.1rem',
@@ -1318,6 +1364,12 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
             <br />
             {native ? 'runs on your device' : 'runs in your browser'}
           </p>
+          {/* ★ Elapsed timer */}
+          {elapsed > 0 && (
+            <p style={{ fontSize: '0.78rem', opacity: 0.55, margin: '0.75rem 0 0' }}>
+              Elapsed: {formatElapsed(elapsed)}
+            </p>
+          )}
         </div>
       )}
 
@@ -1494,11 +1546,6 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
 
 /* ══════════════════════════════════════════════════════════
    PUBLIC WRAPPER — SSR-safe.
-   Astro bundles every `client:load` component for a route into
-   one shared chunk. When that chunk is evaluated on a page that
-   doesn't actually render ToolScreen (like /app/tools), the
-   inner component must never be invoked with a missing prop.
-   This wrapper guards against that — zero hooks, zero risk.
    ══════════════════════════════════════════════════════════ */
 
 export default function ToolScreen(props: Props) {
