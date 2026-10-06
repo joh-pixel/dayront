@@ -1167,17 +1167,23 @@ function ToolScreenInner({ tool }: { tool: Tool }) {
               minHeight: '240px', cursor: 'pointer',
             }}
           >
+            {/* ★ Rounded-square-plus upload icon (blue gradient, white inner tile) */}
             <span aria-hidden="true" style={{
-              width: '72px', height: '72px', borderRadius: '50%',
+              width: '72px', height: '72px', borderRadius: '22px',
               background: 'linear-gradient(135deg,#38bdf8,#0284c7)',
-              color: 'white',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 12px 28px rgba(2,132,199,0.4)',
             }}>
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 5v14" />
-                <path d="M5 12h14" />
-              </svg>
+              <span style={{
+                width: '44px', height: '44px', borderRadius: '14px',
+                background: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </svg>
+              </span>
             </span>
             <p style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
               {multi ? 'Add your first file' : 'Tap to choose a file'}
