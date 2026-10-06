@@ -71,7 +71,7 @@ export default function HomeScreen({ tools }: Props) {
           <circle cx="11" cy="11" r="7" />
           <path d="M21 21l-4.35-4.35" />
         </svg>
-        <span>Search 73 tools…</span>
+        <span>Search tools…</span>
       </a>
 
       {/* Quick actions */}

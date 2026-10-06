@@ -147,7 +147,7 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
             ref={inputRef}
             type="search"
             class="d-tools__input"
-            placeholder="Search 73 tools…"
+            placeholder="Search tools…"
             value={query}
             onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
             autoComplete="off"
