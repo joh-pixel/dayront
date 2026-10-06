@@ -39,10 +39,45 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 24px;
+      margin: 0 auto 20px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
     }
     .logo svg { width: 44px; height: 44px; }
+
+    /* Connection status pill */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 20px;
+      transition: background 240ms ease;
+    }
+    .status__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #FCA5A5;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .status--online {
+      background: rgba(255, 255, 255, 0.28);
+    }
+    .status--online .status__dot {
+      background: #86EFAC;
+      animation: none;
+      box-shadow: 0 0 0 4px rgba(134, 239, 172, 0.25);
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
     h1 {
       font-size: 1.5rem;
       font-weight: 800;
@@ -72,16 +107,30 @@
       font-family: inherit;
       cursor: pointer;
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
-      transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+      transition: transform 120ms ease-out, box-shadow 120ms ease-out, opacity 120ms ease-out;
     }
-    button:active {
+    button:active:not(:disabled) {
       transform: scale(0.97);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
+    button:disabled {
+      opacity: 0.65;
+      cursor: default;
+    }
+    button svg {
+      transition: transform 700ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    button.is-spinning svg {
+      animation: spin 900ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     .hint {
       margin-top: 20px;
       font-size: 0.78rem;
       opacity: 0.7;
+      line-height: 1.5;
+      transition: opacity 240ms ease;
     }
   </style>
 </head>
@@ -93,19 +142,173 @@
         <circle cx="12" cy="12" r="3.5" />
       </svg>
     </div>
-    <h1>Can't reach Dayront</h1>
-    <p>
+
+    <!-- Connection status pill -->
+    <div class="status" id="status">
+      <span class="status__dot"></span>
+      <span id="status-text">Checking connection…</span>
+    </div>
+
+    <h1 id="heading">Can't reach Dayront</h1>
+    <p id="body">
       Check your connection and tap Retry. Your files stay on your device
       — nothing is uploaded while you wait.
     </p>
-    <button onclick="location.reload()">
+
+    <button id="retry-btn" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
         <path d="M3 3v5h5" />
       </svg>
-      Retry
+      <span id="retry-label">Retry</span>
     </button>
-    <p class="hint">No internet? The app will reconnect automatically.</p>
+
+    <p class="hint" id="hint">No internet? The app will reconnect automatically.</p>
   </div>
+
+  <script>
+    (function () {
+      /* ★ The app always loads this URL. Retry navigates here — NOT reload(). */
+      var APP_URL = 'https://dayront.com/app';
+
+      var retryBtn    = document.getElementById('retry-btn');
+      var retryLabel  = document.getElementById('retry-label');
+      var statusEl    = document.getElementById('status');
+      var statusText  = document.getElementById('status-text');
+      var headingEl   = document.getElementById('heading');
+      var bodyEl      = document.getElementById('body');
+      var hintEl      = document.getElementById('hint');
+
+      var isNavigating = false;
+      var probeTimer = null;
+
+      /* ── Set the online/offline UI state ── */
+      function setOnline(online) {
+        if (online) {
+          statusEl.classList.add('status--online');
+          statusText.textContent = 'Connected';
+          hintEl.textContent = 'Reopening Dayront…';
+        } else {
+          statusEl.classList.remove('status--online');
+          statusText.textContent = 'No internet connection';
+          hintEl.textContent = 'The app will reopen automatically when your connection returns.';
+        }
+      }
+
+      /* ── Real connectivity probe (navigator.onLine is unreliable) ── */
+      function probeConnectivity() {
+        // HEAD request to the app URL with no caching.
+        // Times out after 4s to avoid long hangs.
+        return new Promise(function (resolve) {
+          var timer = setTimeout(function () { resolve(false); }, 4000);
+          fetch(APP_URL, { method: 'HEAD', cache: 'no-store' })
+            .then(function (res) {
+              clearTimeout(timer);
+              resolve(res && res.ok);
+            })
+            .catch(function () {
+              clearTimeout(timer);
+              resolve(false);
+            });
+        });
+      }
+
+      /* ── Navigate to the real app URL ── */
+      function goToApp() {
+        if (isNavigating) return;
+        isNavigating = true;
+        window.location.replace(APP_URL);
+      }
+
+      /* ── Auto-navigate when connection returns ── */
+      function checkAndRecover() {
+        if (isNavigating) return;
+        probeConnectivity().then(function (ok) {
+          setOnline(ok);
+          if (ok) {
+            // Give the user ~700ms to see the "Connected" state
+            setTimeout(goToApp, 700);
+          }
+        });
+      }
+
+      /* ── Retry button — always tries the real URL ── */
+      retryBtn.addEventListener('click', function () {
+        if (isNavigating) return;
+        retryBtn.disabled = true;
+        retryBtn.classList.add('is-spinning');
+        retryLabel.textContent = 'Connecting…';
+        statusEl.classList.add('status--online');
+        statusText.textContent = 'Trying to reconnect…';
+        hintEl.textContent = '';
+
+        probeConnectivity().then(function (ok) {
+          retryBtn.classList.remove('is-spinning');
+          if (ok) {
+            retryLabel.textContent = 'Opening…';
+            setTimeout(goToApp, 300);
+          } else {
+            // Reconnect failed — reset UI to offline state
+            retryBtn.disabled = false;
+            retryLabel.textContent = 'Retry';
+            statusEl.classList.remove('status--online');
+            statusText.textContent = 'Still offline';
+            hintEl.textContent = 'Check your connection and try again.';
+            setTimeout(function () {
+              statusText.textContent = 'No internet connection';
+              hintEl.textContent = 'The app will reopen automatically when your connection returns.';
+            }, 1800);
+          }
+        });
+      });
+
+      /* ── Browser online/offline events (fast signals) ── */
+      window.addEventListener('online', function () {
+        // Give the OS ~500ms to actually establish connectivity
+        setTimeout(checkAndRecover, 500);
+      });
+      window.addEventListener('offline', function () {
+        setOnline(false);
+      });
+
+      /* ── Periodic background probe (every 4s) ── */
+      function startProbeLoop() {
+        if (probeTimer) return;
+        probeTimer = setInterval(function () {
+          if (isNavigating) return;
+          // Skip probing if the browser says we're offline (saves battery)
+          if (navigator.onLine === false) {
+            setOnline(false);
+            return;
+          }
+          probeConnectivity().then(function (ok) {
+            setOnline(ok);
+            if (ok) setTimeout(goToApp, 500);
+          });
+        }, 4000);
+      }
+
+      /* ── Initial run ── */
+      if (navigator.onLine === false) {
+        setOnline(false);
+      } else {
+        // First probe after 400ms to avoid a flash if we're actually online
+        setTimeout(function () {
+          probeConnectivity().then(function (ok) {
+            setOnline(ok);
+            if (ok) {
+              // We're online! Skip the error page entirely
+              setTimeout(goToApp, 300);
+            } else {
+              startProbeLoop();
+            }
+          });
+        }, 400);
+      }
+
+      // Also start the loop in case we were offline initially
+      startProbeLoop();
+    })();
+  </script>
 </body>
 </html>
