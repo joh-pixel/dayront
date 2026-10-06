@@ -198,7 +198,19 @@ export async function runTool(
   /* ── Native fast path ───────────────────────────────────
      Fires only inside a Capacitor or Tauri shell where a real
      FFmpeg binary is available. On web, this branch is skipped
-     and the code falls through to the WASM implementation. */
+     and the code falls through to the WASM implementation.
+
+     ★ IMPORTANT: on failure, we do NOT fall through to WASM.
+
+     WASM FFmpeg needs a ~30MB core download from the network and
+     cannot work offline. Native failures almost always happen in
+     situations where WASM would also fail (offline, low storage,
+     missing permissions). Falling through silently produced a
+     misleading experience: the user saw a web-only "please use
+     the Dayront app" message from inside the native app itself.
+
+     Instead, wrap and re-throw the native error so the real cause
+     surfaces in the error sheet. */
   if (isNativeFFmpegAvailable()) {
     try {
       const nativeResult = await runNativeFFmpeg({
@@ -210,11 +222,11 @@ export async function runTool(
       });
       return nativeResult.blob;
     } catch (err) {
-      console.warn(
-        '[toolRunner] Native FFmpeg failed, falling back to WASM:',
-        err,
+      const nativeMsg = err instanceof Error ? err.message : String(err);
+      console.error('[toolRunner] Native FFmpeg failed:', err);
+      throw new Error(
+        `Processing failed on this device: ${nativeMsg || 'unknown error'}`,
       );
-      // Fall through to the WASM branch below
     }
   }
 

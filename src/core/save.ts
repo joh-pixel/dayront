@@ -148,6 +148,7 @@ export async function shareBlob(
 ): Promise<boolean> {
   /* ── Native path ── */
   if (isNative()) {
+    let writtenUri = '';
     try {
       const { Filesystem, Directory } = await import(
         /* @vite-ignore */ '@capacitor/filesystem'
@@ -163,22 +164,50 @@ export async function shareBlob(
         directory: Directory.Cache,
         recursive: true,
       });
+      writtenUri = written.uri;
 
+      /* ★ Use `files:` (plural), not `url:` (singular).
+       *
+       * The `url` parameter is documented for web links. On Android,
+       * passing a `file://` URI through `url` throws (FileUriExposed),
+       * the plugin's catch swallows it, and our caller silently fell
+       * back to saveBlob — producing a "Saved to your device" toast
+       * and no share sheet.
+       *
+       * `files` is the canonical way to hand local file URIs to the
+       * share sheet. Passing `text` as well ensures apps that only
+       * accept plain text still get a useful fallback. */
       await Share.share({
         title,
         text: filename,
-        url: written.uri,
+        files: [written.uri],
         dialogTitle: 'Share your file',
       });
 
       return true;
     } catch (err: any) {
-      // User cancelled the share sheet — that's not an error
       const msg = String(err?.message || err || '').toLowerCase();
-      if (msg.includes('cancel') || msg.includes('abort')) {
+      const code = String(err?.code || '');
+
+      // User dismissed the share sheet — not an error, and definitely
+      // not something we should silently convert into a save.
+      if (
+        msg.includes('cancel') ||
+        msg.includes('abort') ||
+        msg.includes('dismiss') ||
+        code === 'USER_CANCELLED' ||
+        code === 'CANCELLED'
+      ) {
         return false;
       }
-      console.warn('[shareBlob] Native share failed:', err);
+
+      // Real failure — log everything so it appears in logcat when
+      // webContentsDebuggingEnabled is enabled for debugging.
+      console.error('[shareBlob] Native share failed:');
+      console.error('  message:', msg);
+      console.error('  code:', code);
+      console.error('  uri:', writtenUri);
+      console.error('  full error:', err);
       return false;
     }
   }

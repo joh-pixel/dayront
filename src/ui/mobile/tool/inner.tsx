@@ -341,17 +341,20 @@ export function ToolScreenInner({ tool }: { tool: Tool }) {
     haptic();
     try {
       const ok = await shareBlob(resultBlob, resultName, tool.name);
-      if (!ok) {
-        await saveBlob(resultBlob, resultName);
-        setSaveFeedback('Saved to your device');
-      } else {
+      if (ok) {
         setSaveFeedback('Shared successfully');
+        setTimeout(() => setSaveFeedback(null), 2400);
       }
+      /* ★ If !ok, the user either cancelled the share sheet or the
+       *   plugin failed. Either way we do NOT auto-save — that was
+       *   the reason the Share button looked broken: tapping it
+       *   produced a "Saved to your device" toast and no share sheet.
+       *   The user has a dedicated Download button for saving. */
     } catch (err) {
       console.error('[share] Failed:', err);
-      setSaveFeedback('Could not share — try Download');
+      setSaveFeedback('Could not share — use Download');
+      setTimeout(() => setSaveFeedback(null), 2400);
     }
-    setTimeout(() => setSaveFeedback(null), 2400);
   }
 
   async function handleDownload() {
