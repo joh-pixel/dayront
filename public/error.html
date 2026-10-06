@@ -44,7 +44,6 @@
     }
     .logo svg { width: 44px; height: 44px; }
 
-    /* Connection status pill */
     .status {
       display: inline-flex;
       align-items: center;
@@ -65,9 +64,7 @@
       background: #FCA5A5;
       animation: pulse 1.6s ease-in-out infinite;
     }
-    .status--online {
-      background: rgba(255, 255, 255, 0.28);
-    }
+    .status--online { background: rgba(255, 255, 255, 0.28); }
     .status--online .status__dot {
       background: #86EFAC;
       animation: none;
@@ -113,16 +110,9 @@
       transform: scale(0.97);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
-    button:disabled {
-      opacity: 0.65;
-      cursor: default;
-    }
-    button svg {
-      transition: transform 700ms cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    button.is-spinning svg {
-      animation: spin 900ms linear infinite;
-    }
+    button:disabled { opacity: 0.65; cursor: default; }
+    button svg { transition: transform 700ms cubic-bezier(0.32, 0.72, 0, 1); }
+    button.is-spinning svg { animation: spin 900ms linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .hint {
@@ -143,7 +133,6 @@
       </svg>
     </div>
 
-    <!-- Connection status pill -->
     <div class="status" id="status">
       <span class="status__dot"></span>
       <span id="status-text">Checking connection…</span>
@@ -168,21 +157,19 @@
 
   <script>
     (function () {
-      /* ★ The app always loads this URL. Retry navigates here — NOT reload(). */
+      /* ★ The app shell always loads this URL.
+       *   Retry must navigate here — NOT reload error.html. */
       var APP_URL = 'https://dayront.com/app';
 
-      var retryBtn    = document.getElementById('retry-btn');
-      var retryLabel  = document.getElementById('retry-label');
-      var statusEl    = document.getElementById('status');
-      var statusText  = document.getElementById('status-text');
-      var headingEl   = document.getElementById('heading');
-      var bodyEl      = document.getElementById('body');
-      var hintEl      = document.getElementById('hint');
+      var retryBtn   = document.getElementById('retry-btn');
+      var retryLabel = document.getElementById('retry-label');
+      var statusEl   = document.getElementById('status');
+      var statusText = document.getElementById('status-text');
+      var hintEl     = document.getElementById('hint');
 
       var isNavigating = false;
       var probeTimer = null;
 
-      /* ── Set the online/offline UI state ── */
       function setOnline(online) {
         if (online) {
           statusEl.classList.add('status--online');
@@ -195,44 +182,61 @@
         }
       }
 
-      /* ── Real connectivity probe (navigator.onLine is unreliable) ── */
+      /* Probe reachability. error.html runs at a local origin inside the APK,
+       * so https://dayront.com/app is cross-origin. A normal CORS fetch would
+       * reject even when the network is fine — use mode:'no-cors' so only
+       * real network failures (DNS, TLS, refused, timeout) reject. */
       function probeConnectivity() {
-        // HEAD request to the app URL with no caching.
-        // Times out after 4s to avoid long hangs.
         return new Promise(function (resolve) {
           var timer = setTimeout(function () { resolve(false); }, 4000);
-          fetch(APP_URL, { method: 'HEAD', cache: 'no-store' })
-            .then(function (res) {
-              clearTimeout(timer);
-              resolve(res && res.ok);
-            })
-            .catch(function () {
-              clearTimeout(timer);
-              resolve(false);
-            });
+          fetch(APP_URL, {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-store',
+            credentials: 'omit',
+          })
+            .then(function () { clearTimeout(timer); resolve(true); })
+            .catch(function () { clearTimeout(timer); resolve(false); });
         });
       }
 
-      /* ── Navigate to the real app URL ── */
-      function goToApp() {
+      /* Kill any service worker that might serve a stale cached build.
+       * This is the root of the "app boots then bounces / web-only errors"
+       * behavior: a SW from a previous online visit serves a cached bundle
+       * that lacks the native bridge, so the app thinks it's the web version. */
+      async function purgeServiceWorkers() {
+        if (!('serviceWorker' in navigator)) return;
+        try {
+          var regs = await navigator.serviceWorker.getRegistrations();
+          for (var i = 0; i < regs.length; i++) {
+            try { await regs[i].unregister(); } catch (e) {}
+          }
+        } catch (e) {}
+        try {
+          if (window.caches && caches.keys) {
+            var keys = await caches.keys();
+            for (var j = 0; j < keys.length; j++) {
+              try { await caches.delete(keys[j]); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+
+      async function goToApp() {
         if (isNavigating) return;
         isNavigating = true;
+        await purgeServiceWorkers();
         window.location.replace(APP_URL);
       }
 
-      /* ── Auto-navigate when connection returns ── */
       function checkAndRecover() {
         if (isNavigating) return;
         probeConnectivity().then(function (ok) {
           setOnline(ok);
-          if (ok) {
-            // Give the user ~700ms to see the "Connected" state
-            setTimeout(goToApp, 700);
-          }
+          if (ok) setTimeout(goToApp, 600);
         });
       }
 
-      /* ── Retry button — always tries the real URL ── */
       retryBtn.addEventListener('click', function () {
         if (isNavigating) return;
         retryBtn.disabled = true;
@@ -246,9 +250,8 @@
           retryBtn.classList.remove('is-spinning');
           if (ok) {
             retryLabel.textContent = 'Opening…';
-            setTimeout(goToApp, 300);
+            setTimeout(goToApp, 250);
           } else {
-            // Reconnect failed — reset UI to offline state
             retryBtn.disabled = false;
             retryLabel.textContent = 'Retry';
             statusEl.classList.remove('status--online');
@@ -262,21 +265,17 @@
         });
       });
 
-      /* ── Browser online/offline events (fast signals) ── */
       window.addEventListener('online', function () {
-        // Give the OS ~500ms to actually establish connectivity
         setTimeout(checkAndRecover, 500);
       });
       window.addEventListener('offline', function () {
         setOnline(false);
       });
 
-      /* ── Periodic background probe (every 4s) ── */
       function startProbeLoop() {
         if (probeTimer) return;
         probeTimer = setInterval(function () {
           if (isNavigating) return;
-          // Skip probing if the browser says we're offline (saves battery)
           if (navigator.onLine === false) {
             setOnline(false);
             return;
@@ -288,26 +287,21 @@
         }, 4000);
       }
 
-      /* ── Initial run ── */
+      /* Boot:
+       *  - If navigator.onLine is false, show offline state and start polling.
+       *  - Otherwise probe once. If reachable, skip the error page entirely. */
       if (navigator.onLine === false) {
         setOnline(false);
+        startProbeLoop();
       } else {
-        // First probe after 400ms to avoid a flash if we're actually online
         setTimeout(function () {
           probeConnectivity().then(function (ok) {
             setOnline(ok);
-            if (ok) {
-              // We're online! Skip the error page entirely
-              setTimeout(goToApp, 300);
-            } else {
-              startProbeLoop();
-            }
+            if (ok) setTimeout(goToApp, 250);
+            else startProbeLoop();
           });
-        }, 400);
+        }, 350);
       }
-
-      // Also start the loop in case we were offline initially
-      startProbeLoop();
     })();
   </script>
 </body>
