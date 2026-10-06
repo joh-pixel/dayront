@@ -35,7 +35,7 @@
     /* ★ Logo now matches the native app icon:
      *   - solid blue gradient rounded square
      *   - filled white camera body
-     *   - lens cut-out matches the gradient mid-tone
+     *   - blue lens cut-out matching the gradient mid-tone
      */
     .logo {
       width: 80px;
@@ -134,8 +134,8 @@
   <div class="card">
     <div class="logo">
       <!-- ★ Matches the app icon: filled white camera body + blue lens cut-out.
-           The lens colour matches the middle of the container's gradient
-           (#2FB8F5) so the cut-out reads as continuous. -->
+           Lens fill (#2FB8F5) sits between the container's gradient stops
+           (#45C8FF and #1FA8E5) so the cut-out reads as continuous. -->
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="3" y="6.5" width="18" height="12" rx="1.6" fill="#ffffff"/>
         <circle cx="12" cy="12.5" r="2.6" fill="#2FB8F5"/>
@@ -166,12 +166,22 @@
 
   <script>
     (function () {
+      /* ★ This page is the APK's bundled boot screen AND the offline error
+       *   page. On cold start it runs at https://localhost/index.html inside
+       *   the WebView. It probes the live site; if reachable, it redirects
+       *   there; if not, it stays on this branded UI and keeps retrying.
+       *
+       *   Result: Chromium's own "Web page not available" error page is
+       *   never rendered, because no remote navigation is ever attempted
+       *   from a blank slate. */
       var APP_URL = 'https://dayront.com/app';
 
       var retryBtn   = document.getElementById('retry-btn');
       var retryLabel = document.getElementById('retry-label');
       var statusEl   = document.getElementById('status');
       var statusText = document.getElementById('status-text');
+      var headingEl  = document.getElementById('heading');
+      var bodyEl     = document.getElementById('body');
       var hintEl     = document.getElementById('hint');
 
       var isNavigating = false;
@@ -181,14 +191,22 @@
         if (online) {
           statusEl.classList.add('status--online');
           statusText.textContent = 'Connected';
-          hintEl.textContent = 'Reopening Dayront…';
+          headingEl.textContent = 'Opening Dayront…';
+          bodyEl.textContent = 'Just a moment — loading the app.';
+          hintEl.textContent = '';
         } else {
           statusEl.classList.remove('status--online');
           statusText.textContent = 'No internet connection';
+          headingEl.textContent = "Can't reach Dayront";
+          bodyEl.textContent = 'Check your connection and tap Retry. Your files stay on your device — nothing is uploaded while you wait.';
           hintEl.textContent = 'The app will reopen automatically when your connection returns.';
         }
       }
 
+      /* Probe reachability. This page runs at a local origin inside the APK,
+       * so https://dayront.com/app is cross-origin. A normal CORS fetch would
+       * reject even when the network is fine — use mode:'no-cors' so only
+       * real network failures (DNS, TLS, refused, timeout) reject. */
       function probeConnectivity() {
         return new Promise(function (resolve) {
           var timer = setTimeout(function () { resolve(false); }, 4000);
@@ -203,6 +221,7 @@
         });
       }
 
+      /* Kill any service worker that might serve a stale cached build. */
       async function purgeServiceWorkers() {
         if (!('serviceWorker' in navigator)) return;
         try {
@@ -232,7 +251,7 @@
         if (isNavigating) return;
         probeConnectivity().then(function (ok) {
           setOnline(ok);
-          if (ok) setTimeout(goToApp, 600);
+          if (ok) setTimeout(goToApp, 200);
         });
       }
 
@@ -249,7 +268,7 @@
           retryBtn.classList.remove('is-spinning');
           if (ok) {
             retryLabel.textContent = 'Opening…';
-            setTimeout(goToApp, 250);
+            setTimeout(goToApp, 200);
           } else {
             retryBtn.disabled = false;
             retryLabel.textContent = 'Retry';
@@ -281,11 +300,16 @@
           }
           probeConnectivity().then(function (ok) {
             setOnline(ok);
-            if (ok) setTimeout(goToApp, 500);
+            if (ok) setTimeout(goToApp, 300);
           });
         }, 4000);
       }
 
+      /* Boot:
+       *   - If navigator.onLine is false → straight to offline UI.
+       *   - Otherwise probe once with a short delay. If reachable, redirect
+       *     immediately (splash may still be up — perfect handoff). If not,
+       *     enter the recovery loop. */
       if (navigator.onLine === false) {
         setOnline(false);
         startProbeLoop();
@@ -293,10 +317,10 @@
         setTimeout(function () {
           probeConnectivity().then(function (ok) {
             setOnline(ok);
-            if (ok) setTimeout(goToApp, 250);
+            if (ok) setTimeout(goToApp, 150);
             else startProbeLoop();
           });
-        }, 350);
+        }, 150);
       }
     })();
   </script>

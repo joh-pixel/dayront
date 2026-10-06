@@ -6,22 +6,42 @@ const config: CapacitorConfig = {
   webDir: 'dist/client',
 
   /**
-   * Load the mobile shell from the live site.
-   * This keeps the app always up-to-date without rebuilding the APK.
-   * The service worker caches everything after first load, so it works offline.
+   * ★ server.url is intentionally NOT set.
+   *
+   * Previously it was 'https://dayront.com/app', which made the WebView's
+   * very first navigation remote. On DNS failure Chromium painted its own
+   * "Web page not available" UI *before* Capacitor's onReceivedError could
+   * swap in errorPath — producing a visible flash of Chrome's error page.
+   *
+   * Without server.url, the WebView boots from the bundled index.html,
+   * which is a copy of error.html installed by the CI workflow
+   * (.github/workflows/android.yml → "Use error.html as Capacitor boot
+   * page"). That page probes connectivity and redirects to the live site
+   * only when it is reachable. Offline = branded UI from the very first
+   * frame, online = seamless handoff from the native splash.
+   *
+   * The live website is unaffected: dist/client/index.html on Vercel is
+   * still the marketing homepage. The overwrite only happens inside the
+   * Android CI pipeline, after the web build and before cap sync.
    */
   server: {
-    url: 'https://dayront.com/app',
     cleartext: false,
     androidScheme: 'https',
+    /**
+     * Required: the boot page (running at https://localhost inside the
+     * WebView) navigates to the live site via window.location.replace.
+     * Capacitor only keeps that navigation inside the WebView when the
+     * destination host is listed here — otherwise it opens the system
+     * browser instead.
+     */
     allowNavigation: [
       'dayront.com',
       '*.dayront.com',
     ],
     /**
-     * ★ Branded error page instead of Chrome's ERR_TIMED_OUT.
-     * Served from `dist/client/error.html` (built from `public/error.html`).
-     * Shown when the WebView can't reach the server on cold start.
+     * Fallback only — if the bundled index.html itself somehow fails to
+     * load, the WebView falls back to this. In the new boot flow this is
+     * unreachable in practice.
      */
     errorPath: 'error.html',
   },

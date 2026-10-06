@@ -66,6 +66,45 @@ jobs:
       - name: Build web assets
         run: npm run build
 
+      # ══════════════════════════════════════════════════════════
+      #  BOOT PAGE — replaces the marketing homepage inside the APK
+      #  with the branded boot/error page.
+      #
+      #  Why: capacitor.config.ts intentionally does NOT set server.url.
+      #  Without it, the WebView boots from the bundled index.html.
+      #  On Vercel dist/client/index.html is the marketing homepage; if
+      #  we shipped that inside the APK, cold start would try to render
+      #  the marketing site inside a native shell — wrong UX.
+      #
+      #  Solution: overwrite the bundled index.html with error.html,
+      #  which already contains the boot logic (probe connectivity →
+      #  redirect to https://dayront.com/app when reachable → show
+      #  branded offline UI otherwise). Chromium's own "Web page not
+      #  available" error page therefore never paints.
+      #
+      #  The live website is unaffected — this copy only runs inside
+      #  this workflow, not in Vercel's build.
+      # ══════════════════════════════════════════════════════════
+      - name: Use error.html as Capacitor boot page
+        run: |
+          BOOT_DIR="dist/client"
+          if [ ! -d "$BOOT_DIR" ]; then
+            echo "❌ $BOOT_DIR missing after build — check webDir in capacitor.config.ts"
+            echo "Top-level dist tree:"
+            find dist -maxdepth 2 -type d 2>/dev/null || true
+            exit 1
+          fi
+          if [ ! -f "$BOOT_DIR/error.html" ]; then
+            echo "❌ $BOOT_DIR/error.html missing — confirm public/error.html exists"
+            echo "Contents of $BOOT_DIR:"
+            ls -la "$BOOT_DIR"
+            exit 1
+          fi
+          cp "$BOOT_DIR/error.html" "$BOOT_DIR/index.html"
+          echo "✅ Boot page installed at $BOOT_DIR/index.html"
+          echo "--- $BOOT_DIR (first 30 entries) ---"
+          ls -la "$BOOT_DIR" | head -30
+
       - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
