@@ -31,18 +31,24 @@
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ★ Logo now matches the native app icon:
+     *   - solid blue gradient rounded square
+     *   - filled white camera body
+     *   - lens cut-out matches the gradient mid-tone
+     */
     .logo {
       width: 80px;
       height: 80px;
       border-radius: 22px;
-      background: rgba(255, 255, 255, 0.18);
+      background: linear-gradient(135deg, #45C8FF 0%, #1FA8E5 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 20px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
     }
-    .logo svg { width: 44px; height: 44px; }
+    .logo svg { width: 44px; height: 44px; display: block; }
 
     .status {
       display: inline-flex;
@@ -127,9 +133,12 @@
 <body>
   <div class="card">
     <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="5" width="18" height="14" rx="2.5" />
-        <circle cx="12" cy="12" r="3.5" />
+      <!-- ★ Matches the app icon: filled white camera body + blue lens cut-out.
+           The lens colour matches the middle of the container's gradient
+           (#2FB8F5) so the cut-out reads as continuous. -->
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="6.5" width="18" height="12" rx="1.6" fill="#ffffff"/>
+        <circle cx="12" cy="12.5" r="2.6" fill="#2FB8F5"/>
       </svg>
     </div>
 
@@ -157,8 +166,6 @@
 
   <script>
     (function () {
-      /* ★ The app shell always loads this URL.
-       *   Retry must navigate here — NOT reload error.html. */
       var APP_URL = 'https://dayront.com/app';
 
       var retryBtn   = document.getElementById('retry-btn');
@@ -182,10 +189,6 @@
         }
       }
 
-      /* Probe reachability. error.html runs at a local origin inside the APK,
-       * so https://dayront.com/app is cross-origin. A normal CORS fetch would
-       * reject even when the network is fine — use mode:'no-cors' so only
-       * real network failures (DNS, TLS, refused, timeout) reject. */
       function probeConnectivity() {
         return new Promise(function (resolve) {
           var timer = setTimeout(function () { resolve(false); }, 4000);
@@ -200,10 +203,6 @@
         });
       }
 
-      /* Kill any service worker that might serve a stale cached build.
-       * This is the root of the "app boots then bounces / web-only errors"
-       * behavior: a SW from a previous online visit serves a cached bundle
-       * that lacks the native bridge, so the app thinks it's the web version. */
       async function purgeServiceWorkers() {
         if (!('serviceWorker' in navigator)) return;
         try {
@@ -287,9 +286,6 @@
         }, 4000);
       }
 
-      /* Boot:
-       *  - If navigator.onLine is false, show offline state and start polling.
-       *  - Otherwise probe once. If reachable, skip the error page entirely. */
       if (navigator.onLine === false) {
         setOnline(false);
         startProbeLoop();
