@@ -9,6 +9,8 @@
  *   • Navigation guard (blocks back while a tool is processing)
  *   • Last-route memory — reopens where you left off
  *   • Deep link handling (dayront://…)
+ *   • Service-worker purge inside the native shell (prevents stale-web
+ *     fallbacks when offline)
  *
  * IMPORTANT: rendered with `client:load` in every parent .astro file.
  *
@@ -139,6 +141,40 @@ export default function MobileLayout({
     if (typeof window === 'undefined') return;
     saveLastRoute(location.pathname);
   }, [current]);
+
+  /* ── Service-worker purge (native shell) ──
+     Inside the Capacitor APK, a leftover service worker from a prior web
+     visit will serve cached HTML/JS on offline boots. That cached bundle
+     lacks the native bridge, so the app silently falls back to web
+     behaviour: it "opens", lets you pick a file, then errors with
+     "download Dayront" because runTool() routes to the WASM/web path.
+
+     Fix: when running inside the native shell, actively tear down every
+     registered SW and wipe Cache Storage on boot. On the web this is a
+     no-op — the SW in BaseLayout.astro stays registered. */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isNativeApp()) return;
+    if (!('serviceWorker' in navigator)) return;
+
+    (async () => {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) {
+          try { await reg.unregister(); } catch {}
+        }
+      } catch {}
+
+      try {
+        if (window.caches && typeof caches.keys === 'function') {
+          const keys = await caches.keys();
+          for (const key of keys) {
+            try { await caches.delete(key); } catch {}
+          }
+        }
+      } catch {}
+    })();
+  }, []);
 
   /* ── Cold-start route restore ── */
   useEffect(() => {
