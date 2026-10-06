@@ -79,18 +79,6 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
 
   const hasQuery = query.trim().length > 0;
 
-  const counts = useMemo(() => {
-    const c: Record<Category, number> = { all: 0, audio: 0, video: 0, convert: 0, ai: 0 };
-    for (const t of tools) {
-      c.all += 1;
-      if (matchesCategory(t, 'audio')) c.audio += 1;
-      if (matchesCategory(t, 'video')) c.video += 1;
-      if (matchesCategory(t, 'convert')) c.convert += 1;
-      if (matchesCategory(t, 'ai')) c.ai += 1;
-    }
-    return c;
-  }, [tools]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tools.filter((t) => {
@@ -125,6 +113,17 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
   function openTool(slug: string) {
     haptic();
     pushRecentTool(slug);
+  }
+
+  function selectCategory(key: Category) {
+    haptic(8);
+    // Tapping "All" clears any active search so the full catalog
+    // is visible again (fixes: search → tap All → grid stays empty).
+    if (key === 'all' && hasQuery) {
+      setQuery('');
+      inputRef.current?.blur();
+    }
+    setCategory(key);
   }
 
   return (
@@ -182,23 +181,9 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
               role="tab"
               aria-selected={category === c.key}
               class={`d-chip ${category === c.key ? 'd-chip--active' : ''}`}
-              onClick={() => {
-                haptic(8);
-                setCategory(c.key);
-              }}
+              onClick={() => selectCategory(c.key)}
             >
               {c.label}
-              <span
-                aria-hidden="true"
-                style={{
-                  marginLeft: '0.4rem',
-                  fontSize: '0.72em',
-                  opacity: category === c.key ? 0.85 : 0.55,
-                  fontWeight: 700,
-                }}
-              >
-                {counts[c.key]}
-              </span>
             </button>
           ))}
         </div>
@@ -256,12 +241,6 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
         </section>
       )}
 
-      {/* Meta line */}
-      <div class="d-tools__meta">
-        {filtered.length} {filtered.length === 1 ? 'tool' : 'tools'}
-        {hasQuery ? ` matching "${query}"` : ''}
-      </div>
-
       {/* Grid / empty state */}
       {filtered.length > 0 ? (
         <div class="d-tools__grid">
@@ -292,7 +271,18 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
           <div class="d-empty__icon">🔍</div>
           <p class="d-empty__title">No tools found</p>
           <p class="d-empty__sub">
-            Try a shorter keyword or tap <strong>All</strong>
+            Try a shorter keyword or{' '}
+            <button
+              type="button"
+              class="d-empty__link"
+              onClick={() => {
+                setQuery('');
+                setCategory('all');
+                haptic();
+              }}
+            >
+              tap All
+            </button>
           </p>
         </div>
       )}
