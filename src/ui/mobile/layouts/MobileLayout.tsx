@@ -66,6 +66,12 @@ function currentRoot(): string {
   return ROOT_PATHS.has(clean) ? clean : 'other';
 }
 
+/** True when the current URL is a per-tool detail page (/app/tool/…). */
+function isToolDetailPath(): boolean {
+  if (typeof location === 'undefined') return false;
+  return /^\/app\/tool\//.test(location.pathname);
+}
+
 /* ── Route memory ────────────────────────────────────────── */
 
 function saveLastRoute(path: string): void {
@@ -302,8 +308,12 @@ export default function MobileLayout({
     if (!el || hideNav) return;
 
     const idx = TAB_ORDER.indexOf(current);
-    const canGoPrev = idx > 0;
-    const canGoNext = idx >= 0 && idx < TAB_ORDER.length - 1;
+    // On a tool detail page (/app/tool/<slug>) we route swipe-right to the
+    // Tools tab, regardless of which tab the user came from. Swipe-left is
+    // disabled there so it can't skip to Recent/Settings.
+    const onToolDetail = isToolDetailPath();
+    const canGoPrev = onToolDetail || idx > 0;
+    const canGoNext = !onToolDetail && idx >= 0 && idx < TAB_ORDER.length - 1;
 
     let startX = 0;
     let startY = 0;
@@ -331,6 +341,17 @@ export default function MobileLayout({
 
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
+
+      // ★ Opt-out: don't intercept gestures that begin inside a sheet,
+      // modal, or horizontally-scrollable region. Those mark themselves
+      // with [data-swipe-block] so native horizontal scrolling works
+      // (e.g. the Options pill row inside a bottom sheet).
+      const target = e.target as HTMLElement | null;
+      if (target && typeof target.closest === 'function' && target.closest('[data-swipe-block]')) {
+        active = false;
+        return;
+      }
+
       const t = e.touches[0];
       startX = lastX = t.clientX;
       startY = t.clientY;
@@ -397,12 +418,34 @@ export default function MobileLayout({
       setDraggingClass(false);
       setOffset(0, null, 0);
 
-      if (dx > 0 && canGoPrev && (passedDistance || passedVelocity)) {
-        haptic(14);
-        navigateTo(TAB_ORDER[idx - 1], 'back');
-      } else if (dx < 0 && canGoNext && (passedDistance || passedVelocity)) {
-        haptic(14);
-        navigateTo(TAB_ORDER[idx + 1], 'forward');
+      const passed = passedDistance || passedVelocity;
+      if (!passed) return;
+
+      // ★ Block swipe navigation while ToolScreen has an active guard
+      // (job processing, unsaved state, etc.). Silent — no "Confirm
+      // Navigation" dialog, just a haptic bounce and no movement.
+      if (!canNavigate()) {
+        haptic(4);
+        return;
+      }
+
+      if (dx > 0) {
+        // Swipe-right = back gesture
+        if (onToolDetail) {
+          haptic(14);
+          navigateTo('tools', 'back');
+          return;
+        }
+        if (canGoPrev) {
+          haptic(14);
+          navigateTo(TAB_ORDER[idx - 1], 'back');
+        }
+      } else if (dx < 0) {
+        // Swipe-left = forward gesture
+        if (canGoNext) {
+          haptic(14);
+          navigateTo(TAB_ORDER[idx + 1], 'forward');
+        }
       }
     };
 

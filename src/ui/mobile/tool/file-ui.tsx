@@ -30,8 +30,8 @@ export function FileChip({
   return (
     <div style={{
       display: 'flex',
-      alignItems: 'flex-start',
-      gap: '0.75rem',
+      alignItems: 'center',
+      gap: '0.875rem',
       padding: '0.875rem',
       borderRadius: '1rem',
       border: '1px solid var(--line, #e2e8f0)',
@@ -42,10 +42,10 @@ export function FileChip({
         onClick={onPreview}
         aria-label={`Preview ${file.name}`}
         style={{
-          width: '56px',
-          height: '56px',
+          width: '80px',
+          height: '80px',
           flexShrink: 0,
-          borderRadius: '12px',
+          borderRadius: '16px',
           background: kind === 'audio' ? 'var(--brand-soft, #e0f2fe)' : '#0A0E1A',
           color: '#fff',
           border: 'none',
@@ -56,7 +56,7 @@ export function FileChip({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '1.5rem',
+          fontSize: '2rem',
         }}
       >
         {kind === 'video' && thumb ? (
@@ -71,11 +71,18 @@ export function FileChip({
             <span style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.28)',
+              background: 'rgba(0,0,0,0.32)',
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M8 5v14l11-7z" />
-              </svg>
+              <span style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.22)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
             </span>
           </>
         ) : kind === 'image' && thumb ? (
@@ -85,7 +92,7 @@ export function FileChip({
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : kind === 'audio' ? (
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18V5l12-2v13" />
             <circle cx="6" cy="18" r="3" />
             <circle cx="18" cy="16" r="3" />
@@ -97,7 +104,7 @@ export function FileChip({
 
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
-          fontSize: '0.9rem',
+          fontSize: '0.95rem',
           fontWeight: 700,
           lineHeight: 1.35,
           wordBreak: 'break-all',
@@ -106,9 +113,9 @@ export function FileChip({
           {file.name}
         </div>
         <div style={{
-          fontSize: '0.75rem',
+          fontSize: '0.78rem',
           opacity: 0.6,
-          marginTop: '2px',
+          marginTop: '3px',
           display: 'flex',
           alignItems: 'center',
           gap: '0.35rem',
@@ -157,6 +164,7 @@ export function FilePreview({
     <div
       role="dialog"
       aria-modal="true"
+      data-swipe-block
       style={{
         position: 'fixed', inset: 0, zIndex: 150,
         background: 'rgba(0,0,0,0.92)',

@@ -3,15 +3,13 @@
  * ----------------------------------------------------------------------------
  * Presentational primitives shared across the tool screen.
  *
- *   • BottomSheet     slide-up sheet with backdrop
+ *   • BottomSheet     slide-up sheet with backdrop (opts out of page-swipe)
  *   • PremiumButton   pill button with press feedback + 3 variants
  *   • PillSetting     one setting row (select / range / number)
  *   • ProgressRing    circular SVG progress indicator
  *
  * Everything here is stateless w.r.t. the tool workflow — no knowledge of
- * files, jobs, or the runner. That keeps these components reusable elsewhere
- * (SettingsScreen already duplicates similar patterns) and makes them easy
- * to iterate on visually without touching the screen logic.
+ * files, jobs, or the runner.
  */
 import { useState } from 'preact/hooks';
 import { haptic } from '../haptic';
@@ -24,7 +22,7 @@ export function BottomSheet({
 }: { open: boolean; onClose: () => void; children: any; }) {
   if (!open) return null;
   return (
-    <div role="dialog" aria-modal="true" style={{
+    <div role="dialog" aria-modal="true" data-swipe-block style={{
       position: 'fixed', inset: 0, zIndex: 100,
       display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     }}>
@@ -142,11 +140,16 @@ export function PillSetting({
       </div>
 
       {setting.type === 'select' && setting.options && (
-        <div style={{
-          display: 'flex', gap: '0.5rem',
-          overflowX: 'auto', paddingBottom: '0.25rem',
-          scrollbarWidth: 'none',
-        }}>
+        <div
+          data-swipe-block
+          style={{
+            display: 'flex', gap: '0.5rem',
+            overflowX: 'auto', paddingBottom: '0.25rem',
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x',
+          }}
+        >
           {setting.options.map((opt) => {
             const val = typeof opt === 'string' ? opt : opt.value;
             const lbl = typeof opt === 'string' ? opt : opt.label;
