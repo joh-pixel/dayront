@@ -31,12 +31,10 @@ const RELEASES: Record<string, Release> = {
   android: {
     label: 'Android',
     svg: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#34A853" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 0 0 6 7h12a5.98 5.98 0 0 0-2.47-4.84zM9.5 5.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zm5 0c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5z"/></svg>`,
-    // Changed from 'latest/download' to direct versioned link to prevent mobile redirect stalls
-    url: 'https://github.com/joh-pixel/dayront/releases/download/v1.1.0/Dayront.apk',
+    url: '',
     store: 'Android 7+ · ARM64',
-    note: 'Native FFmpeg · 5 GB files · Works offline',
-    status: 'available',
-    size: '126 MB',
+    note: 'In development. Native FFmpeg · 5 GB files · Works offline.',
+    status: 'coming-soon',
   },
   ios: {
     label: 'iOS',
@@ -80,7 +78,7 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
 
 <BaseLayout
   title="Download Dayront — Android, iOS, Windows, macOS, Linux"
-  description="Get Dayront for Android, iOS, Windows, macOS, or Linux. Process 5GB+ files directly on your device. No memory limits, no uploads."
+  description="Dayront apps are coming to Android, iOS, Windows, macOS, and Linux. Process 5GB+ files directly on your device. No memory limits, no uploads."
 >
   <main class="download-page">
     <header class="download-hero">
@@ -92,11 +90,12 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
             <circle cx="20" cy="20" r="3" fill="#2CB5F0"/>
           </svg>
         </div>
-        <h1>Get the Dayront App</h1>
+        <h1>Dayront App</h1>
       </div>
       <p class="lead">
-        Process files up to <strong>5 GB</strong> directly on your device.
-        No memory limits, no uploads, no waiting.
+        Native apps for every platform, in active development.
+        Process files up to <strong>5 GB</strong> directly on your device —
+        no memory limits, no uploads, no waiting.
       </p>
       <div class="hero-badges">
         <span class="badge badge--primary">⚡ 10× faster</span>
@@ -106,37 +105,33 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
     </header>
 
     <!-- ════════════════════════════════════════════════════
-         ANDROID AVAILABLE — Highlight hero
+         COMING SOON — Launch notification hero
          ════════════════════════════════════════════════════ -->
     <section class="android-live">
       <div class="android-live__inner">
         <div class="android-live__badge">
           <span class="android-live__dot" aria-hidden="true"></span>
-          Now available for Android
+          In active development
         </div>
 
-        <h2 class="android-live__title">Download Dayront for Android</h2>
+        <h2 class="android-live__title">The Dayront App is coming soon</h2>
         <p class="android-live__sub">
-          Direct APK · 126 MB · Native FFmpeg engine · 5 GB file support.
-          Works fully offline. No ads, no signup.
+          Android, iOS, Windows, macOS, and Linux builds are all in progress.
+          Native FFmpeg engine, 5 GB file support, fully offline.
+          Leave your email and we'll ping you the moment each one goes live.
         </p>
 
-        <!-- Updated href to direct versioned link -->
-        <a
-          href="https://github.com/joh-pixel/dayront/releases/download/v1.1.0/Dayront.apk"
-          class="android-live__btn"
-          rel="noopener noreferrer"
-        >
+        <a href="#notify-hero" class="android-live__btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <path d="M7 10l5 5 5-5" />
-            <path d="M12 15V3" />
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
-          Download APK
+          Notify me when it launches
         </a>
 
         <p class="android-live__note">
-          Android 7+ · 126 MB (native FFmpeg) · Chrome may show a security warning — that's normal for direct APK installs.
+          No spam. One email per platform, only when it ships. In the meantime,
+          the web tools below work exactly the same in your browser.
         </p>
       </div>
     </section>
@@ -181,55 +176,16 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
       </div>
     </section>
 
-    <!-- ANDROID INSTALL HELP -->
-    <section class="section">
-      <div class="pwa-card">
-        <div class="pwa-card__icon">🤖</div>
-        <div class="pwa-card__body">
-          <h3>How to install the Android APK</h3>
-          <p>
-            Direct download — no Play Store needed. Android will show a
-            security warning; that's normal for direct APK installs.
-          </p>
-          <details class="pwa-instructions" open>
-            <summary>Step-by-step instructions</summary>
-            <div class="pwa-steps">
-              <div class="pwa-step">
-                <strong>1. Tap the Download button above</strong>
-                <span>Dayront.apk saves to your Downloads folder</span>
-              </div>
-              <div class="pwa-step">
-                <strong>2. Open your Downloads folder</strong>
-                <span>Look for <code>Dayront.apk</code> (126 MB)</span>
-              </div>
-              <div class="pwa-step">
-                <strong>3. Tap the file to install</strong>
-                <span>Android may ask to allow unknown sources</span>
-              </div>
-              <div class="pwa-step">
-                <strong>4. Allow "Install unknown apps"</strong>
-                <span>Settings → toggle on for Chrome or Files</span>
-              </div>
-              <div class="pwa-step">
-                <strong>5. Tap Install → Open</strong>
-                <span>Dayront launches full-screen with your icon</span>
-              </div>
-            </div>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- PWA fallback -->
+    <!-- PWA fallback — what works today -->
     <section class="section">
       <div class="pwa-card">
         <div class="pwa-card__icon">🌐</div>
         <div class="pwa-card__body">
-          <h3>Can't install? Use the PWA</h3>
+          <h3>While you wait — install the PWA</h3>
           <p>
-            Dayront works as a Progressive Web App — install it from your
-            browser and get an app-like experience with offline support.
-            No app store needed.
+            Every Dayront tool already runs in your browser. Install the web
+            app and you get an app-like experience right now: home screen icon,
+            full-screen, offline support, and no app store needed.
           </p>
           <button type="button" class="btn btn--secondary" id="pwa-install-btn" hidden>
             Install PWA
@@ -267,8 +223,8 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
           <thead>
             <tr>
               <th>Feature</th>
-              <th>Web</th>
-              <th class="comparison__highlight">App</th>
+              <th>Web <span class="status-pill status-pill--soon">Today</span></th>
+              <th class="comparison__highlight">App <span class="status-pill status-pill--soon">Soon</span></th>
             </tr>
           </thead>
           <tbody>
@@ -324,9 +280,9 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
 
     <!-- Tools benefit list -->
     <section class="section">
-      <h2>What you unlock with the app</h2>
+      <h2>What you'll unlock with the app</h2>
       <p class="section__lead">
-        These {appTools.length} tools run best in the app — some require it.
+        These {appTools.length} tools will run best in the app — some will require it.
       </p>
       <ul class="tools-list">
         {appTools.map((tool) => (
@@ -348,49 +304,53 @@ function toolUrl(tool: { slug: string; from?: string; to?: string }): string {
       <h2>Frequently asked questions</h2>
       <div class="faq">
         <details>
-          <summary>Is the app really free?</summary>
-          <p>Yes. The app is free, with no ads and no sign-up. It's built on the same privacy-first promise as the web version.</p>
+          <summary>When will the apps be available?</summary>
+          <p>Android is furthest along and expected first. iOS, Windows, macOS, and Linux will follow. Leave your email below and we'll notify you the moment each platform launches — no spam, one email per platform.</p>
         </details>
         <details>
-          <summary>Why is the app faster than the browser?</summary>
-          <p>The browser version has stricter memory limits per tab. The app runs a native FFmpeg binary directly on your device — 10× faster and no memory limit.</p>
+          <summary>Will the apps be free?</summary>
+          <p>Yes. Same privacy-first promise as the web version — no ads, no sign-up, no telemetry.</p>
         </details>
         <details>
-          <summary>Does the app upload my files?</summary>
-          <p>No. Everything happens locally on your device, exactly like the web version. The app never connects to a server for processing.</p>
+          <summary>Why will the app be faster than the browser?</summary>
+          <p>The browser version has stricter memory limits per tab. The app runs a native FFmpeg binary directly on your device — up to 10× faster and with no memory limit.</p>
         </details>
         <details>
-          <summary>Why is the APK 126 MB?</summary>
-          <p>The app bundles a full native FFmpeg engine (libavcodec, libx264, libmp3lame, and more) for ARM64 devices. This is what enables 5 GB file support and 10× faster processing. It's the same size range as professional media editors like CapCut or InShot.</p>
+          <summary>Will the app upload my files?</summary>
+          <p>No. Everything will happen locally on your device, exactly like the web version. The app will never connect to a server for processing.</p>
+        </details>
+        <details>
+          <summary>Why will the app be large?</summary>
+          <p>The apps bundle a full native FFmpeg engine (libavcodec, libx264, libmp3lame, and more). This is what enables 5 GB file support and 10× faster processing. It puts the app in the same size range as professional media editors like CapCut or InShot.</p>
         </details>
         <details>
           <summary>Will my settings and preferences carry over?</summary>
-          <p>Yes. Your theme, language, and recent tool history sync between web and app (stored locally — no accounts required).</p>
+          <p>Yes. Your theme, language, and recent tool history will sync between web and app (stored locally — no accounts required).</p>
         </details>
         <details>
-          <summary>Is the Android APK safe to install?</summary>
-          <p>Yes. It's signed with a debug keystore (that's why Android shows a warning — normal for any app not from the Play Store). The source code is fully public on GitHub.</p>
+          <summary>What can I use right now?</summary>
+          <p>Every Dayront tool already works in your browser — no install required. You can also install the Dayront web app as a PWA for a home-screen icon and offline support. See the "While you wait" section above.</p>
         </details>
         <details>
-          <summary>When will it be on the Play Store?</summary>
-          <p>The Play Store listing is in review. In the meantime, the direct APK works identically. Leave your email below if you want to be notified when the Play Store version goes live.</p>
+          <summary>What devices will be supported?</summary>
+          <p>Android 7+ on ARM64 (virtually every phone made since 2017). iOS 14+. Windows 10/11. macOS 11+ on both Intel and Apple Silicon. Linux x86_64. 32-bit-only Android devices from before 2017 will not be supported.</p>
         </details>
         <details>
-          <summary>Does it work on older Android phones?</summary>
-          <p>The app supports Android 7+ on ARM64 devices (virtually every phone made since 2017). 32-bit-only devices from before 2017 are not supported.</p>
+          <summary>Will the app be on the Play Store / App Store?</summary>
+          <p>Yes — Play Store and App Store listings are planned. A direct download will also be available from this page for people who prefer it.</p>
         </details>
       </div>
     </section>
 
-    <!-- Notify form — moved below install info -->
-    <section class="notify-hero">
+    <!-- Notify form -->
+    <section class="notify-hero" id="notify-hero">
       <div class="notify-hero__inner">
         <div class="notify-hero__badge">
           <span class="notify-hero__dot" aria-hidden="true"></span>
           Stay updated
         </div>
 
-        <h2 class="notify-hero__title">iOS, desktop, and Play Store releases</h2>
+        <h2 class="notify-hero__title">Be the first to know when we launch</h2>
         <p class="notify-hero__sub">
           Enter your email and we'll let you know the moment each platform goes live.
         </p>
