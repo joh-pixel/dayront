@@ -120,6 +120,36 @@ const FADE_CURVE_OPTIONS: SettingOption[] = [
 
 const baseTools: Tool[] = [
   // ══════════════════════════════════════════════════════════
+  //   FEATURED UTILITY
+  // ══════════════════════════════════════════════════════════
+  {
+    slug: 'url-download',
+    name: 'Download from URL',
+    category: 'video-utility',
+    description: 'Fetch media from any direct HTTPS link — no server, no proxy, no upload.',
+    metaTitle: 'Download from URL – Direct Media Link Downloader | Dayront',
+    metaDescription: 'Fetch media from direct HTTPS links, Archive.org, Wikimedia Commons and podcast feeds. Runs in your browser — no server, no tracking.',
+    icon: '📥',
+    type: 'url-download',
+    outputFormat: '',
+    settings: [],
+    faq: [
+      { question: 'Which URLs work with the downloader?', answer: 'Direct links to media files (.mp3, .mp4, .wav, .jpg, .png) on servers that allow cross-origin fetches. Archive.org, Wikimedia Commons, most podcast CDNs, and any self-hosted server with permissive CORS.' },
+      { question: "Why doesn't YouTube, TikTok, or Instagram work?", answer: "Those platforms refuse cross-origin requests at the network level. Making them work would require a server that proxies the request — which breaks Dayront's privacy promise and violates our hosting provider's terms. We deliberately don't do that." },
+      { question: 'Is my URL private?', answer: 'Yes. The fetch runs entirely in your browser, going directly from your device to the source server. Dayront never sees the URL, never logs it, and never proxies it.' },
+      { question: 'What size files can I download?', answer: 'Up to 300 MB on mobile, 800 MB on desktop. Larger files risk exhausting browser memory and crashing the tab.' },
+      { question: 'Can I use this for a podcast episode?', answer: "Yes. Open the podcast's RSS feed, copy the direct MP3 URL for the episode you want, and paste it here. Most podcast hosts allow cross-origin fetches." },
+      { question: 'What does "CORS" mean in the error message?', answer: "CORS is a browser security feature. When a website doesn't send the right headers, the browser blocks another site from reading the response. It's a hard wall — no website can bypass it, only a server proxy can, which is the thing we're refusing to use." },
+    ],
+    howTo: [
+      { title: 'Paste a direct media URL', text: 'An HTTPS link ending in .mp3, .mp4, .wav, .jpg, .png — or a streaming link from Archive.org, Wikimedia Commons, or a podcast feed.' },
+      { title: 'Click Fetch', text: 'Your browser downloads the file directly from the source. Progress is shown live.' },
+      { title: 'Preview and download', text: 'Where the content type supports it, the file is previewed inline. Save it to your device with one click.' },
+    ],
+    relatedTools: ['extract-audio', 'audio-cutter', 'video-cutter'],
+  },
+
+  // ══════════════════════════════════════════════════════════
   //   AUDIO UTILITIES
   // ══════════════════════════════════════════════════════════
   {
@@ -364,7 +394,7 @@ const baseTools: Tool[] = [
     relatedTools: ['audio-gate', 'audio-dehum', 'audio-compressor'],
   },
 
-  // ── NEW: Audio production ─────────────────
+  // ── Audio production ──────────────────────
   {
     slug: 'audio-fade',
     name: 'Fade In / Fade Out',
@@ -1900,6 +1930,9 @@ const DEFAULT_LIMITS = {
 } as const;
 
 const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
+  // ── Utility ──────────────────────────────
+  'url-download': { tier: 'light', engine: 'wasm', webMaxMB: 800, recommendApp: false },
+
   // ── Audio utility ────────────────────────
   cut:              { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
   merge:            { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
@@ -1910,7 +1943,7 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   'stereo-to-mono': { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
   denoise:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
 
-  // ── New: audio production ────────────────
+  // ── Audio production ─────────────────────
   fade:               { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
   normalize:          { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
   'dynamic-compress': { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },

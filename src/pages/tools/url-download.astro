@@ -1,0 +1,188 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import UrlDownloader from '../../components/UrlDownloader.tsx';
+
+const faq = [
+  {
+    q: 'Which URLs work with the downloader?',
+    a: 'Direct links to media files (.mp3, .mp4, .wav, .jpg, .png) on servers that allow cross-origin fetches, plus Archive.org, Wikimedia Commons, and most podcast CDNs (Libsyn, Buzzsprout, Transistor, Megaphone, Simplecast). Any link the source permits can be fetched.',
+  },
+  {
+    q: "Why doesn't YouTube, TikTok, or Instagram work?",
+    a: "Those platforms refuse cross-origin requests at the network level. Making them work would require a server that proxies the request — which breaks Dayront's privacy promise and violates our hosting provider's terms. We deliberately don't do that.",
+  },
+  {
+    q: 'Is my URL private?',
+    a: 'Yes. The fetch runs entirely in your browser, going directly from your device to the source server. Dayront never sees the URL, never logs it, and never proxies it.',
+  },
+  {
+    q: 'What size files can I download?',
+    a: 'Up to 300 MB on mobile, 800 MB on desktop. Larger files risk exhausting browser memory and crashing the tab.',
+  },
+  {
+    q: 'Can I use this for a podcast episode?',
+    a: 'Yes. Open the podcast\'s RSS feed, copy the direct MP3 URL for the episode you want, and paste it here. Most podcast hosts allow cross-origin fetches.',
+  },
+  {
+    q: 'What does "CORS" mean in the error message?',
+    a: "CORS (Cross-Origin Resource Sharing) is a browser security feature. When a website doesn't send the right headers, the browser blocks another site (like Dayront) from reading the response. It's a hard wall — no website can bypass it, only a server proxy can, which is the thing we're refusing to use.",
+  },
+];
+
+const howTo = [
+  {
+    title: 'Paste a direct media URL',
+    text: 'An HTTPS link ending in .mp3, .mp4, .wav, .jpg, .png — or a streaming link from Archive.org, Wikimedia Commons, or a podcast feed.',
+  },
+  {
+    title: 'Click Fetch',
+    text: 'Your browser downloads the file directly from the source. Progress is shown live.',
+  },
+  {
+    title: 'Preview and download',
+    text: 'Where the content type supports it, the file is previewed inline. Save it to your device with one click.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to download media from a URL',
+  step: howTo.map((step, i) => ({
+    '@type': 'HowToStep',
+    position: i + 1,
+    name: step.title,
+    text: step.text,
+  })),
+};
+
+const relatedTools = [
+  { href: '/tools/extract-audio', icon: '🎧', name: 'Extract Audio' },
+  { href: '/tools/audio-cutter',  icon: '✂️', name: 'Audio Cutter' },
+  { href: '/tools/video-cutter',  icon: '✂️', name: 'Video Cutter' },
+];
+---
+
+<BaseLayout
+  title="Download from URL – Direct Media Link Downloader | Dayront"
+  description="Fetch media from direct HTTPS links, Archive.org, Wikimedia Commons and podcast feeds. Runs in your browser — no server, no tracking, no upload."
+>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(howToSchema)} />
+
+  <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 text-gray-900 dark:text-gray-100">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="Breadcrumb" class="mb-6 text-xs text-gray-500 dark:text-gray-400">
+      <ol class="flex items-center gap-1.5">
+        <li><a href="/" class="hover:text-sky-500">Home</a></li>
+        <li aria-hidden="true">›</li>
+        <li><a href="/tools" class="hover:text-sky-500">Tools</a></li>
+        <li aria-hidden="true">›</li>
+        <li class="font-medium text-gray-700 dark:text-gray-300" aria-current="page">Download from URL</li>
+      </ol>
+    </nav>
+
+    <!-- Hero -->
+    <header class="mb-8">
+      <div class="flex items-start gap-4">
+        <div
+          class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-3xl dark:bg-sky-900/40"
+          aria-hidden="true"
+        >
+          📥
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">Download from URL</h1>
+          <p class="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">
+            Fetch any media file from a direct HTTPS link — Archive.org, Wikimedia Commons, podcast episodes, or a self-hosted server. Everything runs in your browser.
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              🔒 100% private
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              🌐 No server
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              ⚡ Direct fetch
+            </span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Downloader -->
+    <section class="mb-12">
+      <UrlDownloader client:load />
+    </section>
+
+    <!-- How to -->
+    <section class="mb-12">
+      <h2 class="mb-4 text-xl font-bold sm:text-2xl">How to use it</h2>
+      <ol class="space-y-4">
+        {howTo.map((step, i) => (
+          <li class="flex gap-4">
+            <span
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-sm font-bold text-white"
+              aria-hidden="true"
+            >
+              {i + 1}
+            </span>
+            <div class="min-w-0">
+              <p class="font-semibold">{step.title}</p>
+              <p class="mt-0.5 text-sm leading-6 text-gray-600 dark:text-gray-300">{step.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- FAQ -->
+    <section class="mb-12">
+      <h2 class="mb-4 text-xl font-bold sm:text-2xl">Frequently asked questions</h2>
+      <div class="space-y-2">
+        {faq.map((item) => (
+          <details class="group overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <summary class="flex cursor-pointer items-center justify-between px-5 py-4 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-900/60">
+              <span>{item.q}</span>
+              <svg class="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="border-t border-gray-200 px-5 py-4 text-sm leading-6 text-gray-700 dark:border-gray-700 dark:text-gray-300">
+              {item.a}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <!-- Related tools -->
+    <section class="mb-8">
+      <h2 class="mb-4 text-xl font-bold sm:text-2xl">Related tools</h2>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {relatedTools.map((rt) => (
+          <a
+            href={rt.href}
+            class="group flex items-start gap-3 rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-sky-400 hover:shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:hover:border-sky-500"
+          >
+            <span class="text-2xl" aria-hidden="true">{rt.icon}</span>
+            <p class="text-sm font-bold group-hover:text-sky-500">{rt.name}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+  </main>
+  </BaseLayout>
