@@ -12,6 +12,7 @@ import {
   changeSpeed,
   reverseAudio,
   stereoToMono,
+  denoiseAudio,
   compressVideo,
   cutVideo,
   mergeVideos,
@@ -46,6 +47,7 @@ type ToolType =
   | 'speed'
   | 'reverse'
   | 'stereo-to-mono'
+  | 'denoise'
   | 'video-compress'
   | 'video-cut'
   | 'video-merge'
@@ -107,6 +109,31 @@ function rangeHint(setting: SettingDef): string | null {
   return null;
 }
 
+/**
+ * Video extensions recognised by the denoise tool. When a video is dropped
+ * into that tool, the video stream is copied and the container is kept —
+ * so the preview and output filename must reflect the input container,
+ * not the configured `outputFormat` (which defaults to mp3 for audio).
+ */
+const DENOISE_VIDEO_EXTS = new Set([
+  'mp4', 'm4v', 'mov', 'mkv', 'avi', 'webm', 'flv',
+]);
+
+/**
+ * Return the effective output container for a denoise job, or '' when the
+ * input is audio (in which case `outputFormat` applies).
+ *
+ * webm is kept as webm; every other video container maps to mp4 because
+ * that's what the copy-stream path produces on the native side. The
+ * filename and the preview element both use this.
+ */
+function getDenoiseContainer(file: File | undefined): string {
+  if (!file) return '';
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!DENOISE_VIDEO_EXTS.has(ext)) return '';
+  return ext === 'webm' ? 'webm' : 'mp4';
+}
+
 /** Detect mobile devices (browser UA + viewport width) */
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -161,6 +188,12 @@ function getAllowedExtensions(config: ToolConfig): string[] {
     case 'reverse':
     case 'stereo-to-mono':
       return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'];
+
+    case 'denoise':
+      return [
+        'mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac', 'opus', 'aiff', 'amr', 'ape',
+        'mp4', 'mov', 'mkv', 'avi', 'webm', 'flv', 'm4v',
+      ];
 
     case 'video-compress':
     case 'video-cut':
@@ -501,6 +534,20 @@ export default function Converter({
           output = await stereoToMono(files[0], toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
+        case 'denoise': {
+          // The denoise tool handles both audio and video. For video inputs
+          // the container is preserved (mp4/webm) and the video stream is
+          // copied untouched; for audio inputs `outputFormat` applies.
+          const denoiseContainer = getDenoiseContainer(files[0]);
+          output = await denoiseAudio(
+            files[0],
+            String(getSetting('strength') ?? 'balanced'),
+            denoiseContainer || toolConfig.outputFormat || 'mp3',
+            privacy,
+            updateProgress,
+          );
+          break;
+        }
         case 'convert': {
           output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
           break;
@@ -603,7 +650,18 @@ export default function Converter({
 
       // ★ Clean, descriptive output name:
       //     "myvideo-720p-to-8k.mp4"  (instead of "myvideo.mp4")
-      const format = toolConfig.outputFormat || toolConfig.to || 'mp3';
+      //
+      // Denoise on video keeps the input container, so the filename must
+      // use that instead of `outputFormat` (which is 'mp3' for this tool).
+      const denoiseContainer =
+        toolConfig.type === 'denoise' ? getDenoiseContainer(files[0]) : '';
+
+      const format =
+        denoiseContainer ||
+        toolConfig.outputFormat ||
+        toolConfig.to ||
+        'mp3';
+
       const originalName = files[0]?.name || 'my-file';
       const filename = makeOutputName(
         toolConfig.type + '-conversion',
@@ -683,7 +741,19 @@ export default function Converter({
     'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
   ].join(' ');
 
-  const outputFormat = toolConfig.outputFormat || toolConfig.to || 'mp3';
+  // The denoise tool on a video input keeps the video container, so the
+  // preview element should be a <video>, not an <audio>. Every other tool
+  // uses the configured output format as-is.
+  const denoiseContainer = toolConfig.type === 'denoise'
+    ? getDenoiseContainer(files[0])
+    : '';
+
+  const outputFormat =
+    denoiseContainer ||
+    toolConfig.outputFormat ||
+    toolConfig.to ||
+    'mp3';
+
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
 

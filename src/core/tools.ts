@@ -329,6 +329,44 @@ const baseTools: Tool[] = [
     ],
     relatedTools: ['audio-cutter', 'volume-booster', 'mp3-to-wav'],
   },
+  {
+    slug: 'audio-denoise',
+    name: 'Audio Denoiser',
+    category: 'audio-utility',
+    description: 'Remove background noise and hum from audio or video files.',
+    metaTitle: 'Audio Denoiser – Remove Background Noise Online Free | Dayront',
+    metaDescription: 'Denoise audio and video files in your browser. Removes fan hum, AC noise, hiss and static. No uploads, 100% private.',
+    icon: '🎙️',
+    type: 'denoise',
+    outputFormat: 'mp3',
+    settings: [
+      {
+        name: 'strength',
+        label: 'Noise Reduction',
+        type: 'select',
+        default: 'balanced',
+        options: [
+          { value: 'light',      label: 'Light — subtle hiss, minimal impact' },
+          { value: 'balanced',   label: 'Balanced — recommended' },
+          { value: 'strong',     label: 'Strong — steady hum, fan noise' },
+          { value: 'aggressive', label: 'Aggressive — heavy background noise' },
+        ],
+      },
+    ],
+    faq: [
+      { question: 'How does it work?', answer: 'It uses an FFT-based denoiser that estimates the background noise spectrum and subtracts it from your audio. Everything runs in your browser — nothing is uploaded.' },
+      { question: 'Does it work on video files?', answer: 'Yes. Drop a video and the video stream is copied untouched while the audio track is denoised.' },
+      { question: 'Will it remove speech or music?', answer: 'No. The filter targets steady background noise (fans, AC, electrical hum). Speech and music are preserved.' },
+      { question: 'Which strength should I pick?', answer: 'Balanced works for most files. Use Light for subtle hiss, Strong for loud steady hums, and Aggressive for heavy broadband noise.' },
+      { question: 'Is it free?', answer: 'Yes — completely free, no registration, no uploads.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio or video', text: 'Drop an MP3, WAV, M4A, MP4, MOV, or any common media file.' },
+      { title: 'Pick a noise reduction strength', text: 'Start with Balanced. Choose higher for louder backgrounds.' },
+      { title: 'Download the cleaned file', text: 'Audio in — audio out. Video in — same container, video untouched.' },
+    ],
+    relatedTools: ['audio-compressor', 'volume-booster', 'extract-audio'],
+  },
 
   // ── AUDIO CONVERSIONS ─────────────────────
   {
@@ -1378,6 +1416,7 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   speed:            { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
   reverse:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
   'stereo-to-mono': { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  denoise:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
 
   // ── Format conversion ────────────────────
   convert:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },

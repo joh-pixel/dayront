@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-denoise",
+  name: "Audio Denoiser",
+  metaTitle: "Audio Denoiser – Remove Background Noise Online Free | Dayront",
+  metaDescription: "Remove background noise from audio and video files in your browser. Eliminates fan hum, AC noise, hiss and static. No uploads, 100% private.",
+  icon: "🎙️",
+  howTo: [
+    {"title":"Upload your audio or video","text":"Drop an MP3, WAV, M4A, MP4, MOV, or any common media file. Files stay on your device."},
+    {"title":"Pick a noise reduction strength","text":"Start with Balanced. Choose Light for subtle hiss, or Aggressive for heavy background noise."},
+    {"title":"Download the cleaned file","text":"Audio in — audio out. Video in — same video container, video stream untouched, audio denoised."},
+  ],
+  faq: [
+    {"question":"How does it work?","answer":"It uses an FFT-based denoiser (afftdn) that estimates the background noise spectrum and subtracts it from your audio. Everything runs locally in your browser — nothing is uploaded."},
+    {"question":"Does it work on video files?","answer":"Yes. Drop an MP4, MOV, MKV, AVI, WebM or FLV file and the video stream is copied untouched — only the audio track is denoised and re-encoded."},
+    {"question":"Will it remove speech or music?","answer":"No. The filter targets steady background noise (fans, air conditioners, electrical hum). Speech and music are preserved."},
+    {"question":"Which strength should I pick?","answer":"Balanced works for most files. Use Light for subtle hiss you want to soften, Strong for loud steady hums, and Aggressive for recordings with heavy broadband noise."},
+    {"question":"Is it free?","answer":"Yes — completely free, no registration, no uploads, no file size gimmicks beyond what your browser can handle."},
+    {"question":"What if my file is too large?","answer":"The browser version has a size cap that depends on your device. For files above that limit, the Dayront app processes up to 5 GB with the same denoiser plus a native FFmpeg engine."},
+  ],
+  relatedTools: [
+    {"href":"/tools/audio-compressor","icon":"📦","name":"Audio Compressor"},
+    {"href":"/tools/volume-booster","icon":"🔊","name":"Volume Booster"},
+    {"href":"/tools/extract-audio","icon":"🎧","name":"Extract Audio"},
+  ],
+  type: "denoise",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    {
+      name: "strength",
+      label: "Noise Reduction",
+      type: "select",
+      default: "balanced",
+      options: [
+        { value: "light", label: "Light — subtle hiss, minimal impact" },
+        { value: "balanced", label: "Balanced — recommended" },
+        { value: "strong", label: "Strong — steady hum, fan noise" },
+        { value: "aggressive", label: "Aggressive — heavy background noise" },
+      ],
+    },
+  ],
+  tutorial: "\n    <h2>Using Our Audio Denoiser</h2>\n    <p>Our Audio Denoiser removes background noise from audio and video files directly in your browser. Upload a file, pick a strength, and download the cleaned result — nothing is ever uploaded to a server.</p>\n    <h3>How the Denoiser Works</h3>\n    <p>The tool uses an FFT-based noise reduction filter (afftdn) that estimates the background noise spectrum and subtracts it from the signal. This is ideal for steady, predictable noise: fans, air conditioners, electrical hum, tape hiss.</p>\n    <h3>Audio or Video — Same Tool</h3>\n    <ul>\n      <li>Drop an audio file (MP3, WAV, M4A, OGG, FLAC) — you get a denoised audio file back.</li>\n      <li>Drop a video file (MP4, MOV, MKV, AVI, WebM, FLV) — the video stream is copied untouched; only the audio track is denoised.</li>\n    </ul>\n    <h3>Choosing a Strength</h3>\n    <ul>\n      <li><strong>Light</strong> — for recordings with a subtle hiss you want to soften.</li>\n      <li><strong>Balanced</strong> — the recommended default for most files.</li>\n      <li><strong>Strong</strong> — for loud, steady hums and fan noise.</li>\n      <li><strong>Aggressive</strong> — for recordings with heavy broadband background noise.</li>\n    </ul>\n    <h3>Why Choose Dayront?</h3>\n    <ul>\n      <li>No uploads — your files stay on your device.</li>\n      <li>Native FFmpeg (WebAssembly) runs locally in your browser tab.</li>\n      <li>Completely free, no registration required.</li>\n    </ul>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

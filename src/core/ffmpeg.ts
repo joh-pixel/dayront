@@ -626,6 +626,102 @@ export async function stereoToMono(
 }
 
 /* ========================================================================== */
+/* 9b. AUDIO DENOISE                                                          */
+/* ========================================================================== */
+
+/**
+ * Strength preset → afftdn `nr` value (noise reduction in dB).
+ * Higher = more noise removed, at the risk of musical artefacts.
+ */
+const DENOISE_STRENGTH_TO_NR: Record<string, number> = {
+  light: 6,
+  balanced: 12,
+  strong: 20,
+  aggressive: 30,
+};
+
+/** Containers we treat as video inputs (so we copy the video stream). */
+const VIDEO_INPUT_EXTENSIONS = new Set([
+  'mp4', 'm4v', 'mov', 'mkv', 'avi', 'webm', 'flv',
+]);
+
+/**
+ * Remove background noise from audio or video using FFmpeg's `afftdn`
+ * (FFT denoiser) filter — estimates the noise spectrum and subtracts it.
+ *
+ *   • Audio input  → audio output (honours `outputFormat`, MP3 default)
+ *   • Video input  → video output, video stream copied untouched
+ *                    (`-c:v copy`), only the audio is denoised + re-encoded
+ *
+ * `nf` (noise floor) is fixed at -40 dB — suits the steady backgrounds
+ * the tool targets (fans, AC, electrical hum).
+ */
+export async function denoiseAudio(
+  inputFile: File,
+  strength: string = 'balanced',
+  outputFormat: string = 'mp3',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  if (!inputFile || inputFile.size === 0) {
+    throw new Error('Please select a valid audio or video file.');
+  }
+
+  const nr = DENOISE_STRENGTH_TO_NR[strength] ?? DENOISE_STRENGTH_TO_NR.balanced;
+  const inputExt = getExtension(inputFile.name);
+
+  const isVideoInput =
+    inputFile.type.startsWith('video/') ||
+    VIDEO_INPUT_EXTENSIONS.has(inputExt);
+
+  // Video keeps its container so the copied stream stays valid.
+  // Audio honours the requested output format.
+  const format = isVideoInput
+    ? (inputExt || 'mp4')
+    : normalizeFormat(outputFormat);
+
+  validateFileForTool(inputFile, 'audio-denoise');
+
+  const ff = await getFFmpeg();
+  const inName = makeName('denoise-in', inputExt);
+  const outName = makeName('denoise-out', format);
+
+  try {
+    await ff.writeFile(inName, await fetchFile(inputFile));
+
+    const args: string[] = [
+      '-i', inName,
+      '-af', `afftdn=nr=${nr}:nf=-40`,
+    ];
+
+    if (isVideoInput) {
+      // Pass the video stream through untouched — only audio re-encodes.
+      args.push('-c:v', 'copy');
+      args.push('-c:a', 'aac', '-b:a', '192k');
+    } else if (format === 'mp3') {
+      args.push('-c:a', 'libmp3lame', '-b:a', '192k');
+    } else if (format === 'aac' || format === 'm4a') {
+      args.push('-c:a', 'aac', '-b:a', '192k');
+    } else if (format === 'ogg' || format === 'opus') {
+      args.push('-c:a', 'libvorbis', '-q:a', '5');
+    } else if (format === 'flac') {
+      args.push('-c:a', 'flac');
+    } else if (format === 'wav') {
+      args.push('-c:a', 'pcm_s16le');
+    }
+
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress, 'audio-denoise');
+    return await readBlob(ff, outName, format);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/* ========================================================================== */
 /* 10. VIDEO FUNCTIONS                                                        */
 /* ========================================================================== */
 
