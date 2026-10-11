@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-silence-remove",
+  name: "Silence Remover",
+  metaTitle: "Silence Remover – Trim Dead Air from Podcasts Free | Dayront",
+  metaDescription: "Remove silence from podcasts, interviews and voice recordings in your browser. No uploads, 100% private.",
+  icon: "⏭️",
+  howTo: [
+    { title: "Upload your recording", text: "Podcast, interview, or voice memo." },
+    { title: "Set the silence threshold", text: "-40 dB is a good starting point." },
+    { title: "Download the tightened file", text: "Tighter pacing, no dead air." },
+  ],
+  faq: [
+    { question: "How does the silence remover work?", answer: "It analyses the audio and chops out any stretch of silence longer than your minimum threshold. A tiny amount of the original silence is kept so phrases do not sound rushed." },
+    { question: "What minimum silence should I use?", answer: "0.5 seconds works for most podcasts. Use 1.0 for interviews, 0.3 for energetic speech." },
+    { question: "Will it cut out quiet words?", answer: "If a word is quieter than your threshold it might be trimmed. Lower the threshold to -50 dB if that happens." },
+    { question: "How long should the kept silence be?", answer: "0.1 seconds is nearly imperceptible. 0.3 seconds sounds more natural for interview edits." },
+    { question: "How much shorter will my file be?", answer: "Typically 10–30% shorter for podcast episodes with lots of pauses. Lecture recordings can shrink by 40%." },
+    { question: "Does it work on music?", answer: "Not recommended. Songs use silence intentionally — removing it damages the groove. Use this for spoken word." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-cutter", icon: "✂️", name: "Audio Cutter" },
+    { href: "/tools/audio-gate", icon: "🚪", name: "Noise Gate" },
+    { href: "/tools/audio-denoise", icon: "🎙️", name: "Audio Denoiser" },
+  ],
+  type: "silence-remove",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "threshold",   label: "Silence threshold (dB)", type: "number", min: -90, max: 0,  default: -40 },
+    { name: "minSilence",  label: "Minimum silence (sec)",  type: "number", min: 0.1, max: 30, default: 0.5 },
+    { name: "keepSilence", label: "Kept silence (sec)",     type: "number", min: 0,   max: 5,  default: 0.1 },
+  ],
+  tutorial: "\n    <h2>Trim Dead Air from Podcasts and Interviews</h2>\n    <p>Dead air is the biggest drag on podcast pacing. Every pause, every um, every breath stretches the runtime and tests listener patience. The Silence Remover automatically detects and removes those gaps while keeping your voice intact.</p>\n    <h3>How It Works</h3>\n    <p>The tool scans the audio for any stretch below your silence threshold. Anything longer than your minimum gets trimmed, replaced by a short kept silence so phrases don't mash together. The result sounds like a tighter, more professional edit.</p>\n    <h3>Recommended Settings by Content</h3>\n    <ul>\n      <li><strong>Solo podcast:</strong> Threshold -40 dB, Min silence 0.5 s, Kept silence 0.1 s</li>\n      <li><strong>Interview:</strong> Threshold -45 dB, Min silence 1.0 s, Kept silence 0.3 s</li>\n      <li><strong>Lecture:</strong> Threshold -50 dB, Min silence 2.0 s, Kept silence 0.5 s</li>\n      <li><strong>Audiobook:</strong> Threshold -45 dB, Min silence 1.5 s, Kept silence 0.4 s</li>\n    </ul>\n    <h3>Chain With These Tools</h3>\n    <p>Professional podcast chain: <strong>Denoise → Gate → Silence Remover → Compressor → Limiter → Loudness Normalize</strong>. Each step is a separate Dayront tool.</p>\n    <h3>Why Manual Editing Is Slower</h3>\n    <p>Editing 60 minutes of podcast audio manually takes 2–4 hours. The Silence Remover does the same job in seconds. Combine it with the Loudness Normalizer and you have a fully automated post-production pipeline.</p>\n    <h3>Privacy</h3>\n    <p>Your recordings never leave your device. Confidential interviews, therapy sessions, and unreleased content stay entirely private.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

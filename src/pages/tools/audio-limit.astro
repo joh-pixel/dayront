@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-limit",
+  name: "Peak Limiter",
+  metaTitle: "Audio Limiter – Brickwall Peak Limiting Online Free | Dayront",
+  metaDescription: "Brickwall limiting to prevent clipping in your browser. No uploads, 100% private.",
+  icon: "🧱",
+  howTo: [
+    { title: "Upload your audio file", text: "Anything that might clip on export." },
+    { title: "Set the ceiling", text: "-1 dB is safe for all streaming platforms." },
+    { title: "Download the limited file", text: "No distortion, no clipping." },
+  ],
+  faq: [
+    { question: "What does a limiter do?", answer: "It caps the loudest peaks of a signal so the output never exceeds a chosen ceiling. Essential as the last step before export." },
+    { question: "What is the difference between a compressor and a limiter?", answer: "A compressor gently reduces loud parts. A limiter is a hard ceiling — nothing above it survives. Limiter goes after the compressor." },
+    { question: "What ceiling should I use?", answer: "-1 dB is the streaming industry standard. -0.3 dB for maximum loudness on CD, -3 dB for safety on video." },
+    { question: "Will it reduce overall loudness?", answer: "Yes, if your file was clipping. That is the point — trade a tiny amount of loudness for clean peaks that don't distort." },
+    { question: "What attack should I use?", answer: "5 ms is a good default. Faster attack (1–2 ms) is more transparent but can introduce distortion. Slower attack (10–20 ms) is smoother." },
+    { question: "Is this a true peak limiter?", answer: "It's a sample-peak limiter. For true-peak limiting, use this before Loudness Normalizer with a -1 dBTP setting." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-normalize", icon: "📻", name: "Loudness Normalizer" },
+    { href: "/tools/audio-dynamic-compress", icon: "🎚️", name: "Dynamic Compressor" },
+    { href: "/tools/volume-booster", icon: "🔊", name: "Volume Booster" },
+  ],
+  type: "limit",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "ceiling", label: "Ceiling (dB)",   type: "number", min: -20, max: 0,    default: -1 },
+    { name: "attack",  label: "Attack (ms)",    type: "number", min: 0.1, max: 80,   default: 5 },
+    { name: "release", label: "Release (ms)",   type: "number", min: 1,   max: 8000, default: 50 },
+  ],
+  tutorial: "\n    <h2>What a Peak Limiter Does</h2>\n    <p>A limiter is the final safety net before your audio leaves the studio. It watches for any signal that exceeds a set ceiling and clamps it instantly, preventing digital distortion (clipping) that sounds harsh and destroys playback systems.</p>\n    <h3>Where the Limiter Fits in the Chain</h3>\n    <p>Standard mastering chain: <strong>EQ → Compressor → Limiter → Loudness Normalize</strong>. The limiter is always second-to-last, immediately before final delivery.</p>\n    <h3>Recommended Ceiling Values</h3>\n    <ul>\n      <li><strong>-1 dB</strong> — streaming standard (Spotify, YouTube, Apple Music)</li>\n      <li><strong>-0.3 dB</strong> — CD mastering for maximum loudness</li>\n      <li><strong>-3 dB</strong> — video and broadcast for extra safety margin</li>\n      <li><strong>-6 dB</strong> — archive and edit-ready deliveries</li>\n    </ul>\n    <h3>Attack and Release Explained</h3>\n    <p><strong>Attack</strong> is how fast the limiter clamps a peak. Too slow and the peak leaks through; too fast and the limiter itself introduces distortion. 3–5 ms is the sweet spot for most material.</p>\n    <p><strong>Release</strong> is how fast the limiter lets go. Too short (under 20 ms) creates audible pumping. Too long (over 200 ms) softens transients. 40–80 ms is standard.</p>\n    <h3>When to Limit</h3>\n    <p>Always. Even if your file doesn't seem to clip, sample-peak analysis misses inter-sample peaks that cause distortion on some devices. A -1 dB ceiling costs you almost no loudness and prevents the worst kind of distortion.</p>\n    <h3>Privacy</h3>\n    <p>Limiting runs locally in your browser via FFmpeg. Nothing is uploaded. Unreleased mixes, client masters, and demos stay entirely on your device.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

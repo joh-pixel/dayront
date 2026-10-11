@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-resample",
+  name: "Sample Rate Converter",
+  metaTitle: "Sample Rate Converter – 44.1 / 48 / 96 kHz Online Free | Dayront",
+  metaDescription: "Convert audio sample rate and bit depth in your browser. No uploads, 100% private.",
+  icon: "📐",
+  howTo: [
+    { title: "Upload your audio file", text: "Any common audio format." },
+    { title: "Pick a target sample rate", text: "48 kHz for video, 44.1 kHz for music, 96 kHz for high-res masters." },
+    { title: "Download the converted file", text: "Standardised sample rate and bit depth." },
+  ],
+  faq: [
+    { question: "What sample rate do I need for video?", answer: "48 kHz. That is the standard for video production and broadcast worldwide." },
+    { question: "What sample rate for music?", answer: "44.1 kHz (CD standard) for delivery. 96 kHz or higher for editing projects that will be pitched or processed heavily." },
+    { question: "Does bit depth matter for MP3?", answer: "No — bit depth only applies to WAV and FLAC. For MP3, bitrate matters instead." },
+    { question: "Will converting up improve quality?", answer: "No. Converting 44.1 to 96 kHz does not add information. It only standardises your library for a specific workflow." },
+    { question: "Which bit depth should I use?", answer: "16-bit for CD and delivery. 24-bit for recording and editing. 32-bit for extreme processing headroom." },
+    { question: "Does it work on video files?", answer: "This tool is audio-only. Extract Audio first if your source is video." },
+  ],
+  relatedTools: [
+    { href: "/convert/mp3-to-wav", icon: "🎵", name: "MP3 to WAV" },
+    { href: "/convert/wav-to-mp3", icon: "🎵", name: "WAV to MP3" },
+    { href: "/tools/audio-channels", icon: "🔀", name: "Channel Utilities" },
+  ],
+  type: "resample",
+  from: undefined,
+  to: undefined,
+  outputFormat: "wav",
+  settings: [
+    { name: "sampleRate", label: "Sample rate", type: "select", default: 48000, options: [
+      { value: 8000,   label: "8 000 Hz — Telephone" },
+      { value: 16000,  label: "16 000 Hz — Speech" },
+      { value: 22050,  label: "22 050 Hz — Old radio" },
+      { value: 32000,  label: "32 000 Hz — Broadcast" },
+      { value: 44100,  label: "44 100 Hz — CD audio (recommended for music)" },
+      { value: 48000,  label: "48 000 Hz — Video and broadcast standard (recommended for video)" },
+      { value: 88200,  label: "88 200 Hz — High-res music (2× CD)" },
+      { value: 96000,  label: "96 000 Hz — High-res audio" },
+      { value: 176400, label: "176 400 Hz — High-res audio (4× CD)" },
+      { value: 192000, label: "192 000 Hz — Studio master" },
+    ] },
+    { name: "bitDepth", label: "Bit depth", type: "select", default: 16, options: [
+      { value: 16, label: "16-bit — CD quality" },
+      { value: 24, label: "24-bit — Studio standard" },
+      { value: 32, label: "32-bit — Extreme headroom" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Sample Rate and Bit Depth Explained</h2>\n    <p>Every digital audio file has two core properties: sample rate (how many times per second the waveform is measured) and bit depth (how much precision each measurement has).</p>\n    <h3>Common Sample Rates</h3>\n    <ul>\n      <li><strong>44 100 Hz</strong> — CD audio. The standard for music.</li>\n      <li><strong>48 000 Hz</strong> — Video, television, and broadcast. The standard for anything on screen.</li>\n      <li><strong>88 200 / 96 000 Hz</strong> — High-resolution music delivery.</li>\n      <li><strong>176 400 / 192 000 Hz</strong> — Studio masters and archival.</li>\n    </ul>\n    <h3>Bit Depth</h3>\n    <ul>\n      <li><strong>16-bit</strong> — 96 dB of dynamic range. Plenty for delivery.</li>\n      <li><strong>24-bit</strong> — 144 dB of headroom. Studio recording standard.</li>\n      <li><strong>32-bit</strong> — 192+ dB. Overkill for delivery, useful for heavy processing.</li>\n    </ul>\n    <h3>When to Convert</h3>\n    <ul>\n      <li>Deliver a podcast to a platform that requires 48 kHz.</li>\n      <li>Prepare music for CD duplication (44.1 kHz / 16-bit).</li>\n      <li>Standardise a library of mixed files.</li>\n    </ul>\n    <p><strong>Note:</strong> Upsampling does not add information. Converting 44.1 to 96 kHz does not make audio sound better — it just changes the container.</p>\n    <h3>Privacy</h3>\n    <p>All processing happens in your browser. Nothing is uploaded.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-equalize",
+  name: "Equalizer",
+  metaTitle: "Audio Equalizer – 3-Band Bass Mid Treble EQ Online | Dayront",
+  metaDescription: "Adjust bass, mid, and treble in your browser. No uploads, 100% private.",
+  icon: "🎛️",
+  howTo: [
+    { title: "Upload your audio file", text: "Any common audio format." },
+    { title: "Adjust the three bands", text: "Positive values boost, negative cut. Keep at least one band at 0 unless you are aiming for a specific tone." },
+    { title: "Download the shaped file", text: "Your EQ applied." },
+  ],
+  faq: [
+    { question: "What does each band do?", answer: "Bass boosts or cuts low frequencies (below ~200 Hz). Mid shapes the body of voice and instruments around 1 kHz. Treble shapes clarity and air above ~6 kHz." },
+    { question: "Typical voice-over setting?", answer: "Bass -2, Mid +2, Treble +1 for a warm, clear voice." },
+    { question: "Typical music setting?", answer: "Bass +2, Mid 0, Treble +1 for a slight smiley curve — good for pop." },
+    { question: "Will it distort?", answer: "At ±15 dB it might. Keep changes small for the cleanest result." },
+    { question: "Can I fix muddy audio?", answer: "Yes. Cut bass by 3–5 dB and boost treble by 2–3 dB. That's the standard fix for boxy or muffled recordings." },
+    { question: "What is the difference between EQ and compression?", answer: "EQ shapes the frequency balance (bass vs treble). Compression shapes the volume balance (loud vs quiet). Different tools, often used together." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-dynamic-compress", icon: "🎚️", name: "Dynamic Compressor" },
+    { href: "/tools/volume-booster", icon: "🔊", name: "Volume Booster" },
+    { href: "/tools/audio-normalize", icon: "📻", name: "Loudness Normalizer" },
+  ],
+  type: "equalize",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "bass",   label: "Bass (dB)",   type: "number", min: -15, max: 15, default: 0 },
+    { name: "mid",    label: "Mid (dB)",    type: "number", min: -15, max: 15, default: 0 },
+    { name: "treble", label: "Treble (dB)", type: "number", min: -15, max: 15, default: 0 },
+  ],
+  tutorial: "\n    <h2>Three-Band Equalization</h2>\n    <p>Equalization is the art of shaping tone. Our three-band EQ gives you the three most useful controls: bass (warmth and weight), mid (body and presence), and treble (clarity and air).</p>\n    <h3>What Each Band Controls</h3>\n    <ul>\n      <li><strong>Bass (below ~200 Hz)</strong> — warmth, rumble, and weight. Cut for clarity, boost for impact.</li>\n      <li><strong>Mid (around 1 kHz)</strong> — the body of voice and instruments. Small changes here have big impact.</li>\n      <li><strong>Treble (above ~6 kHz)</strong> — air, clarity, and brightness. Boost carefully — too much sounds harsh.</li>\n    </ul>\n    <h3>Preset Recipes</h3>\n    <p><strong>Podcast voice:</strong> Bass -2, Mid +2, Treble +1. Warm, present, easy to listen to for hours.</p>\n    <p><strong>Acoustic guitar:</strong> Bass +1, Mid -1, Treble +2. Sparkle without mud.</p>\n    <p><strong>Pop music:</strong> Bass +2, Mid 0, Treble +1. Smiley-face curve.</p>\n    <p><strong>Fixing muffled audio:</strong> Bass -3, Mid 0, Treble +3. The standard boxy-recording cure.</p>\n    <h3>Where EQ Fits in the Chain</h3>\n    <p>EQ goes <em>before</em> compression. Fix the tonal balance first, then control dynamics. If you compress first, you compress the tone problems along with the volume.</p>\n    <p>Full chain: <strong>Denoise → Gate → EQ → Compressor → Limiter → Loudness Normalize</strong>.</p>\n    <h3>Privacy</h3>\n    <p>EQ runs entirely in your browser. No uploads, no accounts, no tracking.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

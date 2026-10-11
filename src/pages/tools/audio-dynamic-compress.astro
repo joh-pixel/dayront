@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-dynamic-compress",
+  name: "Audio Dynamic Compressor",
+  metaTitle: "Audio Compressor – Reduce Dynamic Range Online Free | Dayront",
+  metaDescription: "Compress the dynamic range of voice-over, podcasts and music in your browser. No uploads, 100% private.",
+  icon: "🎚️",
+  howTo: [
+    { title: "Upload your audio file", text: "Drop an MP3, WAV, M4A, or any common audio file." },
+    { title: "Set the compression parameters", text: "Or keep the defaults — they work for most spoken-word material." },
+    { title: "Download the compressed file", text: "Steadier volume, same tone." },
+  ],
+  faq: [
+    { question: "What does a compressor do?", answer: "It reduces the level of loud parts so quieter parts become relatively louder. The result is steadier overall volume — essential for podcasts and voice-over." },
+    { question: "What is the difference between this and the Audio Size Reducer?", answer: "This tool compresses dynamic range (loud vs quiet). Audio Size Reducer compresses file size. Completely different jobs." },
+    { question: "What settings should I start with?", answer: "Threshold -20, Ratio 4, Attack 20, Release 250, Makeup 0. Adjust threshold lower for quieter sources." },
+    { question: "What does 'ratio' mean?", answer: "How aggressively compression is applied. A 4:1 ratio means every 4 dB above the threshold is reduced to 1 dB. Higher = more aggressive." },
+    { question: "Will it distort my audio?", answer: "No. The compressor prevents clipping and preserves clarity. Stack it with the Peak Limiter for guaranteed distortion-free output." },
+    { question: "Does it work on video files?", answer: "This tool is audio-only. Use Extract Audio first if your source is video." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-limit", icon: "🧱", name: "Peak Limiter" },
+    { href: "/tools/audio-normalize", icon: "📻", name: "Loudness Normalizer" },
+    { href: "/tools/audio-gate", icon: "🚪", name: "Noise Gate" },
+  ],
+  type: "dynamic-compress",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "threshold", label: "Threshold (dB)",   type: "number", min: -60,  max: 0,    default: -20 },
+    { name: "ratio",     label: "Ratio (1:n)",      type: "number", min: 1,    max: 20,   default: 4 },
+    { name: "attack",    label: "Attack (ms)",      type: "number", min: 0.01, max: 2000, default: 20 },
+    { name: "release",   label: "Release (ms)",     type: "number", min: 0.01, max: 9000, default: 250 },
+    { name: "makeup",    label: "Makeup gain (dB)", type: "number", min: 0,    max: 30,   default: 0 },
+  ],
+  tutorial: "\n    <h2>Audio Compression for Podcasts and Voice-Over</h2>\n    <p>Dynamic range compression is the difference between amateur and professional audio. Without it, quiet phrases disappear and loud ones clip. With it, listeners never touch the volume knob.</p>\n    <h3>What Each Parameter Does</h3>\n    <ul>\n      <li><strong>Threshold</strong> — the dB level above which compression kicks in. Signals below this level are untouched. Lower it for quieter sources.</li>\n      <li><strong>Ratio</strong> — how much reduction is applied. 4:1 means every 4 dB above the threshold becomes 1 dB out. Higher = more aggressive.</li>\n      <li><strong>Attack</strong> — how fast the compressor responds. Short attack (5–20 ms) catches sharp transients; longer attack (50–100 ms) lets them through.</li>\n      <li><strong>Release</strong> — how fast the compressor resets. Longer release (200–400 ms) sounds smoother; short release (50 ms) is punchier.</li>\n      <li><strong>Makeup gain</strong> — compensates for level lost during compression. Add 2–6 dB if the output is quieter than the input.</li>\n    </ul>\n    <h3>Recommended Presets</h3>\n    <p><strong>Voice-over / narration:</strong> Threshold -20, Ratio 3, Attack 15, Release 300, Makeup 3.</p>\n    <p><strong>Podcast interview:</strong> Threshold -18, Ratio 4, Attack 20, Release 250, Makeup 2.</p>\n    <p><strong>Music bus:</strong> Threshold -14, Ratio 2, Attack 30, Release 400, Makeup 1.</p>\n    <h3>Chain With These Tools</h3>\n    <p>The professional chain is: Denoise → Gate → EQ → Compressor → Limiter → Loudness Normalize. Every effect is a separate Dayront tool, so you can apply them in the right order.</p>\n    <h3>Privacy First</h3>\n    <p>Unlike Auphonic, Adobe Podcast, or Descript, Dayront never uploads your audio. Client demos, unreleased tracks, and private interviews stay entirely on your device.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

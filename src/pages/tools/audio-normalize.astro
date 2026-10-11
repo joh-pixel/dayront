@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-normalize",
+  name: "Loudness Normalizer",
+  metaTitle: "Loudness Normalizer – EBU R128 LUFS Normalize Online | Dayront",
+  metaDescription: "Normalise audio to Spotify, YouTube, Apple Podcasts or broadcast loudness targets in your browser. No uploads, 100% private.",
+  icon: "📻",
+  howTo: [
+    { title: "Upload your audio or video", text: "Drop an MP3, WAV, M4A, MP4, MOV, or any common media file." },
+    { title: "Pick a target loudness", text: "Choose the platform your file is destined for: Spotify, YouTube, Apple Podcasts, or broadcast." },
+    { title: "Download the normalised file", text: "Ready for delivery to any platform." },
+  ],
+  faq: [
+    { question: "What is LUFS?", answer: "Loudness Units Full Scale — the broadcast industry standard for measuring perceived loudness. Every major streaming platform normalises to a specific LUFS target." },
+    { question: "Why does my track get quieter on Spotify?", answer: "Spotify normalises everything to -14 LUFS. If your file is louder than that, it gets turned down. Aim for -14 LUFS to preserve headroom and dynamic range." },
+    { question: "What LUFS should I target for podcasts?", answer: "Apple Podcasts recommends -16 LUFS. Spotify accepts -14. Most podcasters target -16 for maximum compatibility." },
+    { question: "What is true peak?", answer: "True peak (dBTP) measures inter-sample peaks that a standard dBFS reading misses. Most platforms recommend -1 dBTP or lower to prevent distortion on playback." },
+    { question: "Does it work on video files?", answer: "Yes. Video is copied untouched; only the audio is normalised." },
+    { question: "Is two-pass mode available?", answer: "Not yet. Single-pass is accurate enough for streaming delivery. Two-pass (measure then apply) is planned for a future update." },
+  ],
+  relatedTools: [
+    { href: "/tools/loudness-meter", icon: "📊", name: "Loudness Meter" },
+    { href: "/tools/audio-limit", icon: "🧱", name: "Peak Limiter" },
+    { href: "/tools/audio-dynamic-compress", icon: "🎚️", name: "Dynamic Compressor" },
+  ],
+  type: "normalize",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "targetLufs", label: "Target loudness", type: "select", default: -14, options: [
+      { value: -14, label: "Spotify / YouTube / Amazon — -14 LUFS" },
+      { value: -16, label: "Apple Podcasts / Apple Music — -16 LUFS" },
+      { value: -18, label: "Web streaming — -18 LUFS" },
+      { value: -23, label: "Broadcast (EBU R128) — -23 LUFS" },
+    ] },
+    { name: "truePeak", label: "True peak ceiling (dBTP)", type: "number", min: -20, max: 0, default: -1.5 },
+    { name: "lra",      label: "Loudness range (LU)",       type: "number", min: 1, max: 50, default: 11 },
+  ],
+  tutorial: "\n    <h2>Why Loudness Normalisation Matters</h2>\n    <p>Every streaming platform normalises playback. If your podcast or track is louder than the platform's target, they turn it down — you lose dynamic range for nothing. If it is quieter, they turn it up, and you lose headroom to noise. Loudness normalisation fixes this once, correctly, using the EBU R128 standard.</p>\n    <h3>Targets by Platform</h3>\n    <ul>\n      <li><strong>-14 LUFS</strong> — Spotify, YouTube, Amazon Music, Tidal</li>\n      <li><strong>-16 LUFS</strong> — Apple Podcasts, Apple Music</li>\n      <li><strong>-18 LUFS</strong> — General web streaming, personal sites</li>\n      <li><strong>-23 LUFS</strong> — Broadcast television and radio (EBU R128)</li>\n    </ul>\n    <h3>True Peak and LRA</h3>\n    <p>True peak (dBTP) is a more accurate measurement than dBFS for digital audio — it catches inter-sample peaks that cause distortion on some playback systems. Most mastering engineers keep true peak at -1 dBTP.</p>\n    <p>Loudness range (LRA) controls how much dynamic variation the normaliser allows. Low LRA values (6–8) suit pop and spoken word. High LRA values (11–15) suit classical and jazz.</p>\n    <h3>How the Filter Works</h3>\n    <p>Our tool runs FFmpeg's <code>loudnorm</code> filter, the same algorithm used by professional mastering suites. It measures the integrated loudness of your file and applies dynamic adjustment to hit the target.</p>\n    <h3>Why Dayront?</h3>\n    <ul>\n      <li>No uploads — your unreleased masters never leave your device.</li>\n      <li>Runs locally in your browser via WebAssembly FFmpeg.</li>\n      <li>Free, unlimited use, no account.</li>\n    </ul>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

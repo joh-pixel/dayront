@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-dehum",
+  name: "De-hum",
+  metaTitle: "De-hum Audio – Remove 50/60 Hz Electrical Hum Online | Dayront",
+  metaDescription: "Remove mains hum from audio recordings in your browser. Target 50 Hz (Europe) or 60 Hz (US) with harmonics. No uploads.",
+  icon: "⚡",
+  howTo: [
+    { title: "Upload your audio or video file", text: "Hum appears most on recordings made near power supplies, guitar pickups, or cheap USB interfaces." },
+    { title: "Pick the hum frequency", text: "50 Hz for most of the world, 60 Hz for the US and Canada." },
+    { title: "Download the de-hummed file", text: "Steady hum removed, everything else preserved." },
+  ],
+  faq: [
+    { question: "What is electrical hum?", answer: "A steady low-frequency buzz caused by electrical mains interference. It appears at 50 Hz (Europe/Asia) or 60 Hz (US/Canada) plus multiples of that frequency." },
+    { question: "How is this different from the Audio Denoiser?", answer: "Denoise removes broadband noise (fans, hiss). De-hum targets a specific frequency. For pure electrical hum, de-hum is more surgical and preserves more of the wanted signal." },
+    { question: "How do I know which frequency?", answer: "If your recording was made in Europe, Africa, Asia (most countries) or Australia: 50 Hz. North America, Brazil, parts of Japan, Taiwan: 60 Hz." },
+    { question: "How many harmonics should I notch?", answer: "3 is a good default. Use 5 or 6 only if the hum is very strong and you have already tried 3." },
+    { question: "Will it affect music content?", answer: "A well-tuned de-hum only notches narrow bands at 50/60 Hz and their multiples. Music content in those exact bands is rare. Bass notes at 50 Hz may be attenuated slightly." },
+    { question: "Does it work on video files?", answer: "Yes. Video is copied untouched; only the audio track is de-hummed." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-denoise", icon: "🎙️", name: "Audio Denoiser" },
+    { href: "/tools/audio-gate", icon: "🚪", name: "Noise Gate" },
+    { href: "/tools/audio-equalize", icon: "🎛️", name: "Equalizer" },
+  ],
+  type: "dehum",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "frequency", label: "Hum frequency", type: "select", default: 50, options: [
+      { value: 50, label: "50 Hz — Europe, Africa, most of Asia" },
+      { value: 60, label: "60 Hz — US, Canada, parts of Japan" },
+    ] },
+    { name: "harmonics", label: "Harmonics to notch", type: "select", default: 3, options: [
+      { value: 1, label: "Fundamental only (50/60 Hz)" },
+      { value: 2, label: "Plus 1st harmonic (100/120 Hz)" },
+      { value: 3, label: "Plus 2 harmonics (recommended)" },
+      { value: 4, label: "Plus 3 harmonics" },
+      { value: 5, label: "Plus 4 harmonics" },
+      { value: 6, label: "Plus 5 harmonics (aggressive)" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Removing Electrical Hum from Audio</h2>\n    <p>Mains hum is one of the most common recording problems. Guitar pickups, cheap USB interfaces, and any cable near a power supply pick it up. The hum appears at 50 Hz (Europe/Asia) or 60 Hz (US/Canada) and creates a steady buzz that ruins otherwise good recordings.</p>\n    <h3>Where Hum Comes From</h3>\n    <ul>\n      <li>Guitar and bass pickups near transformers.</li>\n      <li>USB microphones with cheap power supplies.</li>\n      <li>Long unbalanced cables running near power cables.</li>\n      <li>Ground loops between devices plugged into different outlets.</li>\n    </ul>\n    <h3>How De-hum Works</h3>\n    <p>Unlike a broad noise reduction filter, de-hum uses narrow <code>bandreject</code> notches at exactly 50/60 Hz and its multiples. This surgically removes the hum without affecting the rest of the frequency spectrum.</p>\n    <h3>Choosing the Frequency</h3>\n    <ul>\n      <li><strong>50 Hz</strong> — Europe, Africa, most of Asia, Australia</li>\n      <li><strong>60 Hz</strong> — USA, Canada, Mexico, Brazil, parts of Japan, Taiwan</li>\n    </ul>\n    <h3>How Many Harmonics?</h3>\n    <p>Start with 3 notches (50, 100, 150 Hz or 60, 120, 180 Hz). If the hum is still audible after processing, increase to 5 or 6. Each additional harmonic notch is narrower, so the risk to music content stays low.</p>\n    <h3>De-hum vs Denoise vs Gate</h3>\n    <ul>\n      <li><strong>De-hum</strong> — surgical removal of a specific frequency.</li>\n      <li><strong>Denoise</strong> — broadband reduction of steady noise (fans, hiss).</li>\n      <li><strong>Gate</strong> — silences everything below a level (pauses only).</li>\n    </ul>\n    <p>The professional chain for electrical interference: <strong>De-hum → Denoise → Gate → EQ → Compressor → Limiter</strong>.</p>\n    <h3>Privacy</h3>\n    <p>Nothing is uploaded. De-humming runs entirely in your browser.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

@@ -24,6 +24,23 @@ import {
   changeFPS,
   muteVideo,
   extractAudio,
+  // ── NEW: audio-production batch ──
+  fadeAudio,
+  normalizeLoudness,
+  dynamicCompressAudio,
+  gateAudio,
+  limitAudio,
+  removeSilence,
+  equalizeAudio,
+  resampleAudio,
+  changeChannels,
+  crossfadeAudio,
+  dehumAudio,
+  reverbAudio,
+  karaokeAudio,
+  makeRingtone,
+  meterLoudness,
+  type LoudnessReading,
 } from '../../lib/ffmpeg';
 
 import {
@@ -59,14 +76,25 @@ type ToolType =
   | 'mute-video'
   | 'extract-audio'
   | 'convert-video'
-  | 'resolution-convert';
+  | 'resolution-convert'
+  // ── NEW: audio production ──
+  | 'fade'
+  | 'normalize'
+  | 'dynamic-compress'
+  | 'gate'
+  | 'limit'
+  | 'silence-remove'
+  | 'equalize'
+  | 'resample'
+  | 'channels'
+  | 'crossfade'
+  | 'dehum'
+  | 'reverb'
+  | 'karaoke'
+  | 'ringtone'
+  | 'loudness-meter';
 
-/* ── Friendly option type ─────────────────────────────────
-   A setting option can be either:
-     - a plain string  → "192k"
-     - a friendly pair → { value: 192, label: "High (192 kbps)" }
-   The `value` is what FFmpeg receives; the `label` is what the user sees.
-   ─────────────────────────────────────────────────────────── */
+/* ── Friendly option type ───────────────────────────────── */
 export interface SettingOption {
   value: string | number;
   label: string;
@@ -78,7 +106,6 @@ export interface SettingDef {
   type: 'range' | 'number' | 'select';
   min?: number;
   max?: number;
-  /** Plain strings OR { value, label } objects */
   options?: Array<string | SettingOption>;
   default: string | number;
 }
@@ -106,35 +133,37 @@ function rangeHint(setting: SettingDef): string | null {
   const name = setting.name.toLowerCase();
   if (name === 'crf') return 'Lower = better quality, larger file';
   if (name === 'quality') return '0 = best, 9 = smallest';
+  if (name === 'threshold') return 'Signals below this level are compressed or gated';
+  if (name === 'ratio') return 'Higher = more aggressive compression';
+  if (name === 'attack') return 'How fast the effect reacts (shorter = more responsive)';
+  if (name === 'release') return 'How fast the effect releases (longer = smoother)';
+  if (name === 'bass' || name === 'mid' || name === 'treble') return 'Boost (+dB) or cut (-dB) this band';
+  if (name === 'ceiling') return 'Peak ceiling in dB — never exceeded';
+  if (name === 'makeup') return 'Compensates for level lost during compression';
   return null;
 }
 
 /**
- * Video extensions recognised by the denoise tool. When a video is dropped
- * into that tool, the video stream is copied and the container is kept —
- * so the preview and output filename must reflect the input container,
- * not the configured `outputFormat` (which defaults to mp3 for audio).
+ * Video extensions recognised by the audio-with-copied-video tools (denoise,
+ * fade, normalize, dehum, ringtone, loudness-meter). Video stream is copied,
+ * only the audio is processed.
  */
-const DENOISE_VIDEO_EXTS = new Set([
+const AUDIO_VIDEO_EXTS = new Set([
   'mp4', 'm4v', 'mov', 'mkv', 'avi', 'webm', 'flv',
 ]);
 
 /**
- * Return the effective output container for a denoise job, or '' when the
- * input is audio (in which case `outputFormat` applies).
- *
- * webm is kept as webm; every other video container maps to mp4 because
- * that's what the copy-stream path produces on the native side. The
- * filename and the preview element both use this.
+ * Return the effective output container for a video-input job, or ''
+ * when the input is audio (in which case `outputFormat` applies).
  */
-function getDenoiseContainer(file: File | undefined): string {
+function getAudioVideoContainer(file: File | undefined): string {
   if (!file) return '';
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-  if (!DENOISE_VIDEO_EXTS.has(ext)) return '';
+  if (!AUDIO_VIDEO_EXTS.has(ext)) return '';
   return ext === 'webm' ? 'webm' : 'mp4';
 }
 
-/** Detect mobile devices (browser UA + viewport width) */
+/** Detect mobile devices */
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -158,28 +187,16 @@ function getAllowedExtensions(config: ToolConfig): string[] {
 
   if (config.from) {
     const formatMap: Record<string, string[]> = {
-      mp3: ['mp3'],
-      wav: ['wav'],
-      mp4: ['mp4', 'm4v'],
-      flac: ['flac'],
-      m4a: ['m4a'],
-      mov: ['mov', 'qt'],
-      webm: ['webm'],
-      aac: ['aac'],
-      ogg: ['ogg', 'oga'],
-      opus: ['opus'],
-      avi: ['avi'],
-      mkv: ['mkv'],
-      aiff: ['aiff', 'aif'],
-      amr: ['amr'],
-      ape: ['ape'],
-      flv: ['flv'],
-      gif: ['gif'],
+      mp3: ['mp3'], wav: ['wav'], mp4: ['mp4', 'm4v'], flac: ['flac'],
+      m4a: ['m4a'], mov: ['mov', 'qt'], webm: ['webm'], aac: ['aac'],
+      ogg: ['ogg', 'oga'], opus: ['opus'], avi: ['avi'], mkv: ['mkv'],
+      aiff: ['aiff', 'aif'], amr: ['amr'], ape: ['ape'], flv: ['flv'], gif: ['gif'],
     };
     return formatMap[config.from] || [];
   }
 
   switch (config.type) {
+    // Audio utilities (audio only)
     case 'cut':
     case 'merge':
     case 'compress':
@@ -187,14 +204,32 @@ function getAllowedExtensions(config: ToolConfig): string[] {
     case 'speed':
     case 'reverse':
     case 'stereo-to-mono':
-      return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac'];
+    // NEW audio-only tools
+    case 'dynamic-compress':
+    case 'gate':
+    case 'limit':
+    case 'silence-remove':
+    case 'equalize':
+    case 'resample':
+    case 'channels':
+    case 'crossfade':
+    case 'reverb':
+    case 'karaoke':
+      return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac', 'opus', 'aiff', 'amr', 'ape'];
 
+    // Accepts audio OR video (video stream copied, audio processed)
     case 'denoise':
+    case 'fade':
+    case 'normalize':
+    case 'dehum':
+    case 'ringtone':
+    case 'loudness-meter':
       return [
         'mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac', 'opus', 'aiff', 'amr', 'ape',
         'mp4', 'mov', 'mkv', 'avi', 'webm', 'flv', 'm4v',
       ];
 
+    // Video-only utilities
     case 'video-compress':
     case 'video-cut':
     case 'video-merge':
@@ -226,16 +261,11 @@ const APP_DOWNLOAD_URL = 'https://download.dayront.com';
 
 function reasonToHeadline(reason: FallbackReason | 'desktop-only'): string {
   switch (reason) {
-    case 'file-too-large':
-      return 'This file needs the app';
-    case 'out-of-memory':
-      return 'Your browser ran out of memory';
-    case 'timeout':
-      return 'This job is taking too long in the browser';
-    case 'desktop-only':
-      return 'Best on the Dayront App';
-    default:
-      return 'Use the Dayront App for this file';
+    case 'file-too-large':    return 'This file needs the app';
+    case 'out-of-memory':     return 'Your browser ran out of memory';
+    case 'timeout':           return 'This job is taking too long in the browser';
+    case 'desktop-only':      return 'Best on the Dayront App';
+    default:                  return 'Use the Dayront App for this file';
   }
 }
 
@@ -265,11 +295,7 @@ function reasonToBody(
 }
 
 export function NativeAppPromo({
-  reason,
-  totalMB,
-  isMobile,
-  onTryAnyway,
-  canBypass,
+  reason, totalMB, isMobile, onTryAnyway, canBypass,
 }: {
   reason: FallbackReason | 'desktop-only';
   totalMB: number;
@@ -279,7 +305,6 @@ export function NativeAppPromo({
 }) {
   return (
     <div class="w-full overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white shadow-sm dark:border-sky-900/60 dark:from-sky-950/50 dark:to-gray-900">
-      {/* Header strip */}
       <div class="flex items-center gap-2 border-b border-sky-100 bg-sky-500/10 px-5 py-2.5 dark:border-sky-900/60">
         <span class="h-2 w-2 rounded-full bg-sky-500 animate-pulse" aria-hidden="true" />
         <span class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">
@@ -288,7 +313,6 @@ export function NativeAppPromo({
       </div>
 
       <div class="p-6">
-        {/* Icon + headline */}
         <div class="flex items-start gap-4">
           <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-2xl shadow-md">
             📱
@@ -303,7 +327,6 @@ export function NativeAppPromo({
           </div>
         </div>
 
-        {/* Feature bullets */}
         <ul class="mt-5 grid gap-2 sm:grid-cols-3">
           <li class="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-semibold text-gray-800 dark:bg-gray-800/70 dark:text-gray-200">
             <span aria-hidden="true">⚡</span> 10× faster
@@ -316,7 +339,6 @@ export function NativeAppPromo({
           </li>
         </ul>
 
-        {/* CTAs */}
         <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <a
             href={APP_DOWNLOAD_URL}
@@ -331,7 +353,6 @@ export function NativeAppPromo({
             </svg>
             Download the App
           </a>
-
           {canBypass && onTryAnyway && (
             <button
               type="button"
@@ -343,7 +364,6 @@ export function NativeAppPromo({
           )}
         </div>
 
-        {/* Platform hint */}
         <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
           Android available now · iOS, Windows, macOS &amp; Linux coming soon.
         </p>
@@ -363,6 +383,7 @@ export default function Converter({
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+  const [meterReading, setMeterReading] = useState<LoudnessReading | null>(null);
   const [outputFilename, setOutputFilename] = useState('');
   const [privacy, setPrivacy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -423,12 +444,6 @@ export default function Converter({
     return unit === 'minutes' ? displayValue * 60 : displayValue;
   }
 
-  /**
-   * Sanitize incoming files — some browsers (and every native picker)
-   * hand us filenames with cache hashes like "1fe1b728..._17909978.mp4".
-   * We rebuild the File object with a cleaned name so it shows nicely
-   * everywhere downstream.
-   */
   function sanitizeFiles(selected: File[]): File[] {
     return selected.map((file) => {
       const clean = cleanFileName(file.name);
@@ -436,7 +451,6 @@ export default function Converter({
       try {
         return new File([file], clean, { type: file.type });
       } catch {
-        // Some browsers restrict File() construction — fall back to original
         return file;
       }
     });
@@ -444,27 +458,20 @@ export default function Converter({
 
   function handleFiles(selected: File[]) {
     if (processing) return;
-
     const cleaned = sanitizeFiles(selected);
-
     setFiles(cleaned);
     setResultBlob(null);
+    setMeterReading(null);
     setOutputFilename('');
     setError(null);
     setProgress(0);
     setBypassPromo(false);
 
     const capacity = checkWebCapacity(cleaned, isMobile);
-    if (capacity) {
-      setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
-    } else {
-      setPromo(null);
-    }
+    if (capacity) setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
+    else setPromo(null);
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }
   }
 
   function handleTryAnyway() {
@@ -473,13 +480,13 @@ export default function Converter({
 
   async function startConversion() {
     if (files.length === 0 || processing) return;
-
     if (promo && !bypassPromo) return;
 
     setProcessing(true);
     setProgress(0);
     setError(null);
     setResultBlob(null);
+    setMeterReading(null);
     setOutputFilename('');
 
     try {
@@ -487,14 +494,12 @@ export default function Converter({
       const type = toolConfig.type;
 
       switch (type) {
+        /* ── Existing audio utilities ── */
         case 'cut': {
           const start = Math.max(0, Number(getSetting('start') ?? 0));
           const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
-          output = await cutAudio(
-            files[0], start, duration,
-            toolConfig.outputFormat || 'mp3',
-            privacy, updateProgress,
-          );
+          output = await cutAudio(files[0], start, duration,
+            toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'merge': {
@@ -503,27 +508,18 @@ export default function Converter({
           break;
         }
         case 'compress': {
-          output = await compressAudio(
-            files[0], Number(getSetting('quality') ?? 3),
-            toolConfig.outputFormat || 'mp3',
-            privacy, updateProgress,
-          );
+          output = await compressAudio(files[0], Number(getSetting('quality') ?? 3),
+            toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'boost': {
-          output = await boostVolume(
-            files[0], Number(getSetting('gain') ?? 6),
-            toolConfig.outputFormat || 'mp3',
-            privacy, updateProgress,
-          );
+          output = await boostVolume(files[0], Number(getSetting('gain') ?? 6),
+            toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'speed': {
-          output = await changeSpeed(
-            files[0], Number(getSetting('factor') ?? 1.5),
-            toolConfig.outputFormat || 'mp3',
-            privacy, updateProgress,
-          );
+          output = await changeSpeed(files[0], Number(getSetting('factor') ?? 1.5),
+            toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
         case 'reverse': {
@@ -535,40 +531,167 @@ export default function Converter({
           break;
         }
         case 'denoise': {
-          // The denoise tool handles both audio and video. For video inputs
-          // the container is preserved (mp4/webm) and the video stream is
-          // copied untouched; for audio inputs `outputFormat` applies.
-          const denoiseContainer = getDenoiseContainer(files[0]);
-          output = await denoiseAudio(
-            files[0],
-            String(getSetting('strength') ?? 'balanced'),
-            denoiseContainer || toolConfig.outputFormat || 'mp3',
-            privacy,
-            updateProgress,
-          );
+          const c = getAudioVideoContainer(files[0]);
+          output = await denoiseAudio(files[0], String(getSetting('strength') ?? 'balanced'),
+            c || toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
+
+        /* ── NEW: audio production — processing ── */
+        case 'fade': {
+          const c = getAudioVideoContainer(files[0]);
+          output = await fadeAudio(files[0],
+            Number(getSetting('fadeIn') ?? 2),
+            Number(getSetting('fadeOut') ?? 2),
+            String(getSetting('curve') ?? 'tri'),
+            c || toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'normalize': {
+          const c = getAudioVideoContainer(files[0]);
+          output = await normalizeLoudness(files[0],
+            Number(getSetting('targetLufs') ?? -14),
+            Number(getSetting('truePeak') ?? -1.5),
+            Number(getSetting('lra') ?? 11),
+            c || toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'dynamic-compress': {
+          output = await dynamicCompressAudio(files[0],
+            Number(getSetting('threshold') ?? -20),
+            Number(getSetting('ratio') ?? 4),
+            Number(getSetting('attack') ?? 20),
+            Number(getSetting('release') ?? 250),
+            Number(getSetting('makeup') ?? 0),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'gate': {
+          output = await gateAudio(files[0],
+            Number(getSetting('threshold') ?? -50),
+            Number(getSetting('ratio') ?? 4),
+            Number(getSetting('attack') ?? 10),
+            Number(getSetting('release') ?? 200),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'limit': {
+          output = await limitAudio(files[0],
+            Number(getSetting('ceiling') ?? -1),
+            Number(getSetting('attack') ?? 5),
+            Number(getSetting('release') ?? 50),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'silence-remove': {
+          output = await removeSilence(files[0],
+            Number(getSetting('threshold') ?? -40),
+            Number(getSetting('minSilence') ?? 0.5),
+            Number(getSetting('keepSilence') ?? 0.1),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'equalize': {
+          output = await equalizeAudio(files[0],
+            Number(getSetting('bass') ?? 0),
+            Number(getSetting('mid') ?? 0),
+            Number(getSetting('treble') ?? 0),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'resample': {
+          output = await resampleAudio(files[0],
+            Number(getSetting('sampleRate') ?? 48000),
+            Number(getSetting('bitDepth') ?? 16),
+            toolConfig.outputFormat || 'wav',
+            privacy, updateProgress);
+          break;
+        }
+        case 'channels': {
+          output = await changeChannels(files[0],
+            String(getSetting('mode') ?? 'stereo-to-mono'),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'crossfade': {
+          if (files.length !== 2) throw new Error('Crossfade requires exactly 2 audio files.');
+          output = await crossfadeAudio(files,
+            Number(getSetting('duration') ?? 1.5),
+            String(getSetting('curve') ?? 'tri'),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'dehum': {
+          const c = getAudioVideoContainer(files[0]);
+          output = await dehumAudio(files[0],
+            Number(getSetting('frequency') ?? 50),
+            Number(getSetting('harmonics') ?? 3),
+            c || toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'reverb': {
+          output = await reverbAudio(files[0],
+            Number(getSetting('delayMs') ?? 100),
+            Number(getSetting('decay') ?? 0.5),
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'karaoke': {
+          output = await karaokeAudio(files[0],
+            toolConfig.outputFormat || 'mp3',
+            privacy, updateProgress);
+          break;
+        }
+        case 'ringtone': {
+          const c = getAudioVideoContainer(files[0]);
+          output = await makeRingtone(files[0],
+            Number(getSetting('start') ?? 0),
+            Number(getSetting('duration') ?? 30),
+            Number(getSetting('fadeIn') ?? 0.5),
+            Number(getSetting('fadeOut') ?? 0.5),
+            c || toolConfig.outputFormat || 'm4a',
+            privacy, updateProgress);
+          break;
+        }
+
+        /* ── NEW: loudness meter — analysis only, no output Blob ── */
+        case 'loudness-meter': {
+          const reading = await meterLoudness(files[0], updateProgress);
+          const base = files[0].name.replace(/\.[^.]+$/, '');
+          setMeterReading(reading);
+          setOutputFilename(`${base}-loudness.txt`);
+          setProgress(100);
+          setProcessing(false);
+          return; // skip the blob-save block below
+        }
+
+        /* ── Existing format/video cases ── */
         case 'convert': {
           output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
           break;
         }
         case 'video-compress': {
-          output = await compressVideo(
-            files[0], Number(getSetting('crf') ?? 23),
+          output = await compressVideo(files[0], Number(getSetting('crf') ?? 23),
             String(getSetting('preset') ?? 'medium'),
-            toolConfig.outputFormat || 'mp4',
-            privacy, updateProgress,
-          );
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'video-cut': {
           const start = Math.max(0, Number(getSetting('start') ?? 0));
           const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
-          output = await cutVideo(
-            files[0], start, duration,
-            toolConfig.outputFormat || 'mp4',
-            privacy, updateProgress,
-          );
+          output = await cutVideo(files[0], start, duration,
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'video-merge': {
@@ -577,11 +700,8 @@ export default function Converter({
           break;
         }
         case 'video-to-gif': {
-          output = await videoToGif(
-            files[0], Number(getSetting('fps') ?? 10),
-            Number(getSetting('width') ?? 320),
-            privacy, updateProgress,
-          );
+          output = await videoToGif(files[0], Number(getSetting('fps') ?? 10),
+            Number(getSetting('width') ?? 320), privacy, updateProgress);
           break;
         }
         case 'gif-to-video': {
@@ -589,41 +709,29 @@ export default function Converter({
           break;
         }
         case 'resize-video': {
-          output = await resizeVideo(
-            files[0],
+          output = await resizeVideo(files[0],
             Number(getSetting('width') ?? 1280),
             Number(getSetting('height') ?? 720),
-            toolConfig.outputFormat || 'mp4',
-            privacy, updateProgress,
-          );
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'resolution-convert': {
           const w = toolConfig.presetWidth ?? 1920;
           const h = toolConfig.presetHeight ?? 1080;
-          output = await resolutionConvert(
-            files[0], w, h,
-            toolConfig.outputFormat || 'mp4',
-            privacy, updateProgress,
-          );
+          output = await resolutionConvert(files[0], w, h,
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'crop-video': {
-          output = await cropVideo(
-            files[0],
+          output = await cropVideo(files[0],
             Number(getSetting('x') ?? 0), Number(getSetting('y') ?? 0),
             Number(getSetting('w') ?? 640), Number(getSetting('h') ?? 480),
-            toolConfig.outputFormat || 'mp4',
-            privacy, updateProgress,
-          );
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'change-fps': {
-          output = await changeFPS(
-            files[0], Number(getSetting('fps') ?? 30),
-            toolConfig.outputFormat || 'mp4',
-            privacy, updateProgress,
-          );
+          output = await changeFPS(files[0], Number(getSetting('fps') ?? 30),
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
           break;
         }
         case 'mute-video': {
@@ -631,10 +739,8 @@ export default function Converter({
           break;
         }
         case 'extract-audio': {
-          output = await extractAudio(
-            files[0], String(getSetting('format') ?? 'mp3'),
-            privacy, updateProgress,
-          );
+          output = await extractAudio(files[0], String(getSetting('format') ?? 'mp3'),
+            privacy, updateProgress);
           break;
         }
         case 'convert-video': {
@@ -645,19 +751,18 @@ export default function Converter({
           throw new Error('Unsupported tool.');
       }
 
+      /* ── Save output (all tools above except loudness-meter) ── */
       const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       await saveFile(id, output);
 
-      // ★ Clean, descriptive output name:
-      //     "myvideo-720p-to-8k.mp4"  (instead of "myvideo.mp4")
-      //
-      // Denoise on video keeps the input container, so the filename must
-      // use that instead of `outputFormat` (which is 'mp3' for this tool).
-      const denoiseContainer =
-        toolConfig.type === 'denoise' ? getDenoiseContainer(files[0]) : '';
+      // Container override for the audio-with-video-stream-copied tools
+      const containerOverride = (
+        type === 'denoise' || type === 'fade' || type === 'normalize' ||
+        type === 'dehum' || type === 'ringtone'
+      ) ? getAudioVideoContainer(files[0]) : '';
 
       const format =
-        denoiseContainer ||
+        containerOverride ||
         toolConfig.outputFormat ||
         toolConfig.to ||
         'mp3';
@@ -705,23 +810,50 @@ export default function Converter({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function downloadMeterReport() {
+    if (!meterReading) return;
+    const text = [
+      'Dayront — Loudness Report',
+      '═══════════════════════════════════════',
+      `Integrated loudness:  ${meterReading.integratedLufs.toFixed(2)} LUFS`,
+      `True peak:            ${meterReading.truePeakDb.toFixed(2)} dBTP`,
+      `Loudness range (LRA): ${meterReading.loudnessRangeLu.toFixed(2)} LU`,
+      '',
+      'Reference targets:',
+      '  Spotify / YouTube / Amazon Music ..... -14 LUFS',
+      '  Apple Podcasts / Apple Music ......... -16 LUFS',
+      '  General web streaming ................ -18 LUFS',
+      '  Broadcast (EBU R128) ................. -23 LUFS',
+    ].join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = outputFilename || 'loudness-report.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function resetAll() {
     setFiles([]);
     setResultBlob(null);
+    setMeterReading(null);
     setOutputFilename('');
     setError(null);
     setProgress(0);
     setProcessing(false);
     setPromo(null);
     setBypassPromo(false);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }
   }
 
   const settings = toolConfig.settings || [];
-  const multipleAllowed = toolConfig.type === 'merge' || toolConfig.type === 'video-merge';
+  const multipleAllowed =
+    toolConfig.type === 'merge' ||
+    toolConfig.type === 'video-merge' ||
+    toolConfig.type === 'crossfade';
   const allowedExtensions = getAllowedExtensions(toolConfig);
 
   const inputClass = [
@@ -732,7 +864,6 @@ export default function Converter({
     'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
   ].join(' ');
 
-  /* Bigger tap target on mobile-friendly selects */
   const selectClass = [
     'w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-900',
     'outline-none transition appearance-none cursor-pointer',
@@ -741,15 +872,17 @@ export default function Converter({
     'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
   ].join(' ');
 
-  // The denoise tool on a video input keeps the video container, so the
-  // preview element should be a <video>, not an <audio>. Every other tool
-  // uses the configured output format as-is.
-  const denoiseContainer = toolConfig.type === 'denoise'
-    ? getDenoiseContainer(files[0])
-    : '';
+  // Audio-with-video-copied tools keep the video container on video inputs
+  const containerOverride = (
+    toolConfig.type === 'denoise' ||
+    toolConfig.type === 'fade' ||
+    toolConfig.type === 'normalize' ||
+    toolConfig.type === 'dehum' ||
+    toolConfig.type === 'ringtone'
+  ) ? getAudioVideoContainer(files[0]) : '';
 
   const outputFormat =
-    denoiseContainer ||
+    containerOverride ||
     toolConfig.outputFormat ||
     toolConfig.to ||
     'mp3';
@@ -767,7 +900,6 @@ export default function Converter({
 
   /* ─────────── Blocking states ─────────── */
 
-  // 1. Desktop-only tools on mobile → unified NativeAppPromo (app-first)
   if (isDesktopOnlyTool) {
     return (
       <div class="w-full">
@@ -781,8 +913,7 @@ export default function Converter({
     );
   }
 
-  // 2. Capacity warning on selected files → NativeAppPromo with bypass
-  if (promo && !bypassPromo && !resultBlob) {
+  if (promo && !bypassPromo && !resultBlob && !meterReading) {
     return (
       <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
         <NativeAppPromo
@@ -834,7 +965,7 @@ export default function Converter({
 
   return (
     <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
-      {!resultBlob && (
+      {!resultBlob && !meterReading && (
         <>
           <FileDropzone
             onFilesSelected={handleFiles}
@@ -1086,6 +1217,75 @@ export default function Converter({
         </div>
       )}
 
+      {/* ── Loudness Meter result ── */}
+      {meterReading && (
+        <div class="overflow-hidden rounded-2xl border border-sky-200 bg-sky-50 shadow-sm dark:border-sky-900/70 dark:bg-sky-950/30">
+          <div class="p-6">
+            <div class="flex items-start gap-4">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xl dark:bg-sky-900/50">📊</div>
+              <div class="min-w-0">
+                <h2 class="text-lg font-bold text-sky-900 dark:text-sky-100">Loudness analysis</h2>
+                <p class="mt-1 text-xs font-medium text-sky-600 dark:text-sky-400">EBU R128 / ITU-R BS.1770-4</p>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-xl border border-sky-200 bg-white p-4 dark:border-sky-900/50 dark:bg-gray-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Integrated</p>
+                <p class="mt-1 text-2xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                  {meterReading.integratedLufs.toFixed(2)}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">LUFS</p>
+              </div>
+              <div class="rounded-xl border border-sky-200 bg-white p-4 dark:border-sky-900/50 dark:bg-gray-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">True peak</p>
+                <p class="mt-1 text-2xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                  {meterReading.truePeakDb.toFixed(2)}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">dBTP</p>
+              </div>
+              <div class="rounded-xl border border-sky-200 bg-white p-4 dark:border-sky-900/50 dark:bg-gray-900">
+                <p class="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Range (LRA)</p>
+                <p class="mt-1 text-2xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                  {meterReading.loudnessRangeLu.toFixed(2)}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">LU</p>
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-xl border border-sky-200 bg-white p-4 dark:border-sky-900/50 dark:bg-gray-900">
+              <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">Reference targets</p>
+              <ul class="mt-2 space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                <li class="flex items-center justify-between"><span>Spotify / YouTube / Amazon Music</span><span class="font-mono">-14 LUFS</span></li>
+                <li class="flex items-center justify-between"><span>Apple Podcasts / Apple Music</span><span class="font-mono">-16 LUFS</span></li>
+                <li class="flex items-center justify-between"><span>General web streaming</span><span class="font-mono">-18 LUFS</span></li>
+                <li class="flex items-center justify-between"><span>Broadcast (EBU R128)</span><span class="font-mono">-23 LUFS</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="border-t border-sky-200 bg-white p-5 dark:border-sky-900/70 dark:bg-gray-900/60">
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={downloadMeterReport}
+                class="w-full rounded-xl bg-sky-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-sky-600 active:scale-[0.98]"
+              >
+                Download Report
+              </button>
+              <button
+                type="button"
+                onClick={resetAll}
+                class="w-full rounded-xl border border-gray-300 bg-gray-100 px-6 py-3 font-semibold text-gray-800 transition hover:bg-gray-200 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+              >
+                Measure Another File
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Standard result ── */}
       {resultBlob && (
         <div class="overflow-hidden rounded-2xl border border-green-200 bg-green-50 shadow-sm dark:border-green-900/70 dark:bg-green-950/30">
           <div class="p-6">

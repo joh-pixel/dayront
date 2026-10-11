@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-fade",
+  name: "Fade In / Fade Out",
+  metaTitle: "Fade In / Fade Out Audio – Add Fades Online Free | Dayront",
+  metaDescription: "Add professional fade-in and fade-out to audio and video in your browser. Choose your curve. No uploads, 100% private.",
+  icon: "🌅",
+  howTo: [
+    { title: "Upload your audio or video", text: "Drop an MP3, WAV, MP4, MOV, or any common media file." },
+    { title: "Set fade-in and fade-out durations", text: "Typical values: 1–3 seconds for music, 0.3–1 second for speech." },
+    { title: "Download the faded file", text: "Same container as your input." },
+  ],
+  faq: [
+    { question: "What is a fade in audio?", answer: "A fade is a gradual rise (fade-in) or fall (fade-out) in volume at the start or end of a file — the standard way to make tracks end cleanly." },
+    { question: "Which fade curve should I pick?", answer: "Linear is natural and works for most material. Quarter sine is gentle. Exponential is great for songs fading into silence." },
+    { question: "Does the fade tool work on video files?", answer: "Yes. Video is copied untouched; only the audio track fades. The video stream is never re-encoded." },
+    { question: "Can I set only a fade-in without a fade-out?", answer: "Yes. Set the other side to 0 and only the chosen fade applies." },
+    { question: "How long should a fade be?", answer: "Music: 2–4 seconds. Podcast intros and outros: 0.5–1.5 seconds. Voice-over: 0.2–0.5 seconds." },
+    { question: "Is my file uploaded to a server?", answer: "No. Fades are applied locally in your browser using FFmpeg (WebAssembly). Nothing leaves your device." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-normalize", icon: "📻", name: "Loudness Normalizer" },
+    { href: "/tools/audio-crossfade", icon: "🔀", name: "Crossfade" },
+    { href: "/tools/audio-cutter", icon: "✂️", name: "Audio Cutter" },
+  ],
+  type: "fade",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "fadeIn",  label: "Fade-in duration",  type: "number", min: 0, default: 2 },
+    { name: "fadeOut", label: "Fade-out duration", type: "number", min: 0, default: 2 },
+    { name: "curve",   label: "Curve shape", type: "select", default: "tri", options: [
+      { value: "tri",  label: "Linear — natural, most common" },
+      { value: "qsin", label: "Quarter sine — gentle S-curve" },
+      { value: "hsin", label: "Half sine — dramatic S-curve" },
+      { value: "exp",  label: "Exponential — fast rise, slow settle" },
+      { value: "log",  label: "Logarithmic — slow rise, fast settle" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Using Our Fade In / Fade Out Tool</h2>\n    <p>Fades are the simplest, most-used audio production technique. A fade-in eases the listener into a track. A fade-out lets it end cleanly instead of cutting off abruptly. Our Fade In / Fade Out tool adds both to any audio or video file — entirely in your browser, no uploads.</p>\n    <h3>When to Use Fades</h3>\n    <ul>\n      <li><strong>Music tracks:</strong> 2–4 seconds for a classic ending.</li>\n      <li><strong>Podcast intros:</strong> 0.5–1.5 seconds to ease in the theme.</li>\n      <li><strong>Voice-over:</strong> 0.2–0.5 seconds to avoid a hard start.</li>\n      <li><strong>Video soundtracks:</strong> fade under a cut to hide the seam.</li>\n    </ul>\n    <h3>Curve Shapes Explained</h3>\n    <p>Linear is the default for a reason — it sounds natural. Quarter sine has a gentle S-curve and works well for orchestral pieces. Exponential fades are popular for pop songs — the tail disappears gracefully. Logarithmic fades are for the start of ambient or transition tracks.</p>\n    <h3>Video Support</h3>\n    <p>Drop a video file and the video stream is copied untouched while the audio fades. That means no re-encoding, no quality loss, and it happens in a fraction of the time of a full video render.</p>\n    <h3>Why Dayront?</h3>\n    <ul>\n      <li>No uploads — files stay on your device.</li>\n      <li>Runs in your browser with WebAssembly FFmpeg.</li>\n      <li>Free, no registration, unlimited use.</li>\n    </ul>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "karaoke",
+  name: "Karaoke / Vocal Remover",
+  metaTitle: "Vocal Remover – Make Karaoke Tracks Online Free | Dayront",
+  metaDescription: "Remove vocals from stereo songs using phase cancellation. No uploads, 100% private.",
+  icon: "🎤",
+  howTo: [
+    { title: "Upload a stereo song", text: "MP3, WAV, M4A — stereo only." },
+    { title: "Run the tool", text: "One click. No settings." },
+    { title: "Download the karaoke track", text: "Vocals reduced, instruments intact." },
+  ],
+  faq: [
+    { question: "How does vocal removal work?", answer: "It subtracts the right channel from the left and vice versa. Centre-panned content (usually lead vocals) cancels out. Hard-panned instruments survive." },
+    { question: "Will it work on every song?", answer: "No. It works best on classic stereo pop, rock, and country mixes with centre-panned vocals. Modern productions use stereo tricks that survive the cancellation." },
+    { question: "Why does the bass sometimes disappear?", answer: "Bass is also usually panned centre, so it gets cancelled too. This is expected. Use EQ or a separate bass track if you want it back." },
+    { question: "Does it work on mono files?", answer: "No. Mono files have no stereo difference to cancel, so the output will be silent. Only stereo sources work." },
+    { question: "How is this different from AI stem separation?", answer: "This is phase cancellation — instant, free, no model download. AI separation gives cleaner results but requires a neural network. AI separation is planned for the Dayront App." },
+    { question: "Can I extract just the vocals?", answer: "Not with this tool. Phase cancellation removes centre-panned content, it doesn't isolate it. AI-based vocal isolation is planned." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-channels", icon: "🔀", name: "Channel Utilities" },
+    { href: "/tools/audio-equalize", icon: "🎛️", name: "Equalizer" },
+    { href: "/tools/extract-audio", icon: "🎧", name: "Extract Audio" },
+  ],
+  type: "karaoke",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [],
+  tutorial: "\n    <h2>Make Karaoke Tracks Without a Studio</h2>\n    <p>Our Karaoke / Vocal Remover uses phase cancellation to strip lead vocals from any stereo song. The math is elegant: subtract one channel from the other, and centre-panned content cancels while hard-panned instruments survive.</p>\n    <h3>How Phase Cancellation Works</h3>\n    <p>In most commercial mixes, the lead vocal is panned dead centre — identical in the left and right channels. When we flip one channel's polarity and sum both to mono, that centre content cancels mathematically. Hard-panned instruments (guitars, keyboards, drums) remain.</p>\n    <h3>Which Songs Work Best</h3>\n    <ul>\n      <li><strong>Classic pop from the 60s–90s</strong> — vocals were routinely mixed dead centre.</li>\n      <li><strong>Rock and country</strong> — same conventional stereo.</li>\n      <li><strong>Older jazz recordings</strong> — often centre-panned vocals.</li>\n    </ul>\n    <p><strong>Poor results:</strong> modern pop with heavy stereo vocal processing, mono recordings, and any mix with wide stereo vocals.</p>\n    <h3>Trade-offs</h3>\n    <ul>\n      <li><strong>Bass</strong> usually disappears — it is also mixed centre.</li>\n      <li><strong>Lead snare and kick</strong> thin out for the same reason.</li>\n      <li><strong>Reverb tails</strong> often remain, since reverb is stereo.</li>\n    </ul>\n    <h3>Chain With Other Tools</h3>\n    <p>After vocal removal, try the <strong>Equalizer</strong> to boost bass back, and the <strong>Audio Normalizer</strong> to restore loudness.</p>\n    <h3>Privacy</h3>\n    <p>Songs are never uploaded. All processing is local in your browser.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

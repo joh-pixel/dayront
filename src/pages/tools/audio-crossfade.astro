@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-crossfade",
+  name: "Crossfade",
+  metaTitle: "Audio Crossfade – Smooth Track Transitions Online | Dayront",
+  metaDescription: "Crossfade two audio files in your browser. Perfect for DJ mixes and album transitions. No uploads, 100% private.",
+  icon: "🔀",
+  howTo: [
+    { title: "Upload two audio files", text: "The crossfade happens between file 1 → file 2 in that order." },
+    { title: "Set the crossfade duration", text: "Length of the overlap in seconds." },
+    { title: "Download the crossfaded file", text: "Seamless transition between both tracks." },
+  ],
+  faq: [
+    { question: "What is a crossfade?", answer: "A transition where one track fades out while the other fades in. Used to blend two tracks seamlessly — the standard for DJ mixes and album flow." },
+    { question: "How long should the crossfade be?", answer: "1–2 seconds for pop songs, 3–5 seconds for ambient or house, 0.5 seconds for fast-paced edits." },
+    { question: "Does the audio overlap or play sequentially?", answer: "It overlaps. If file A ends at 3:00 and file B starts at 0:00 with a 2-second crossfade, the total length is 3:00 + (length of B) minus 2 seconds." },
+    { question: "Why does this need exactly 2 files?", answer: "Crossfading is defined between two tracks. For merging 3+ files, use the Audio Merger." },
+    { question: "Which curve should I use?", answer: "Linear works for most transitions. Quarter sine is smoother for ambient music. Exponential is best when the incoming track is quieter." },
+    { question: "Does it work on video files?", answer: "This tool is audio-only. Extract Audio first if your source is video." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-merger", icon: "🔗", name: "Audio Merger" },
+    { href: "/tools/audio-fade", icon: "🌅", name: "Fade In / Fade Out" },
+    { href: "/tools/audio-cutter", icon: "✂️", name: "Audio Cutter" },
+  ],
+  type: "crossfade",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "duration", label: "Crossfade duration (sec)", type: "number", min: 0.1, max: 30, default: 1.5 },
+    { name: "curve",    label: "Curve shape", type: "select", default: "tri", options: [
+      { value: "tri",  label: "Linear — natural, most common" },
+      { value: "qsin", label: "Quarter sine — gentle S-curve" },
+      { value: "hsin", label: "Half sine — dramatic S-curve" },
+      { value: "exp",  label: "Exponential — fast rise, slow settle" },
+      { value: "log",  label: "Logarithmic — slow rise, fast settle" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Crossfading Explained</h2>\n    <p>A crossfade is the audio version of a dissolve. One track fades out while the other fades in, overlapping in the middle. The result is a seamless transition where the listener never hears a cut.</p>\n    <h3>Where Crossfades Are Used</h3>\n    <ul>\n      <li><strong>DJ mixes:</strong> blend tracks so the beat never stops.</li>\n      <li><strong>Album flow:</strong> bridge two songs that should feel connected.</li>\n      <li><strong>Podcast segments:</strong> transition between ad read and content smoothly.</li>\n      <li><strong>Meditation and ambient:</strong> avoid jarring changes of texture.</li>\n    </ul>\n    <h3>Choosing the Duration</h3>\n    <ul>\n      <li><strong>0.5 s</strong> — fast pop edits and radio shows.</li>\n      <li><strong>1–2 s</strong> — standard for most music transitions.</li>\n      <li><strong>3–5 s</strong> — ambient, house, meditation.</li>\n      <li><strong>8–30 s</strong> — cinematic and long-form ambient.</li>\n    </ul>\n    <h3>Curve Shapes</h3>\n    <p>Linear is the default. Quarter sine gives a gentle S-curve and is popular for ambient music. Exponential works well when the outgoing track is louder than the incoming one.</p>\n    <h3>How It Works Internally</h3>\n    <p>The two files are decoded in parallel, then FFmpeg's <code>acrossfade</code> filter blends them over your chosen duration. The output is a single file with the overlap applied.</p>\n    <h3>Privacy</h3>\n    <p>Everything runs locally in your browser. Your unreleased mixes and demos never leave your device.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

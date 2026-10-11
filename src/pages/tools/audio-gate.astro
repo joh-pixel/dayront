@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-gate",
+  name: "Noise Gate",
+  metaTitle: "Noise Gate – Silence Background Between Phrases | Dayront",
+  metaDescription: "Clean up voice recordings by silencing everything below a threshold. No uploads, 100% private.",
+  icon: "🚪",
+  howTo: [
+    { title: "Upload your audio file", text: "Voice, podcast, or interview recording." },
+    { title: "Set the gate threshold", text: "-50 dB is a safe default for most recordings." },
+    { title: "Download the cleaned file", text: "Silent gaps, clean phrases." },
+  ],
+  faq: [
+    { question: "What is a noise gate?", answer: "A gate mutes the signal whenever it drops below a threshold. It removes breath, room tone, and small background noises between phrases." },
+    { question: "What is the difference between this and the Denoiser?", answer: "Denoise removes continuous noise (fan, hum) while keeping audio playing. Gate silences everything below a level — perfect for the gaps between speech." },
+    { question: "What threshold should I use?", answer: "Start at -50 dB. Lower it to -60 for very quiet rooms, raise to -40 for noisy ones." },
+    { question: "Will it cut off the start of words?", answer: "If the attack is too slow, yes. Keep attack under 20 ms for speech." },
+    { question: "Can I gate music?", answer: "You can, but gates are usually for voice. On music they create unnatural silences. Use the Denoiser for music." },
+    { question: "Does it work on video files?", answer: "This tool is audio-only. Extract Audio first if your source is video." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-denoise", icon: "🎙️", name: "Audio Denoiser" },
+    { href: "/tools/audio-dynamic-compress", icon: "🎚️", name: "Dynamic Compressor" },
+    { href: "/tools/audio-silence-remove", icon: "⏭️", name: "Silence Remover" },
+  ],
+  type: "gate",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "threshold", label: "Threshold (dB)", type: "number", min: -90,  max: 0,    default: -50 },
+    { name: "ratio",     label: "Ratio (1:n)",    type: "number", min: 1,    max: 9000, default: 4 },
+    { name: "attack",    label: "Attack (ms)",    type: "number", min: 0.01, max: 9000, default: 10 },
+    { name: "release",   label: "Release (ms)",   type: "number", min: 0.01, max: 9000, default: 200 },
+  ],
+  tutorial: "\n    <h2>What a Noise Gate Does</h2>\n    <p>A noise gate is the opposite of a compressor. Instead of smoothing out loud parts, it silences quiet parts. When audio drops below a threshold, the gate closes and mutes everything. When it rises above, the gate opens.</p>\n    <h3>When to Use a Noise Gate</h3>\n    <ul>\n      <li><strong>Podcasts:</strong> remove breath sounds and mouth clicks between sentences.</li>\n      <li><strong>Voice-over:</strong> eliminate room tone in the pauses.</li>\n      <li><strong>Live recordings:</strong> reduce bleed between microphones.</li>\n      <li><strong>Streaming:</strong> silence keyboard noise during quiet moments.</li>\n    </ul>\n    <h3>Recommended Settings</h3>\n    <p><strong>Podcast voice:</strong> Threshold -50, Ratio 4, Attack 10, Release 200.</p>\n    <p><strong>Interview room:</strong> Threshold -45, Ratio 8, Attack 5, Release 250.</p>\n    <p><strong>Bright room / HVAC:</strong> Threshold -40, Ratio 10, Attack 3, Release 300.</p>\n    <h3>Gate vs Denoiser vs Silence Remover</h3>\n    <ul>\n      <li><strong>Denoiser</strong> — removes steady noise (fan, hum) while audio plays.</li>\n      <li><strong>Gate</strong> — silences the pauses between phrases.</li>\n      <li><strong>Silence Remover</strong> — cuts out the pauses entirely (shortens the file).</li>\n    </ul>\n    <p>The professional workflow uses all three: Denoise first, then Gate, then Silence Remover for podcasts.</p>\n    <h3>Privacy</h3>\n    <p>Files stay on your device. The gate runs in your browser via WebAssembly FFmpeg. No uploads, no accounts, no tracking.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

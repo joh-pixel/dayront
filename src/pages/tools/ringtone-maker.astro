@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "ringtone-maker",
+  name: "Ringtone Maker",
+  metaTitle: "Ringtone Maker – Create iPhone & Android Ringtones | Dayront",
+  metaDescription: "Create custom ringtones from any song in your browser. Automatic fades. iPhone (M4A) and Android (MP3) ready. No uploads.",
+  icon: "🔔",
+  howTo: [
+    { title: "Upload a song or video", text: "MP3, WAV, M4A, MP4, MOV — anything with audio." },
+    { title: "Pick the segment", text: "Set start time and duration. 30 seconds is standard." },
+    { title: "Download your ringtone", text: "M4A for iPhone, MP3 for Android." },
+  ],
+  faq: [
+    { question: "What format is best for iPhone?", answer: "M4A (AAC). iOS accepts M4A ringtones up to 40 seconds." },
+    { question: "What format is best for Android?", answer: "MP3. Android accepts most audio formats, 30 seconds is the common default." },
+    { question: "Why is the maximum 60 seconds?", answer: "Ringtones are typically 30–40 seconds. Longer files work but are wasteful." },
+    { question: "Does it work on video files?", answer: "Yes. Video is stripped to audio-only — perfect for grabbing a ringtone from a concert clip." },
+    { question: "How do I install a ringtone on iPhone?", answer: "Open the downloaded M4A in GarageBand, or use the iTunes/Finder sync method. Full instructions in the Dayront App." },
+    { question: "Will the fades make it too quiet?", answer: "No. The fades are only 0.5 seconds at each end. The middle of the ringtone is at full volume." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-cutter", icon: "✂️", name: "Audio Cutter" },
+    { href: "/tools/audio-fade", icon: "🌅", name: "Fade In / Fade Out" },
+    { href: "/convert/mp3-to-m4a", icon: "🎵", name: "MP3 to M4A" },
+  ],
+  type: "ringtone",
+  from: undefined,
+  to: undefined,
+  outputFormat: "m4a",
+  settings: [
+    { name: "start",    label: "Start time (sec)", type: "number", min: 0, default: 0 },
+    { name: "duration", label: "Duration (sec)",   type: "number", min: 1, max: 60, default: 30 },
+    { name: "fadeIn",   label: "Fade in (sec)",    type: "number", min: 0, max: 10, default: 0.5 },
+    { name: "fadeOut",  label: "Fade out (sec)",   type: "number", min: 0, max: 10, default: 0.5 },
+  ],
+  tutorial: "\n    <h2>Custom Ringtones in Three Steps</h2>\n    <p>Your phone should not sound like everyone else's. The Ringtone Maker turns any song, voice clip, or video into a phone-ready ringtone — with automatic fades so it sounds professional.</p>\n    <h3>Choosing the Right Segment</h3>\n    <p>The best ringtone segment is usually the chorus or a recognisable hook. 25–35 seconds is standard. Skip intros and long instrumental builds — you want the catchy part to start within the first second.</p>\n    <h3>Format Guide</h3>\n    <ul>\n      <li><strong>iPhone</strong> — M4A. Max 40 seconds. Sync via GarageBand or Finder.</li>\n      <li><strong>Android</strong> — MP3. Max 30–60 seconds depending on the device.</li>\n      <li><strong>Other devices</strong> — both formats work on most phones.</li>\n    </ul>\n    <h3>Automatic Fades</h3>\n    <p>Every ringtone gets a 0.5-second fade-in and fade-out by default. This prevents hard starts and clicks that sound amateur. You can adjust the fade durations or set them to 0 for an abrupt ringtone.</p>\n    <h3>Installing on iPhone</h3>\n    <ol>\n      <li>Download the M4A file.</li>\n      <li>Open it in GarageBand or use Finder/iTunes to sync.</li>\n      <li>Rename the file to <code>.m4r</code> if you are using Finder.</li>\n      <li>Sync your iPhone and the ringtone appears under Settings → Sounds.</li>\n    </ol>\n    <h3>Installing on Android</h3>\n    <p>Download the MP3 to your phone, open Settings → Sound → Ringtone → Add from device.</p>\n    <h3>Privacy</h3>\n    <p>Your songs never leave your device. Everything runs in your browser.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

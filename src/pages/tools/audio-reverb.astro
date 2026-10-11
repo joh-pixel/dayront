@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-reverb",
+  name: "Reverb / Echo",
+  metaTitle: "Add Reverb / Echo to Audio Online Free | Dayront",
+  metaDescription: "Add reverb or echo to your audio in the browser. No uploads, 100% private.",
+  icon: "🌊",
+  howTo: [
+    { title: "Upload your audio file", text: "Any common audio format." },
+    { title: "Set delay and decay", text: "Short delay + high decay = reverb-like space." },
+    { title: "Download the processed file", text: "Effect applied." },
+  ],
+  faq: [
+    { question: "What is the difference between reverb and echo?", answer: "Reverb is many short reflections blurring together (a room). Echo is a distinct repeat of the sound. This tool uses echo — short delays sound reverb-like, long delays sound like a canyon." },
+    { question: "What delay should I use?", answer: "For reverb-like effect: 30–80 ms. For slapback echo: 100–200 ms. For a canyon effect: 500 ms or more." },
+    { question: "What does decay control?", answer: "How much of each repeat survives. 0.5 means each echo is half as loud. Higher values = longer tail." },
+    { question: "Does it apply to video files too?", answer: "This tool is audio-only. Use Extract Audio first if you need the effect on a video soundtrack." },
+    { question: "Can I make vocals sound like a big hall?", answer: "Yes. Try delay 70 ms with decay 0.7 for a hall effect. Add a second pass with delay 150 ms and decay 0.5 for depth." },
+    { question: "Does it work on music and speech?", answer: "Both. Music generally wants longer delays, speech usually wants short reverb-style delays (30–60 ms)." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-equalize", icon: "🎛️", name: "Equalizer" },
+    { href: "/tools/audio-dynamic-compress", icon: "🎚️", name: "Dynamic Compressor" },
+    { href: "/tools/audio-normalize", icon: "📻", name: "Loudness Normalizer" },
+  ],
+  type: "reverb",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "delayMs", label: "Delay (ms)",     type: "number", min: 1, max: 2000, default: 100 },
+    { name: "decay",   label: "Decay (0-0.95)", type: "number", min: 0, max: 0.95, default: 0.5 },
+  ],
+  tutorial: "\n    <h2>Adding Reverb and Echo</h2>\n    <p>Reverb and echo place your audio in a space. Without them, a voice sounds flat and boxy — like it was recorded in a small closet. With them, it sounds like a concert hall, a cathedral, or a canyon.</p>\n    <h3>Delay Time Controls the Space</h3>\n    <ul>\n      <li><strong>20–40 ms</strong> — small room. Subtle thickening.</li>\n      <li><strong>50–80 ms</strong> — medium hall. Classic reverb feel.</li>\n      <li><strong>100–150 ms</strong> — slapback echo. Rockabilly and vocals.</li>\n      <li><strong>200–500 ms</strong> — large hall or cathedral.</li>\n      <li><strong>500 ms+</strong> — canyon, cave, or dub echo.</li>\n    </ul>\n    <h3>Decay Controls the Tail</h3>\n    <p>Decay is how much each repeat fades. 0.3 = subtle, 0.5 = natural reverb, 0.7 = lush and spacious, 0.9 = ambient wash.</p>\n    <h3>Recipes</h3>\n    <ul>\n      <li><strong>Podcast voice, subtle:</strong> delay 40, decay 0.4</li>\n      <li><strong>Vocal, natural hall:</strong> delay 70, decay 0.6</li>\n      <li><strong>Lead guitar, rockabilly:</strong> delay 120, decay 0.5</li>\n      <li><strong>Ambient pad:</strong> delay 200, decay 0.75</li>\n      <li><strong>Dub style:</strong> delay 350, decay 0.8</li>\n    </ul>\n    <h3>How It Works</h3>\n    <p>The tool uses FFmpeg's <code>aecho</code> filter to layer delayed copies of the audio on top of the original. Different delay and decay values create every space from a small room to an infinite hall.</p>\n    <h3>Privacy</h3>\n    <p>No uploads. Everything runs in your browser. Your recordings stay private.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

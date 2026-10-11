@@ -8,15 +8,6 @@ export interface HowToStep {
   text: string;
 }
 
-/* --------------------------------------------------------------------------
-   ★ FRIENDLY SETTING OPTIONS
-   --------------------------------------------------------------------------
-   A dropdown option can be:
-     - a plain string   → "192k"
-     - a friendly pair  → { value: '192k', label: 'High — 192 kbps' }
-   `value` is what FFmpeg receives; `label` is what the user sees.
--------------------------------------------------------------------------- */
-
 export interface SettingOption {
   value: string | number;
   label: string;
@@ -28,14 +19,9 @@ export interface SettingDef {
   type: 'range' | 'number' | 'select';
   min?: number;
   max?: number;
-  /** Plain strings OR { value, label } pairs for user-friendly dropdowns */
   options?: Array<string | SettingOption>;
   default: string | number;
 }
-
-/* --------------------------------------------------------------------------
-   ★ PLATFORM TYPES
--------------------------------------------------------------------------- */
 
 export type ToolTier = 'light' | 'medium' | 'heavy';
 export type ToolEngine = 'wasm' | 'native' | 'ai';
@@ -90,7 +76,6 @@ export interface Tool {
 
 /* --------------------------------------------------------------------------
    REUSABLE FRIENDLY OPTION SETS
-   (Kept here so every tool uses the exact same labels.)
 -------------------------------------------------------------------------- */
 
 const AUDIO_BITRATE_OPTIONS: SettingOption[] = [
@@ -120,12 +105,23 @@ const WEBM_AUDIO_CODEC_OPTIONS: SettingOption[] = [
   { value: 'copy',      label: 'Copy — No re-encoding (fastest)' },
 ];
 
+/** Fade curve shapes (shared by audio-fade and audio-crossfade). */
+const FADE_CURVE_OPTIONS: SettingOption[] = [
+  { value: 'tri',  label: 'Linear — natural, most common' },
+  { value: 'qsin', label: 'Quarter sine — gentle S-curve' },
+  { value: 'hsin', label: 'Half sine — dramatic S-curve' },
+  { value: 'exp',  label: 'Exponential — fast rise, slow settle' },
+  { value: 'log',  label: 'Logarithmic — slow rise, fast settle' },
+];
+
 /* --------------------------------------------------------------------------
    BASE TOOLS
 -------------------------------------------------------------------------- */
 
 const baseTools: Tool[] = [
-  // ── AUDIO UTILITIES ──────────────────────
+  // ══════════════════════════════════════════════════════════
+  //   AUDIO UTILITIES
+  // ══════════════════════════════════════════════════════════
   {
     slug: 'audio-cutter',
     name: 'Audio Cutter',
@@ -172,13 +168,13 @@ const baseTools: Tool[] = [
       { title: 'Arrange the order', text: 'Drag to set playback sequence.' },
       { title: 'Merge and download', text: 'Get your combined file.' },
     ],
-    relatedTools: ['audio-cutter', 'audio-compressor', 'wav-to-mp3'],
+    relatedTools: ['audio-cutter', 'audio-crossfade', 'audio-compressor'],
   },
   {
     slug: 'audio-compressor',
-    name: 'Audio Compressor',
+    name: 'Audio Size Reducer',
     category: 'audio-utility',
-    description: 'Reduce audio file size without losing quality.',
+    description: 'Reduce the file size of an audio file.',
     metaTitle: 'Audio Compressor – Reduce Audio File Size Online | Dayront',
     metaDescription: 'Compress MP3, WAV, M4A files in your browser. No uploads, 100% private.',
     icon: '📦',
@@ -201,14 +197,14 @@ const baseTools: Tool[] = [
     faq: [
       { question: 'Will quality suffer?', answer: 'Smart compression keeps audio clear.' },
       { question: 'Is my file safe?', answer: 'Everything happens on your device.' },
-      { question: 'Which formats?', answer: 'MP3, WAV, M4A, OGG, FLAC.' },
+      { question: 'Looking for dynamic range compression?', answer: 'This tool reduces file size. For loudness/tone compression, use the Audio Dynamic Compressor.' },
     ],
     howTo: [
       { title: 'Upload your audio file', text: 'Select the file to compress.' },
       { title: 'Choose compression strength', text: 'Adjust quality vs size.' },
       { title: 'Download compressed file', text: 'Get a lighter file instantly.' },
     ],
-    relatedTools: ['volume-booster', 'audio-cutter', 'mp3-to-wav'],
+    relatedTools: ['volume-booster', 'audio-dynamic-compress', 'mp3-to-wav'],
   },
   {
     slug: 'volume-booster',
@@ -244,7 +240,7 @@ const baseTools: Tool[] = [
       { title: 'Boost the volume', text: 'Safe gain applied.' },
       { title: 'Download louder file', text: 'Save boosted audio.' },
     ],
-    relatedTools: ['audio-compressor', 'speed-changer', 'mp3-to-wav'],
+    relatedTools: ['audio-normalize', 'audio-compressor', 'audio-limit'],
   },
   {
     slug: 'speed-changer',
@@ -327,7 +323,7 @@ const baseTools: Tool[] = [
       { title: 'Convert automatically', text: 'Mixed to mono.' },
       { title: 'Download mono file', text: 'Save single-channel audio.' },
     ],
-    relatedTools: ['audio-cutter', 'volume-booster', 'mp3-to-wav'],
+    relatedTools: ['audio-channels', 'volume-booster', 'mp3-to-wav'],
   },
   {
     slug: 'audio-denoise',
@@ -365,10 +361,498 @@ const baseTools: Tool[] = [
       { title: 'Pick a noise reduction strength', text: 'Start with Balanced. Choose higher for louder backgrounds.' },
       { title: 'Download the cleaned file', text: 'Audio in — audio out. Video in — same container, video untouched.' },
     ],
-    relatedTools: ['audio-compressor', 'volume-booster', 'extract-audio'],
+    relatedTools: ['audio-gate', 'audio-dehum', 'audio-compressor'],
   },
 
-  // ── AUDIO CONVERSIONS ─────────────────────
+  // ── NEW: Audio production ─────────────────
+  {
+    slug: 'audio-fade',
+    name: 'Fade In / Fade Out',
+    category: 'audio-utility',
+    description: 'Add smooth fade-in and fade-out to any audio or video file.',
+    metaTitle: 'Fade In / Fade Out Audio – Free Online, No Upload | Dayront',
+    metaDescription: 'Add professional fade-in and fade-out to audio and video in your browser. Choose your curve. No uploads, 100% private.',
+    icon: '🌅',
+    type: 'fade',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'fadeIn',  label: 'Fade-in duration',  type: 'number', min: 0, default: 2 },
+      { name: 'fadeOut', label: 'Fade-out duration', type: 'number', min: 0, default: 2 },
+      { name: 'curve',   label: 'Curve shape', type: 'select', default: 'tri', options: FADE_CURVE_OPTIONS },
+    ],
+    faq: [
+      { question: 'What is a fade?', answer: 'A gradual rise (fade-in) or fall (fade-out) in volume at the start or end of a file — the standard way to make tracks end cleanly.' },
+      { question: 'Which curve should I pick?', answer: 'Linear is natural and works for most material. Quarter sine is gentle. Exponential is great for songs fading into silence.' },
+      { question: 'Does it work on video files?', answer: 'Yes. Video is copied untouched; only the audio track fades.' },
+      { question: 'Can I set only one side?', answer: 'Yes. Set the other side to 0 and only the chosen fade applies.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio or video', text: 'Drop an MP3, WAV, MP4, MOV, or any common media file.' },
+      { title: 'Set fade-in and fade-out durations', text: 'Typical values: 1–3 seconds for music, 0.3–1 second for speech.' },
+      { title: 'Download the faded file', text: 'Same container as your input.' },
+    ],
+    relatedTools: ['audio-normalize', 'audio-crossfade', 'audio-cutter'],
+  },
+  {
+    slug: 'audio-normalize',
+    name: 'Loudness Normalizer',
+    category: 'audio-utility',
+    description: 'Normalise audio to streaming and broadcast loudness standards (EBU R128).',
+    metaTitle: 'Loudness Normalizer – EBU R128 LUFS Online Free | Dayront',
+    metaDescription: 'Normalise audio to Spotify, YouTube, Apple Podcasts or broadcast targets in your browser. No uploads, 100% private.',
+    icon: '📻',
+    type: 'normalize',
+    outputFormat: 'mp3',
+    settings: [
+      {
+        name: 'targetLufs',
+        label: 'Target loudness',
+        type: 'select',
+        default: -14,
+        options: [
+          { value: -14, label: 'Spotify / YouTube / Amazon — -14 LUFS' },
+          { value: -16, label: 'Apple Podcasts / Apple Music — -16 LUFS' },
+          { value: -18, label: 'Web streaming — -18 LUFS' },
+          { value: -23, label: 'Broadcast (EBU R128) — -23 LUFS' },
+        ],
+      },
+      { name: 'truePeak', label: 'True peak ceiling (dBTP)', type: 'number', min: -20, max: 0, default: -1.5 },
+      { name: 'lra',      label: 'Loudness range (LU)',       type: 'number', min: 1, max: 50, default: 11 },
+    ],
+    faq: [
+      { question: 'What is LUFS?', answer: 'Loudness Units Full Scale — the broadcast industry standard for measuring perceived loudness. Every major streaming platform normalises to a specific LUFS target.' },
+      { question: 'Why does my track get quieter on Spotify?', answer: 'Spotify normalises everything to -14 LUFS. If your file is louder than that, it gets turned down. If it is quieter, Spotify turns it up — but you lose headroom. Aim for -14.' },
+      { question: 'What about true peak?', answer: 'True peak prevents inter-sample distortion during playback. Most platforms recommend -1 dBTP or lower.' },
+      { question: 'Does it work on video files?', answer: 'Yes. Video is copied untouched; only the audio is normalised.' },
+      { question: 'Is two-pass mode available?', answer: 'Not yet. Single-pass is accurate enough for streaming delivery. Two-pass (measure then apply) is planned.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio or video', text: 'Drop an MP3, WAV, M4A, MP4, MOV, or any common media file.' },
+      { title: 'Pick a target loudness', text: 'Choose the platform your file is destined for.' },
+      { title: 'Download the normalised file', text: 'Ready for delivery.' },
+    ],
+    relatedTools: ['loudness-meter', 'audio-limit', 'audio-dynamic-compress'],
+  },
+  {
+    slug: 'audio-dynamic-compress',
+    name: 'Audio Dynamic Compressor',
+    category: 'audio-utility',
+    description: 'Smooth out volume differences in voice, podcasts, and music.',
+    metaTitle: 'Audio Compressor – Reduce Dynamic Range Online Free | Dayront',
+    metaDescription: 'Compress the dynamic range of voice-over, podcasts and music in your browser. No uploads, 100% private.',
+    icon: '🎚️',
+    type: 'dynamic-compress',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'threshold', label: 'Threshold (dB)',        type: 'number', min: -60, max: 0,    default: -20 },
+      { name: 'ratio',     label: 'Ratio (1:n)',           type: 'number', min: 1,   max: 20,   default: 4 },
+      { name: 'attack',    label: 'Attack (ms)',           type: 'number', min: 0.01, max: 2000, default: 20 },
+      { name: 'release',   label: 'Release (ms)',          type: 'number', min: 0.01, max: 9000, default: 250 },
+      { name: 'makeup',    label: 'Makeup gain (dB)',      type: 'number', min: 0,   max: 30,   default: 0 },
+    ],
+    faq: [
+      { question: 'What does a compressor do?', answer: 'It reduces the level of loud parts so quieter parts become relatively louder. The result is steadier overall volume — essential for podcasts and voice-over.' },
+      { question: 'Difference from Audio Size Reducer?', answer: 'This tool compresses dynamic range (loud vs quiet). Audio Size Reducer compresses file size. Completely different jobs.' },
+      { question: 'What settings should I start with?', answer: 'Threshold -20, Ratio 4, Attack 20, Release 250, Makeup 0. Adjust threshold lower for quieter sources.' },
+      { question: 'Will it distort?', answer: 'No. The compressor prevents clipping and preserves clarity.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Drop an MP3, WAV, M4A, or any common audio file.' },
+      { title: 'Set the compression parameters', text: 'Or keep the defaults — they work for most spoken-word material.' },
+      { title: 'Download the compressed file', text: 'Steadier volume, same tone.' },
+    ],
+    relatedTools: ['audio-limit', 'audio-normalize', 'audio-gate'],
+  },
+  {
+    slug: 'audio-gate',
+    name: 'Noise Gate',
+    category: 'audio-utility',
+    description: 'Silence background noise between phrases in voice recordings.',
+    metaTitle: 'Noise Gate – Silence Background Online Free | Dayront',
+    metaDescription: 'Clean up voice recordings by silencing everything below a threshold. No uploads, 100% private.',
+    icon: '🚪',
+    type: 'gate',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'threshold', label: 'Threshold (dB)', type: 'number', min: -90, max: 0,    default: -50 },
+      { name: 'ratio',     label: 'Ratio (1:n)',    type: 'number', min: 1,   max: 9000, default: 4 },
+      { name: 'attack',    label: 'Attack (ms)',    type: 'number', min: 0.01, max: 9000, default: 10 },
+      { name: 'release',   label: 'Release (ms)',   type: 'number', min: 0.01, max: 9000, default: 200 },
+    ],
+    faq: [
+      { question: 'What is a noise gate?', answer: 'A gate mutes the signal whenever it drops below a threshold. It removes breath, room tone, and small background noises between phrases.' },
+      { question: 'Difference from the Denoiser?', answer: 'Denoise removes continuous noise (fan, hum) while keeping audio playing. Gate silences everything below a level — perfect for the gaps between speech.' },
+      { question: 'What threshold should I use?', answer: 'Start at -50 dB. Lower it to -60 for very quiet rooms, raise to -40 for noisy ones.' },
+      { question: 'Will it cut off the start of words?', answer: 'If the attack is too slow, yes. Keep attack under 20 ms for speech.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Voice, podcast, or interview recording.' },
+      { title: 'Set the gate threshold', text: '-50 dB is a safe default for most recordings.' },
+      { title: 'Download the cleaned file', text: 'Silent gaps, clean phrases.' },
+    ],
+    relatedTools: ['audio-denoise', 'audio-dynamic-compress', 'audio-silence-remove'],
+  },
+  {
+    slug: 'audio-limit',
+    name: 'Peak Limiter',
+    category: 'audio-utility',
+    description: 'Prevent clipping with a brickwall peak limiter.',
+    metaTitle: 'Audio Limiter – Brickwall Peak Limiter Online Free | Dayront',
+    metaDescription: 'Brickwall limiting to prevent clipping in your browser. No uploads, 100% private.',
+    icon: '🧱',
+    type: 'limit',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'ceiling', label: 'Ceiling (dB)',   type: 'number', min: -20, max: 0,    default: -1 },
+      { name: 'attack',  label: 'Attack (ms)',    type: 'number', min: 0.1, max: 80,   default: 5 },
+      { name: 'release', label: 'Release (ms)',   type: 'number', min: 1,   max: 8000, default: 50 },
+    ],
+    faq: [
+      { question: 'What does a limiter do?', answer: 'It caps the loudest peaks of a signal so the output never exceeds a chosen ceiling. Essential as the last step before export.' },
+      { question: 'Difference from the compressor?', answer: 'A compressor gently reduces loud parts. A limiter is a hard ceiling — nothing above it survives. Limiter goes after the compressor.' },
+      { question: 'What ceiling should I use?', answer: '-1 dB is the streaming industry standard. -0.3 dB for maximum loudness on CD, -3 dB for safety on video.' },
+      { question: 'Will it reduce overall loudness?', answer: 'Yes, if your file was clipping. That is the point — loudness trading for clean peaks.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Anything that might clip on export.' },
+      { title: 'Set the ceiling', text: '-1 dB is safe for all streaming platforms.' },
+      { title: 'Download the limited file', text: 'No distortion, no clipping.' },
+    ],
+    relatedTools: ['audio-normalize', 'audio-dynamic-compress', 'volume-booster'],
+  },
+  {
+    slug: 'audio-silence-remove',
+    name: 'Silence Remover',
+    category: 'audio-utility',
+    description: 'Automatically trim out dead air from podcasts and interviews.',
+    metaTitle: 'Silence Remover – Trim Dead Air Online Free | Dayront',
+    metaDescription: 'Remove silence from podcasts, interviews and voice recordings in your browser. No uploads, 100% private.',
+    icon: '⏭️',
+    type: 'silence-remove',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'threshold',   label: 'Silence threshold (dB)',  type: 'number', min: -90, max: 0,   default: -40 },
+      { name: 'minSilence',  label: 'Minimum silence (sec)',   type: 'number', min: 0.1, max: 30,  default: 0.5 },
+      { name: 'keepSilence', label: 'Kept silence (sec)',      type: 'number', min: 0,   max: 5,   default: 0.1 },
+    ],
+    faq: [
+      { question: 'How does it work?', answer: 'It analyses the audio and chops out any stretch of silence longer than your minimum threshold. A tiny amount of the original silence is kept so phrases do not sound rushed.' },
+      { question: 'What minimum silence should I use?', answer: '0.5 s works for most podcasts. Use 1.0 s for interviews, 0.3 s for energetic speech.' },
+      { question: 'Will it cut out quiet words?', answer: 'If a word is quieter than your threshold it might be trimmed. Lower the threshold to -50 dB if that happens.' },
+      { question: 'How long should kept silence be?', answer: '0.1 s is nearly imperceptible. 0.3 s sounds more natural for interview edits.' },
+    ],
+    howTo: [
+      { title: 'Upload your recording', text: 'Podcast, interview, or voice memo.' },
+      { title: 'Set the silence threshold', text: '-40 dB is a good starting point.' },
+      { title: 'Download the tightened file', text: 'Tighter pacing, no dead air.' },
+    ],
+    relatedTools: ['audio-cutter', 'audio-gate', 'audio-denoise'],
+  },
+  {
+    slug: 'audio-equalize',
+    name: 'Equalizer',
+    category: 'audio-utility',
+    description: 'Shape tone with three-band bass / mid / treble EQ.',
+    metaTitle: 'Audio Equalizer – 3-Band Bass, Mid, Treble Online Free | Dayront',
+    metaDescription: 'Adjust bass, mid, and treble in your browser. No uploads, 100% private.',
+    icon: '🎛️',
+    type: 'equalize',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'bass',   label: 'Bass (dB)',   type: 'number', min: -15, max: 15, default: 0 },
+      { name: 'mid',    label: 'Mid (dB)',    type: 'number', min: -15, max: 15, default: 0 },
+      { name: 'treble', label: 'Treble (dB)', type: 'number', min: -15, max: 15, default: 0 },
+    ],
+    faq: [
+      { question: 'What does each band do?', answer: 'Bass boosts or cuts low frequencies (below ~200 Hz). Mid shapes the body of voice and instruments around 1 kHz. Treble shapes clarity and air above ~6 kHz.' },
+      { question: 'Typical voice-over setting?', answer: 'Bass -2, Mid +2, Treble +1 for a warm, clear voice.' },
+      { question: 'Typical music setting?', answer: 'Bass +2, Mid 0, Treble +1 for a slight smiley curve — good for pop.' },
+      { question: 'Will it distort?', answer: 'At ±15 dB it might. Keep changes small for the cleanest result.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Any common audio format.' },
+      { title: 'Adjust the three bands', text: 'Positive values boost, negative cut. Keep at least one band at 0 unless you are aiming for a specific tone.' },
+      { title: 'Download the shaped file', text: 'Your EQ applied.' },
+    ],
+    relatedTools: ['audio-dynamic-compress', 'volume-booster', 'audio-normalize'],
+  },
+  {
+    slug: 'audio-resample',
+    name: 'Sample Rate Converter',
+    category: 'audio-utility',
+    description: 'Convert between 44.1 kHz, 48 kHz, 96 kHz, and more.',
+    metaTitle: 'Sample Rate Converter – 44.1 / 48 / 96 kHz Online Free | Dayront',
+    metaDescription: 'Convert audio sample rate and bit depth in your browser. No uploads, 100% private.',
+    icon: '📐',
+    type: 'resample',
+    outputFormat: 'wav',
+    settings: [
+      {
+        name: 'sampleRate',
+        label: 'Sample rate',
+        type: 'select',
+        default: 48000,
+        options: [
+          { value: 8000,  label: '8 000 Hz — Telephone' },
+          { value: 16000, label: '16 000 Hz — Speech' },
+          { value: 22050, label: '22 050 Hz — Old radio' },
+          { value: 32000, label: '32 000 Hz — Broadcast' },
+          { value: 44100, label: '44 100 Hz — CD audio (recommended for music)' },
+          { value: 48000, label: '48 000 Hz — Video and broadcast standard (recommended for video)' },
+          { value: 88200, label: '88 200 Hz — High-res music (2× CD)' },
+          { value: 96000, label: '96 000 Hz — High-res audio' },
+          { value: 176400, label: '176 400 Hz — High-res audio (4× CD)' },
+          { value: 192000, label: '192 000 Hz — Studio master' },
+        ],
+      },
+      {
+        name: 'bitDepth',
+        label: 'Bit depth',
+        type: 'select',
+        default: 16,
+        options: [
+          { value: 16, label: '16-bit — CD quality' },
+          { value: 24, label: '24-bit — Studio standard' },
+          { value: 32, label: '32-bit — Extreme headroom' },
+        ],
+      },
+    ],
+    faq: [
+      { question: 'What sample rate do I need?', answer: 'For video and broadcast: 48 kHz. For music: 44.1 kHz. Higher rates (96 kHz+) are only useful if you plan to edit heavily or pitch-shift.' },
+      { question: 'Does bit depth matter for MP3?', answer: 'No — bit depth only applies to WAV and FLAC. For MP3, the bitrate matters instead.' },
+      { question: 'Will converting up improve quality?', answer: 'No. Converting 44.1 to 96 kHz does not add information. It only standardises your library.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Any common audio format.' },
+      { title: 'Pick a target sample rate', text: '48 kHz for video, 44.1 kHz for music, 96 kHz for high-res masters.' },
+      { title: 'Download the converted file', text: 'Standardised sample rate and bit depth.' },
+    ],
+    relatedTools: ['mp3-to-wav', 'wav-to-mp3', 'audio-channels'],
+  },
+  {
+    slug: 'audio-channels',
+    name: 'Channel Utilities',
+    category: 'audio-utility',
+    description: 'Mono, stereo, swap channels, invert phase — all in one tool.',
+    metaTitle: 'Audio Channel Utilities – Mono / Stereo / Swap / Phase | Dayront',
+    metaDescription: 'Convert mono to stereo, swap channels, invert phase, or extract a single channel. No uploads, 100% private.',
+    icon: '🔀',
+    type: 'channels',
+    outputFormat: 'mp3',
+    settings: [
+      {
+        name: 'mode',
+        label: 'Channel mode',
+        type: 'select',
+        default: 'stereo-to-mono',
+        options: [
+          { value: 'stereo-to-mono', label: 'Stereo → Mono (downmix)' },
+          { value: 'mono-to-stereo', label: 'Mono → Stereo (duplicate)' },
+          { value: 'swap-lr',        label: 'Swap left / right' },
+          { value: 'invert-phase',   label: 'Invert phase (polarity flip)' },
+          { value: 'left-only',      label: 'Keep left channel only' },
+          { value: 'right-only',     label: 'Keep right channel only' },
+        ],
+      },
+    ],
+    faq: [
+      { question: 'Why swap left and right?', answer: 'Sometimes a recording was captured with cables reversed. Swapping restores the correct stereo image.' },
+      { question: 'What is phase inversion?', answer: 'It flips the polarity of the waveform. Used in some stereo-summing tricks and to cancel out one channel against another.' },
+      { question: 'When would I use left-only?', answer: 'If you recorded two different sources on each channel (dual-mono), extracting one gives you a clean single-source file.' },
+      { question: 'Difference from Stereo to Mono tool?', answer: 'That tool is a shortcut for the mono-downmix mode. This tool offers five other modes.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Stereo or mono source.' },
+      { title: 'Pick a channel mode', text: 'Six options cover the common cases.' },
+      { title: 'Download the converted file', text: 'Channel configuration applied.' },
+    ],
+    relatedTools: ['stereo-to-mono', 'audio-resample', 'karaoke'],
+  },
+  {
+    slug: 'audio-crossfade',
+    name: 'Crossfade',
+    category: 'audio-utility',
+    description: 'Overlap two tracks with a smooth transition.',
+    metaTitle: 'Audio Crossfade – Smooth Transition Between Two Tracks | Dayront',
+    metaDescription: 'Crossfade two audio files in your browser. Perfect for DJ mixes and album transitions. No uploads, 100% private.',
+    icon: '🔀',
+    type: 'crossfade',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'duration', label: 'Crossfade duration (sec)', type: 'number', min: 0.1, max: 30, default: 1.5 },
+      { name: 'curve',    label: 'Curve shape', type: 'select', default: 'tri', options: FADE_CURVE_OPTIONS },
+    ],
+    faq: [
+      { question: 'What is a crossfade?', answer: 'A transition where one track fades out while the other fades in. Used to blend two tracks seamlessly — the standard for DJ mixes and album flow.' },
+      { question: 'How long should the crossfade be?', answer: '1–2 s for pop songs, 3–5 s for ambient or house, 0.5 s for fast-paced edits.' },
+      { question: 'Does the audio overlap or play sequentially?', answer: 'It overlaps. If file A ends at 3:00 and file B starts at 0:00 with a 2 s crossfade, the total length is 3:00 + (length of B) − 2 s.' },
+      { question: 'Why does this need exactly 2 files?', answer: 'Crossfading is defined between two tracks. For merging 3+ files, use the Audio Merger.' },
+    ],
+    howTo: [
+      { title: 'Upload two audio files', text: 'The crossfade happens between file 1 → file 2 in that order.' },
+      { title: 'Set the crossfade duration', text: 'Length of the overlap in seconds.' },
+      { title: 'Download the crossfaded file', text: 'Seamless transition between both tracks.' },
+    ],
+    relatedTools: ['audio-merger', 'audio-fade', 'audio-cutter'],
+  },
+  {
+    slug: 'audio-dehum',
+    name: 'De-hum',
+    category: 'audio-utility',
+    description: 'Remove electrical hum at 50 Hz or 60 Hz and its harmonics.',
+    metaTitle: 'De-hum Audio – Remove 50/60 Hz Electrical Hum | Dayront',
+    metaDescription: 'Remove mains hum from audio recordings in your browser. Target 50 Hz (Europe) or 60 Hz (US) with harmonics. No uploads.',
+    icon: '⚡',
+    type: 'dehum',
+    outputFormat: 'mp3',
+    settings: [
+      {
+        name: 'frequency',
+        label: 'Hum frequency',
+        type: 'select',
+        default: 50,
+        options: [
+          { value: 50, label: '50 Hz — Europe, Africa, most of Asia' },
+          { value: 60, label: '60 Hz — US, Canada, parts of Japan' },
+        ],
+      },
+      {
+        name: 'harmonics',
+        label: 'Harmonics to notch',
+        type: 'select',
+        default: 3,
+        options: [
+          { value: 1, label: 'Fundamental only (50/60 Hz)' },
+          { value: 2, label: 'Plus 1st harmonic (100/120 Hz)' },
+          { value: 3, label: 'Plus 2 harmonics (recommended)' },
+          { value: 4, label: 'Plus 3 harmonics' },
+          { value: 5, label: 'Plus 4 harmonics' },
+          { value: 6, label: 'Plus 5 harmonics (aggressive)' },
+        ],
+      },
+    ],
+    faq: [
+      { question: 'What is hum?', answer: 'A steady low-frequency buzz caused by electrical mains interference. It appears at 50 Hz (Europe/Asia) or 60 Hz (US/Canada) plus multiples of that frequency.' },
+      { question: 'Difference from Audio Denoiser?', answer: 'Denoise removes broadband noise (fans, hiss). De-hum targets a specific frequency. For pure electrical hum, de-hum is more surgical and preserves more of the wanted signal.' },
+      { question: 'How do I know which frequency?', answer: 'If your recording was made in Europe, Africa, Asia (most countries) or Australia: 50 Hz. North America, Brazil, parts of Japan, Taiwan: 60 Hz.' },
+      { question: 'How many harmonics?', answer: '3 is a good default. Use 5 or 6 only if the hum is very strong and you have already tried 3.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio or video file', text: 'Hum happens most on recordings made near power supplies, guitar pickups, or cheap USB interfaces.' },
+      { title: 'Pick the hum frequency', text: '50 Hz for most of the world, 60 Hz for the US and Canada.' },
+      { title: 'Download the de-hummed file', text: 'Steady hum removed, everything else preserved.' },
+    ],
+    relatedTools: ['audio-denoise', 'audio-gate', 'audio-equalize'],
+  },
+  {
+    slug: 'audio-reverb',
+    name: 'Reverb / Echo',
+    category: 'audio-utility',
+    description: 'Add echo or simple reverb to any audio file.',
+    metaTitle: 'Add Reverb / Echo to Audio Online Free | Dayront',
+    metaDescription: 'Add reverb or echo to your audio in the browser. No uploads, 100% private.',
+    icon: '🌊',
+    type: 'reverb',
+    outputFormat: 'mp3',
+    settings: [
+      { name: 'delayMs', label: 'Delay (ms)',   type: 'number', min: 1,    max: 2000, default: 100 },
+      { name: 'decay',   label: 'Decay (0-0.95)', type: 'number', min: 0,  max: 0.95, default: 0.5 },
+    ],
+    faq: [
+      { question: 'What is the difference between reverb and echo?', answer: 'Reverb is many short reflections blurring together (a room). Echo is a distinct repeat of the sound. This tool uses echo — short delays sound reverb-like, long delays sound like a canyon.' },
+      { question: 'What delay should I use?', answer: 'For reverb-like effect: 30–80 ms. For slapback echo: 100–200 ms. For a canyon effect: 500 ms or more.' },
+      { question: 'What does decay do?', answer: 'How much of each repeat survives. 0.5 means each echo is half as loud. Higher = longer tail.' },
+      { question: 'Does it apply to video too?', answer: 'This tool is audio-only. Use Extract Audio first, process, then recombine with the video if you need the effect on video.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio file', text: 'Any common audio format.' },
+      { title: 'Set delay and decay', text: 'Short delay + high decay = reverb-like space.' },
+      { title: 'Download the processed file', text: 'Effect applied.' },
+    ],
+    relatedTools: ['audio-equalize', 'audio-dynamic-compress', 'audio-normalize'],
+  },
+  {
+    slug: 'karaoke',
+    name: 'Karaoke / Vocal Remover',
+    category: 'audio-utility',
+    description: 'Remove centre-panned vocals from a stereo track.',
+    metaTitle: 'Vocal Remover – Karaoke Track Maker Online Free | Dayront',
+    metaDescription: 'Remove vocals from stereo songs using phase cancellation. No uploads, 100% private.',
+    icon: '🎤',
+    type: 'karaoke',
+    outputFormat: 'mp3',
+    faq: [
+      { question: 'How does it work?', answer: 'It subtracts the right channel from the left and vice versa. Centre-panned content (usually lead vocals) cancels out. Hard-panned instruments survive.' },
+      { question: 'Will it work on every song?', answer: 'No. It works best on classic stereo pop, rock, and country mixes with centre-panned vocals. Modern productions use stereo tricks that survive the cancellation.' },
+      { question: 'Why does the bass sometimes disappear?', answer: 'Bass is also usually panned centre, so it gets cancelled too. This is expected. Use EQ or a separate bass track if you want it back.' },
+      { question: 'Does it work on mono files?', answer: 'No. Mono files have no stereo difference to cancel, so the output will be silent. Only stereo sources work.' },
+      { question: 'How is this different from AI stem separation?', answer: 'This is phase cancellation — instant, free, no model download. AI separation gives cleaner results but requires a neural network. AI separation is planned for the Dayront App.' },
+    ],
+    howTo: [
+      { title: 'Upload a stereo song', text: 'MP3, WAV, M4A — stereo only.' },
+      { title: 'Run the tool', text: 'One click. No settings.' },
+      { title: 'Download the karaoke track', text: 'Vocals reduced, instruments intact.' },
+    ],
+    relatedTools: ['audio-channels', 'audio-equalize', 'extract-audio'],
+  },
+  {
+    slug: 'ringtone-maker',
+    name: 'Ringtone Maker',
+    category: 'audio-utility',
+    description: 'Turn any song into a phone-ready ringtone.',
+    metaTitle: 'Ringtone Maker – Create iPhone & Android Ringtones Free | Dayront',
+    metaDescription: 'Create custom ringtones from any song in your browser. Automatic fades. iPhone (M4A) and Android (MP3) ready. No uploads.',
+    icon: '🔔',
+    type: 'ringtone',
+    outputFormat: 'm4a',
+    settings: [
+      { name: 'start',   label: 'Start time (sec)',   type: 'number', min: 0, default: 0 },
+      { name: 'duration', label: 'Duration (sec)',    type: 'number', min: 1, max: 60, default: 30 },
+      { name: 'fadeIn',  label: 'Fade in (sec)',      type: 'number', min: 0, max: 10, default: 0.5 },
+      { name: 'fadeOut', label: 'Fade out (sec)',     type: 'number', min: 0, max: 10, default: 0.5 },
+    ],
+    faq: [
+      { question: 'What format is best for iPhone?', answer: 'M4A (AAC). iOS accepts M4A ringtones up to 40 seconds.' },
+      { question: 'What format is best for Android?', answer: 'MP3. Android accepts most audio formats, 30 seconds is the common default.' },
+      { question: 'Why is the max 60 seconds?', answer: 'Ringtones are typically 30–40 seconds. Longer files work but are wasteful.' },
+      { question: 'Does it work on video files?', answer: 'Yes. Video is stripped to audio-only — perfect for grabbing a ringtone from a concert clip.' },
+      { question: 'How do I install a ringtone on iPhone?', answer: 'Open the downloaded M4A in GarageBand, or use the iTunes/Finder sync method. Full instructions in the Dayront App.' },
+    ],
+    howTo: [
+      { title: 'Upload a song or video', text: 'MP3, WAV, M4A, MP4, MOV — anything with audio.' },
+      { title: 'Pick the segment', text: 'Set start time and duration. 30 seconds is standard.' },
+      { title: 'Download your ringtone', text: 'M4A for iPhone, MP3 for Android.' },
+    ],
+    relatedTools: ['audio-cutter', 'audio-fade', 'mp3-to-m4a'],
+  },
+  {
+    slug: 'loudness-meter',
+    name: 'Loudness Meter',
+    category: 'audio-utility',
+    description: 'Analyse LUFS, true peak, and loudness range — no output file.',
+    metaTitle: 'Loudness Meter – LUFS & True Peak Analyser Free | Dayront',
+    metaDescription: 'Analyse integrated LUFS, true peak, and loudness range (EBU R128). No uploads, 100% private.',
+    icon: '📊',
+    type: 'loudness-meter',
+    outputFormat: 'txt',
+    faq: [
+      { question: 'What does it measure?', answer: 'Integrated loudness (LUFS), true peak (dBTP), and loudness range (LU). These are the three metrics broadcast and streaming platforms care about.' },
+      { question: 'Does it produce a file?', answer: 'It produces a text report, not audio. Use Loudness Normalizer if you want an adjusted audio file.' },
+      { question: 'Why is my file louder than -14 LUFS?', answer: 'Modern masters often hit -9 or -10 LUFS. Spotify and YouTube will turn those down to -14 automatically — you lose headroom for nothing.' },
+      { question: 'What true peak is safe?', answer: '-1 dBTP is the streaming industry recommendation.' },
+      { question: 'What about LRA?', answer: 'Loudness range measures dynamic spread. Speech is typically 4–9 LU, music 6–12 LU, classical up to 20 LU.' },
+    ],
+    howTo: [
+      { title: 'Upload your audio or video file', text: 'Anything you want to measure.' },
+      { title: 'Wait for the analysis', text: 'Runs at real time or faster.' },
+      { title: 'Download the report', text: 'Plain text with LUFS, dBTP, and LU plus reference targets.' },
+    ],
+    relatedTools: ['audio-normalize', 'audio-limit', 'audio-dynamic-compress'],
+  },
+
+  // ══════════════════════════════════════════════════════════
+  //   AUDIO CONVERSIONS
+  // ══════════════════════════════════════════════════════════
   {
     slug: 'mp3-to-wav',
     name: 'MP3 to WAV',
@@ -461,7 +945,7 @@ const baseTools: Tool[] = [
       { title: 'Convert to M4A', text: 'Wrapped in M4A container.' },
       { title: 'Download M4A', text: 'Save for Apple devices.' },
     ],
-    relatedTools: ['m4a-to-mp3', 'mp3-to-wav', 'audio-compressor'],
+    relatedTools: ['m4a-to-mp3', 'mp3-to-wav', 'ringtone-maker'],
   },
   {
     slug: 'flac-to-mp3',
@@ -641,7 +1125,9 @@ const baseTools: Tool[] = [
     relatedTools: ['wav-to-mp3', 'aac-to-mp3', 'mp3-to-ogg'],
   },
 
-  // ── VIDEO TO AUDIO ────────────────────────
+  // ══════════════════════════════════════════════════════════
+  //   VIDEO TO AUDIO
+  // ══════════════════════════════════════════════════════════
   {
     slug: 'mp4-to-mp3',
     name: 'MP4 to MP3',
@@ -833,7 +1319,9 @@ const baseTools: Tool[] = [
     relatedTools: ['mp4-to-mp3', 'webm-to-mp3', 'flv-to-mp4'],
   },
 
-  // ── VIDEO CONVERSIONS ─────────────────────
+  // ══════════════════════════════════════════════════════════
+  //   VIDEO CONVERSIONS
+  // ══════════════════════════════════════════════════════════
   {
     slug: 'flv-to-mp4',
     name: 'FLV to MP4',
@@ -881,7 +1369,9 @@ const baseTools: Tool[] = [
     relatedTools: ['flv-to-mp4', 'webm-to-mp3', 'video-compressor'],
   },
 
-  // ── VIDEO UTILITIES ──────────────────────
+  // ══════════════════════════════════════════════════════════
+  //   VIDEO UTILITIES
+  // ══════════════════════════════════════════════════════════
   {
     slug: 'video-compressor',
     name: 'Video Compressor',
@@ -1201,7 +1691,9 @@ const baseTools: Tool[] = [
     relatedTools: ['mp4-to-mp3', 'mute-video', 'audio-cutter'],
   },
 
-  // ── AI TOOLS ─────────────────────────────
+  // ══════════════════════════════════════════════════════════
+  //   AI TOOLS
+  // ══════════════════════════════════════════════════════════
   {
     slug: 'ai-video-captions',
     name: 'AI Video Captions',
@@ -1418,6 +1910,23 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   'stereo-to-mono': { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
   denoise:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
 
+  // ── New: audio production ────────────────
+  fade:               { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  normalize:          { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  'dynamic-compress': { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  gate:               { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  limit:              { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  'silence-remove':   { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  equalize:           { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  resample:           { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  channels:           { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  crossfade:          { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  dehum:              { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  reverb:             { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioLight,  recommendApp: false },
+  karaoke:            { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  ringtone:           { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+  'loudness-meter':   { tier: 'light', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.audioMedium, recommendApp: false },
+
   // ── Format conversion ────────────────────
   convert:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
   'convert-video':  { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
@@ -1578,7 +2087,7 @@ export function getToolsByEngine(engine: ToolEngine): Tool[] {
 }
 
 /* ==========================================================================
- * ★ PLATFORM DETECTION (client-side runtime)
+ * ★ PLATFORM DETECTION
  * ========================================================================== */
 
 export function detectPlatform(): PlatformInfo {
@@ -1601,7 +2110,6 @@ export function detectPlatform(): PlatformInfo {
     return { type: 'desktop-native', label: 'Desktop App', engine: 'native', maxMB: 5000 };
   }
   if (isCapacitor) {
-    // ★ Aligned with the marketing promise: 5 GB on native mobile.
     return { type: 'mobile-native', label: 'Mobile App', engine: 'native', maxMB: 5000 };
   }
   if (isExtension) {

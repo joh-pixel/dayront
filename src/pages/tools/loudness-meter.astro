@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "loudness-meter",
+  name: "Loudness Meter",
+  metaTitle: "Loudness Meter – LUFS & True Peak Analyser Online | Dayront",
+  metaDescription: "Analyse integrated LUFS, true peak, and loudness range (EBU R128). No uploads, 100% private.",
+  icon: "📊",
+  howTo: [
+    { title: "Upload your audio or video file", text: "Anything you want to measure." },
+    { title: "Wait for the analysis", text: "Runs at real time or faster." },
+    { title: "Download the report", text: "Plain text with LUFS, dBTP, and LU plus reference targets." },
+  ],
+  faq: [
+    { question: "What does the loudness meter measure?", answer: "Integrated loudness (LUFS), true peak (dBTP), and loudness range (LU). These are the three metrics broadcast and streaming platforms care about." },
+    { question: "Does it produce an audio file?", answer: "It produces a text report, not audio. Use Loudness Normalizer if you want an adjusted audio file." },
+    { question: "Why is my file louder than -14 LUFS?", answer: "Modern masters often hit -9 or -10 LUFS. Spotify and YouTube turn those down to -14 automatically — you lose headroom for nothing." },
+    { question: "What true peak is safe?", answer: "-1 dBTP is the streaming industry recommendation." },
+    { question: "What should LRA be?", answer: "Loudness range measures dynamic spread. Speech is typically 4–9 LU, music 6–12 LU, classical up to 20 LU." },
+    { question: "Is this an EBU R128 loudness meter?", answer: "Yes. It uses the same EBU R128 / ITU-R BS.1770-4 algorithm used by broadcast compliance tools." },
+  ],
+  relatedTools: [
+    { href: "/tools/audio-normalize", icon: "📻", name: "Loudness Normalizer" },
+    { href: "/tools/audio-limit", icon: "🧱", name: "Peak Limiter" },
+    { href: "/tools/audio-dynamic-compress", icon: "🎚️", name: "Dynamic Compressor" },
+  ],
+  type: "loudness-meter",
+  from: undefined,
+  to: undefined,
+  outputFormat: "txt",
+  settings: [],
+  tutorial: "\n    <h2>Measure Loudness Like a Broadcast Engineer</h2>\n    <p>Every streaming platform uses loudness normalisation. Spotify targets -14 LUFS. Apple Podcasts targets -16 LUFS. YouTube targets -14 LUFS. If your file does not match, it gets turned up or down automatically — and you lose either headroom or dynamic range.</p>\n    <h3>What You Get</h3>\n    <ul>\n      <li><strong>Integrated loudness (LUFS)</strong> — the average perceived loudness of the whole file.</li>\n      <li><strong>True peak (dBTP)</strong> — the highest signal peak, measured with intersample precision.</li>\n      <li><strong>Loudness range (LU)</strong> — how much dynamic spread the file has.</li>\n    </ul>\n    <h3>Reference Targets</h3>\n    <ul>\n      <li>Spotify, YouTube, Amazon Music, Tidal — <strong>-14 LUFS</strong></li>\n      <li>Apple Podcasts, Apple Music — <strong>-16 LUFS</strong></li>\n      <li>General web streaming — <strong>-18 LUFS</strong></li>\n      <li>Broadcast television and radio (EBU R128) — <strong>-23 LUFS</strong></li>\n    </ul>\n    <h3>Interpreting LRA</h3>\n    <ul>\n      <li><strong>2–6 LU</strong> — very compressed, EDM and heavily processed pop.</li>\n      <li><strong>6–12 LU</strong> — normal music and podcasts.</li>\n      <li><strong>12–20 LU</strong> — classical, jazz, and dynamic recordings.</li>\n    </ul>\n    <h3>Next Step: Normalise</h3>\n    <p>Once you know your file's loudness, use the <strong>Loudness Normalizer</strong> to bring it to the correct target. The two tools are designed to work together.</p>\n    <h3>Privacy</h3>\n    <p>Your unreleased mixes, client masters, and podcasts are analysed entirely in your browser. Nothing is uploaded.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

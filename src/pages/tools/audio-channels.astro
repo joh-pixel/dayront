@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "audio-channels",
+  name: "Channel Utilities",
+  metaTitle: "Audio Channel Utilities – Mono Stereo Swap Phase | Dayront",
+  metaDescription: "Convert mono to stereo, swap channels, invert phase, or extract a single channel. No uploads, 100% private.",
+  icon: "🔀",
+  howTo: [
+    { title: "Upload your audio file", text: "Stereo or mono source." },
+    { title: "Pick a channel mode", text: "Six options cover the common cases." },
+    { title: "Download the converted file", text: "Channel configuration applied." },
+  ],
+  faq: [
+    { question: "Why swap left and right channels?", answer: "Sometimes a recording was captured with cables reversed. Swapping restores the correct stereo image." },
+    { question: "What is phase inversion?", answer: "It flips the polarity of the waveform. Used in some stereo-summing tricks and to cancel out one channel against another." },
+    { question: "When would I use left-only?", answer: "If you recorded two different sources on each channel (dual-mono), extracting one gives you a clean single-source file." },
+    { question: "What is the difference from the Stereo to Mono tool?", answer: "That tool is a shortcut for the mono-downmix mode. This tool offers five other modes." },
+    { question: "Does mono to stereo add information?", answer: "No. Mono duplicated to both channels is still mono content — it just plays out of both speakers. For true stereo, the source needs stereo content." },
+    { question: "Does it work on video files?", answer: "This tool is audio-only. Extract Audio first if your source is video." },
+  ],
+  relatedTools: [
+    { href: "/tools/stereo-to-mono", icon: "🔉", name: "Stereo to Mono" },
+    { href: "/tools/audio-resample", icon: "📐", name: "Sample Rate Converter" },
+    { href: "/tools/karaoke", icon: "🎤", name: "Vocal Remover" },
+  ],
+  type: "channels",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp3",
+  settings: [
+    { name: "mode", label: "Channel mode", type: "select", default: "stereo-to-mono", options: [
+      { value: "stereo-to-mono", label: "Stereo → Mono (downmix)" },
+      { value: "mono-to-stereo", label: "Mono → Stereo (duplicate)" },
+      { value: "swap-lr",        label: "Swap left / right" },
+      { value: "invert-phase",   label: "Invert phase (polarity flip)" },
+      { value: "left-only",      label: "Keep left channel only" },
+      { value: "right-only",     label: "Keep right channel only" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Six Channel Configurations in One Tool</h2>\n    <p>Channel manipulation is the plumbing of audio. Sometimes you need mono for a phone system, stereo for playback, or a single channel extracted from a dual-mono recording. This tool does all six of the common cases.</p>\n    <h3>The Six Modes</h3>\n    <ul>\n      <li><strong>Stereo → Mono</strong> — downmix both channels to a single mono file. Smaller size, plays equally from both speakers.</li>\n      <li><strong>Mono → Stereo</strong> — duplicate a mono file onto both channels. No new information, but plays from both speakers.</li>\n      <li><strong>Swap left / right</strong> — reverse the stereo image. Fixes cable-reversed recordings.</li>\n      <li><strong>Invert phase</strong> — flip the polarity of both channels. Used in stereo summing tricks and phase-cancellation vocal removal.</li>\n      <li><strong>Keep left channel only</strong> — extract one channel from a dual-mono or stereo source.</li>\n      <li><strong>Keep right channel only</strong> — same, from the other channel.</li>\n    </ul>\n    <h3>Common Use Cases</h3>\n    <ul>\n      <li>Podcast for a phone system that only accepts mono.</li>\n      <li>Fix a stereo recording captured with reversed cables.</li>\n      <li>Split a two-track podcast recording into separate host tracks.</li>\n      <li>Prepare audio for karaoke by phase inverting one channel.</li>\n    </ul>\n    <h3>Privacy</h3>\n    <p>Channel conversion runs entirely in your browser. Nothing is uploaded.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>
