@@ -77,11 +77,15 @@ const categoryIcons: Record<string, string> = {
 };
 
 /* ------------------------------------------------------------------------
-   CLIENT DATA
+   CLIENT DATA — delivered via a <script type="application/json"> block so
+   that the interactivity script can stay bundled (and therefore re-run on
+   every Astro ClientRouter navigation).
 ------------------------------------------------------------------------ */
-const toolsJson = JSON.stringify(translatedTools);
-const categoryLabelsJson = JSON.stringify(categoryLabels);
-const categoryIconsJson = JSON.stringify(categoryIcons);
+const pageDataJson = JSON.stringify({
+  tools: translatedTools,
+  labels: categoryLabels,
+  icons: categoryIcons,
+}).replace(/</g, '\\u003c');
 
 const pageTitle = t('tools_page_title', 'All Media Tools – Free & Private | Dayront');
 const pageDesc = t('tools_page_desc', 'Browse all free online media tools. Convert, cut, merge, boost, and enhance your audio and video files directly in your browser. 100% private, no sign-up, no uploads required.');
@@ -231,9 +235,7 @@ const pageDesc = t('tools_page_desc', 'Browse all free online media tools. Conve
             id="tool-filter"
             aria-label="Filter tools by category"
           >
-            <option value="all">
-              <span data-i18n="all_categories">All Categories</span>
-            </option>
+            <option value="all">All Categories</option>
 
             {
               Object.entries(categoryLabels).map(
@@ -459,191 +461,143 @@ const pageDesc = t('tools_page_desc', 'Browse all free online media tools. Conve
       </div>
     </div>
   </section>
+
+  <!-- ═══ Client data — server-rendered JSON consumed by the module below ═══ -->
+  <script
+    type="application/json"
+    id="tools-page-data"
+    set:html={pageDataJson}
+  ></script>
 </BaseLayout>
 
-<script define:vars={{
-  toolsData: toolsJson,
-  categoryLabels: categoryLabelsJson,
-  categoryIcons: categoryIconsJson
-}}>
-  const tools = JSON.parse(toolsData);
-  const labels = JSON.parse(categoryLabels);
-  const icons = JSON.parse(categoryIcons);
+<script>
+  /**
+   * Tools page interactivity.
+   *
+   * This is a bundled module (no `define:vars`, no `is:inline`), so Astro's
+   * ClientRouter RE-RUNS it after every navigation. `astro:page-load` fires
+   * once on initial load and once per ClientRouter navigation — that's the
+   * single hook we need.
+   */
+  (() => {
+    function initToolsPage() {
+      const dataEl = document.getElementById('tools-page-data');
+      const grid = document.getElementById('tool-grid');
+      if (!dataEl || !grid) return;
 
-  const searchInput =
-    document.querySelector('#tool-search');
+      // Guard against double-binding after ClientRouter re-runs this script.
+      if (grid.hasAttribute('data-tools-bound')) return;
+      grid.setAttribute('data-tools-bound', '1');
 
-  const clearButton =
-    document.querySelector('#clear-search');
-
-  const categoryFilter =
-    document.querySelector('#tool-filter');
-
-  const grid =
-    document.querySelector('#tool-grid');
-
-  const emptyState =
-    document.querySelector('#empty-state');
-
-  const resultCount =
-    document.querySelector('#result-count');
-
-  const resetButton =
-    document.querySelector('#reset-tools');
-
-  const gridButton =
-    document.querySelector('#view-grid');
-
-  const listButton =
-    document.querySelector('#view-list');
-
-  const categoryPills =
-    document.querySelectorAll('.category-pill');
-
-  function updateTools() {
-    if (!searchInput || !categoryFilter || !grid) return;
-
-    const search =
-      searchInput.value.trim().toLowerCase();
-
-    const category =
-      categoryFilter.value;
-
-    let visible = 0;
-
-    const cards =
-      grid.querySelectorAll('.tool-card');
-
-    cards.forEach((card) => {
-      const name =
-        card.dataset.toolName?.toLowerCase() || '';
-
-      const cardCategory =
-        card.dataset.toolCategory || '';
-
-      const matchesSearch =
-        !search ||
-        name.includes(search);
-
-      const matchesCategory =
-        category === 'all' ||
-        cardCategory === category;
-
-      const show =
-        matchesSearch &&
-        matchesCategory;
-
-      card.style.display =
-        show ? '' : 'none';
-
-      if (show) visible++;
-    });
-
-    if (resultCount) {
-      const template =
-        'Showing {count} tools';
-
-      resultCount.textContent =
-        template.replace(
-          '{count}',
-          String(visible)
-        );
-    }
-
-    if (emptyState) {
-      emptyState.classList.toggle(
-        'hidden',
-        visible !== 0
-      );
-    }
-
-    if (clearButton) {
-      clearButton.classList.toggle(
-        'visible',
-        searchInput.value.length > 0
-      );
-    }
-  }
-
-  function setCategory(category) {
-    if (!categoryFilter) return;
-
-    categoryFilter.value = category;
-
-    categoryPills.forEach((pill) => {
-      pill.classList.toggle(
-        'active',
-        pill.dataset.category === category
-      );
-    });
-
-    updateTools();
-  }
-
-  searchInput?.addEventListener(
-    'input',
-    updateTools
-  );
-
-  categoryFilter?.addEventListener(
-    'change',
-    () => {
-      setCategory(categoryFilter.value);
-    }
-  );
-
-  clearButton?.addEventListener(
-    'click',
-    () => {
-      if (!searchInput) return;
-
-      searchInput.value = '';
-      updateTools();
-      searchInput.focus();
-    }
-  );
-
-  categoryPills.forEach((pill) => {
-    pill.addEventListener(
-      'click',
-      () => {
-        setCategory(
-          pill.dataset.category || 'all'
-        );
+      let data: { tools?: unknown[]; labels?: Record<string, string>; icons?: Record<string, string> } = {};
+      try {
+        data = JSON.parse(dataEl.textContent || '{}');
+      } catch (error) {
+        console.error('[tools] failed to parse page data:', error);
+        return;
       }
-    );
-  });
 
-  resetButton?.addEventListener(
-    'click',
-    () => {
-      if (searchInput) {
+      const searchInput   = document.getElementById('tool-search')    as HTMLInputElement  | null;
+      const clearButton   = document.getElementById('clear-search')   as HTMLButtonElement | null;
+      const categoryFilter = document.getElementById('tool-filter')   as HTMLSelectElement | null;
+      const emptyState    = document.getElementById('empty-state');
+      const resultCount   = document.getElementById('result-count');
+      const resetButton   = document.getElementById('reset-tools')    as HTMLButtonElement | null;
+      const gridButton    = document.getElementById('view-grid')      as HTMLButtonElement | null;
+      const listButton    = document.getElementById('view-list')      as HTMLButtonElement | null;
+
+      if (!searchInput || !categoryFilter) return;
+
+      function updateTools() {
+        const search = searchInput.value.trim().toLowerCase();
+        const category = categoryFilter.value;
+
+        let visible = 0;
+        const cards = grid.querySelectorAll<HTMLElement>('.tool-card');
+
+        cards.forEach((card) => {
+          const name = (card.getAttribute('data-tool-name') || '').toLowerCase();
+          const cardCategory = card.getAttribute('data-tool-category') || '';
+
+          const matchesSearch   = !search || name.includes(search);
+          const matchesCategory = category === 'all' || cardCategory === category;
+          const show = matchesSearch && matchesCategory;
+
+          card.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+
+        if (resultCount) {
+          resultCount.textContent = `Showing ${visible} tool${visible === 1 ? '' : 's'}`;
+        }
+
+        if (emptyState) {
+          emptyState.classList.toggle('hidden', visible !== 0);
+        }
+
+        if (clearButton) {
+          clearButton.classList.toggle('visible', searchInput.value.length > 0);
+        }
+      }
+
+      function setCategory(category: string) {
+        categoryFilter.value = category;
+
+        document.querySelectorAll<HTMLElement>('.category-pill').forEach((pill) => {
+          pill.classList.toggle('active', (pill.getAttribute('data-category') || '') === category);
+        });
+
+        updateTools();
+      }
+
+      searchInput.addEventListener('input', updateTools);
+
+      categoryFilter.addEventListener('change', () => {
+        setCategory(categoryFilter.value);
+      });
+
+      clearButton?.addEventListener('click', () => {
         searchInput.value = '';
-      }
+        updateTools();
+        searchInput.focus();
+      });
 
-      setCategory('all');
+      document.querySelectorAll<HTMLElement>('.category-pill').forEach((pill) => {
+        pill.addEventListener('click', () => {
+          setCategory(pill.getAttribute('data-category') || 'all');
+        });
+      });
+
+      resetButton?.addEventListener('click', () => {
+        searchInput.value = '';
+        setCategory('all');
+      });
+
+      gridButton?.addEventListener('click', () => {
+        grid.classList.remove('list-view');
+        gridButton.classList.add('active');
+        listButton?.classList.remove('active');
+      });
+
+      listButton?.addEventListener('click', () => {
+        grid.classList.add('list-view');
+        listButton.classList.add('active');
+        gridButton?.classList.remove('active');
+      });
+
+      // Sync initial state
+      updateTools();
     }
-  );
 
-  gridButton?.addEventListener(
-    'click',
-    () => {
-      grid?.classList.remove('list-view');
+    // Re-run on every ClientRouter navigation, plus the initial page load.
+    document.addEventListener('astro:page-load', initToolsPage);
 
-      gridButton.classList.add('active');
-      listButton?.classList.remove('active');
+    // Fallback: if `astro:page-load` already fired before this deferred
+    // module executed, run once immediately.
+    if (document.readyState !== 'loading') {
+      initToolsPage();
+    } else {
+      document.addEventListener('DOMContentLoaded', initToolsPage, { once: true });
     }
-  );
-
-  listButton?.addEventListener(
-    'click',
-    () => {
-      grid?.classList.add('list-view');
-
-      listButton.classList.add('active');
-      gridButton?.classList.remove('active');
-    }
-  );
-
-  updateTools();
+  })();
 </script>
