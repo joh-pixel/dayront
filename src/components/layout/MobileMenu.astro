@@ -2,34 +2,31 @@
 /**
  * src/components/layout/MobileMenu.astro
  * ----------------------------------------------------------------------------
- * Mobile slide-in navigation drawer.
+ * Mobile folder-style menu.
  *
  *   • Hamburger trigger button (mobile only — hidden from md: up)
- *   • Right-side drawer that slides in/out
- *   • Backdrop that closes on outside click
- *   • ESC key closes / X button closes
- *   • Body scroll lock while open (with scrollbar-width compensation)
- *   • Focus management
- *   • Respects safe-area insets
+ *   • Panel pops out from the top-right corner (folder-style)
+ *   • Backdrop dims the page behind
+ *   • Outside-click, ESC, and X all close
+ *   • Body scroll lock with scrollbar compensation
+ *   • Staggered content reveal
  *   • Survives Astro ClientRouter navigation
+ *   • Search button opens the site-wide search modal
  *
- * Critical layout is inline — no percentage heights, no reliance on
- * Tailwind emitting any particular utility. The drawer is a flex column:
- * header (shrink-0) + nav (flex-1, min-h-0, scrollable).
- *
- * The drawer + backdrop are portaled to <body> so `position: fixed`
- * resolves against the viewport, not the header.
+ * Panel and backdrop are portaled to <body> because the header has
+ * `backdrop-filter`, which creates a CSS containing block for every
+ * `position: fixed` descendant.
  */
 ---
 
-<!-- ── Trigger (hamburger) — stays inside the header ── -->
+<!-- ── Trigger (hamburger) ── -->
 <button
   type="button"
   data-mobile-menu-trigger
   aria-label="Open menu"
   aria-expanded="false"
   aria-haspopup="dialog"
-  aria-controls="mobile-menu-drawer"
+  aria-controls="mobile-menu-panel"
   class="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white/70 text-gray-800 transition hover:bg-gray-100 active:scale-[0.97] dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-100 dark:hover:bg-gray-800"
 >
   <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true">
@@ -39,120 +36,149 @@
   </svg>
 </button>
 
-<!-- ── Backdrop (portaled to <body> on init) ── -->
+<!-- ── Backdrop ── -->
 <div
   data-mobile-menu-backdrop
   aria-hidden="true"
-  class="bg-black/50 backdrop-blur-sm"
+  class="bg-black/40 backdrop-blur-sm"
   style="
     position: fixed;
     inset: 0;
     z-index: 60;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 320ms ease-out;
+    transition: opacity 240ms ease-out;
   "
 ></div>
 
-<!-- ── Drawer (portaled to <body> on init) ── -->
-<aside
-  id="mobile-menu-drawer"
-  data-mobile-menu-drawer
+<!-- ── Panel (folder) ── -->
+<div
+  id="mobile-menu-panel"
+  data-mobile-menu-panel
   role="dialog"
   aria-modal="true"
   aria-label="Menu"
   class="bg-white dark:bg-gray-900"
   style="
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    top: calc(env(safe-area-inset-top, 0px) + 4.25rem);
+    right: 0.75rem;
     width: 17rem;
-    max-width: 88vw;
+    max-width: calc(100vw - 1.5rem);
+    max-height: calc(100vh - 6rem);
     z-index: 70;
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -24px 0 60px rgba(0, 0, 0, 0.25);
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform-origin: top right;
+    transform: scale(0.72) translateY(-12px);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 200ms ease-out;
   "
 >
-  <!-- Drawer header -->
-  <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+  <!-- Panel header -->
+  <div class="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
     <span class="text-sm font-bold text-gray-900 dark:text-white">Menu</span>
     <button
       type="button"
       data-mobile-menu-close
-      class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition hover:bg-gray-200 active:scale-[0.95] dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+      class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition hover:bg-gray-200 active:scale-[0.95] dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       aria-label="Close menu"
     >
-      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M18 6L6 18M6 6l12 12" />
       </svg>
     </button>
   </div>
 
-  <!-- Drawer body — flex-1 so it takes whatever space the header leaves -->
+  <!-- Panel body -->
   <nav
-    class="flex flex-col gap-0.5 overflow-y-auto p-4"
+    class="folder-nav flex flex-col gap-0.5 overflow-y-auto p-2.5"
     style="flex: 1 1 auto; min-height: 0;"
   >
     <button
       type="button"
       data-mobile-menu-search
-      class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
+      class="folder-item flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
+      style="--i: 0;"
     >
-      <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+      <svg class="h-4.5 w-4.5 shrink-0 text-gray-500 dark:text-gray-400" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="8" />
         <path d="M21 21l-4.35-4.35" />
       </svg>
       Search
     </button>
 
-    <hr class="my-2 border-gray-200 dark:border-gray-800" />
+    <hr class="mx-3 my-1.5 border-gray-100 dark:border-gray-800" />
 
-    <a href="/tools" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">Tools</a>
-    <a href="/convert" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">Converters</a>
-    <a href="/blog" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">Blog</a>
-    <a href="/download" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">Download App</a>
-    <a href="/about" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">About</a>
-    <a href="/privacy" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">Privacy</a>
-    <a href="/terms" class="rounded-lg px-3 py-2.5 text-base font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800">Terms</a>
+    <a href="/tools"      class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 1;">Tools</a>
+    <a href="/convert"    class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 2;">Converters</a>
+    <a href="/blog"       class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 3;">Blog</a>
+    <a href="/download"   class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 4;">Download App</a>
+    <a href="/about"      class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 5;">About</a>
+    <a href="/privacy"    class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 6;">Privacy</a>
+    <a href="/terms"      class="folder-item rounded-xl px-3 py-2.5 text-[15px] font-medium text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800" style="--i: 7;">Terms</a>
   </nav>
-</aside>
+</div>
+
+<style>
+  /* Staggered reveal: each .folder-item uses its own --i index. */
+  @keyframes folder-item-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  [data-mobile-menu-panel][data-state="open"] .folder-item {
+    animation: folder-item-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 28ms + 90ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-mobile-menu-panel] {
+      transition: opacity 120ms ease-out !important;
+      transform: none !important;
+    }
+    [data-mobile-menu-panel][data-state="open"] .folder-item {
+      animation: none !important;
+    }
+  }
+</style>
 
 <script>
   (() => {
     const SEL_TRIGGER  = '[data-mobile-menu-trigger]';
-    const SEL_DRAWER   = '[data-mobile-menu-drawer]';
+    const SEL_PANEL    = '[data-mobile-menu-panel]';
     const SEL_BACKDROP = '[data-mobile-menu-backdrop]';
 
     function portalToBody() {
       const backdrop = document.querySelector(SEL_BACKDROP);
-      const drawer   = document.querySelector(SEL_DRAWER);
+      const panel    = document.querySelector(SEL_PANEL);
       if (backdrop && backdrop.parentElement !== document.body) {
         document.body.appendChild(backdrop);
       }
-      if (drawer && drawer.parentElement !== document.body) {
-        document.body.appendChild(drawer);
+      if (panel && panel.parentElement !== document.body) {
+        document.body.appendChild(panel);
       }
     }
 
     function init() {
       const trigger  = document.querySelector(SEL_TRIGGER) as HTMLButtonElement | null;
-      const drawer   = document.querySelector(SEL_DRAWER)  as HTMLElement | null;
+      const panel    = document.querySelector(SEL_PANEL)    as HTMLElement | null;
       const backdrop = document.querySelector(SEL_BACKDROP) as HTMLElement | null;
-      if (!trigger || !drawer || !backdrop) return;
+      if (!trigger || !panel || !backdrop) return;
 
       portalToBody();
 
       if (trigger.hasAttribute('data-mobile-menu-bound')) return;
       trigger.setAttribute('data-mobile-menu-bound', '1');
 
-      const closers = drawer.querySelectorAll<HTMLElement>('[data-mobile-menu-close]');
-      const search  = drawer.querySelector<HTMLElement>('[data-mobile-menu-search]');
+      const closers = panel.querySelectorAll<HTMLElement>('[data-mobile-menu-close]');
+      const search  = panel.querySelector<HTMLElement>('[data-mobile-menu-search]');
 
       let isOpen = false;
       let prevHtmlOverflow = '';
@@ -160,14 +186,10 @@
       let prevBodyPaddingRight = '';
 
       function lockScroll() {
-        // Preserve scroll position and prevent layout shift on desktop by
-        // compensating for the scrollbar width. On mobile this is a no-op
-        // because innerWidth === clientWidth.
         const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
         prevHtmlOverflow = document.documentElement.style.overflow;
         prevBodyOverflow = document.body.style.overflow;
         prevBodyPaddingRight = document.body.style.paddingRight;
-
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
         if (scrollbarWidth > 0) {
@@ -184,42 +206,70 @@
       function open() {
         if (isOpen) return;
         isOpen = true;
+
+        // Force a reflow so the animation restarts cleanly every time.
+        void panel.offsetWidth;
+        panel.setAttribute('data-state', 'open');
+        panel.style.transform = 'scale(1) translateY(0)';
+        panel.style.opacity = '1';
+        panel.style.pointerEvents = 'auto';
+
         backdrop.style.opacity = '1';
         backdrop.style.pointerEvents = 'auto';
-        drawer.style.transform = 'translateX(0)';
+
         trigger.setAttribute('aria-expanded', 'true');
         lockScroll();
-        const firstFocusable = drawer.querySelector<HTMLElement>(
+
+        // Focus first interactive item for keyboard users.
+        const first = panel.querySelector<HTMLElement>(
           'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
         );
-        firstFocusable?.focus();
+        first?.focus({ preventScroll: true });
       }
 
-      function close() {
+      function close(options?: { skipFocus?: boolean }) {
         if (!isOpen) return;
         isOpen = false;
-        drawer.style.transform = 'translateX(100%)';
+
+        panel.setAttribute('data-state', 'closed');
+        panel.style.transform = 'scale(0.72) translateY(-12px)';
+        panel.style.opacity = '0';
+        panel.style.pointerEvents = 'none';
+
         backdrop.style.opacity = '0';
         backdrop.style.pointerEvents = 'none';
+
         trigger.setAttribute('aria-expanded', 'false');
         unlockScroll();
-        trigger.focus();
+
+        if (!options?.skipFocus) {
+          trigger.focus({ preventScroll: true });
+        }
       }
 
       trigger.addEventListener('click', open);
-      closers.forEach((el) => el.addEventListener('click', close));
-      backdrop.addEventListener('click', close);
+      closers.forEach((el) => el.addEventListener('click', () => close()));
+      backdrop.addEventListener('click', () => close());
 
       if (search) {
-        search.addEventListener('click', () => {
-          close();
+        search.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          // Open the search modal FIRST. It focuses its own input.
           const w = window as any;
-          if (typeof w.openSearch === 'function') w.openSearch();
+          if (typeof w.openSearch === 'function') {
+            try { w.openSearch(); } catch {}
+          }
+
+          // Then close the drawer WITHOUT stealing focus back to the
+          // trigger — otherwise the modal's input focus gets clobbered.
+          close({ skipFocus: true });
         });
       }
 
-      drawer.querySelectorAll('a').forEach((link) => {
-        link.addEventListener('click', () => { close(); });
+      panel.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => { close({ skipFocus: true }); });
       });
 
       window.addEventListener('keydown', (e) => {
@@ -242,7 +292,7 @@
 
     document.addEventListener('astro:before-swap', () => {
       document.querySelectorAll(
-        `body > ${SEL_DRAWER}, body > ${SEL_BACKDROP}`,
+        `body > ${SEL_PANEL}, body > ${SEL_BACKDROP}`,
       ).forEach((el) => el.remove());
     });
 
