@@ -60,7 +60,7 @@ const HINTS: Record<string, string> = {
   harmonics: 'Number of hum overtones to remove. 3 is usually enough.',
   delayMs: 'Time between echoes. Short = reverb, long = canyon.',
   decay: 'How much the echo fades on each repeat.',
-  minSilence: 'Silence shorter than this is left alone.',
+  minSilence: 'Silence longer than this will be trimmed.',
   keepSilence: 'A short gap is left in place of the cut silence.',
   x: 'Horizontal offset from the left edge.',
   y: 'Vertical offset from the top edge.',
@@ -69,8 +69,6 @@ const HINTS: Record<string, string> = {
   width: 'How many pixels wide the output should be.',
   height: 'How many pixels tall the output should be.',
   fps: 'Frames per second. Higher = smoother motion.',
-  format_audio: 'The output audio format.',
-  'minSilence': 'Silence longer than this will be trimmed.',
 };
 
 function hintFor(setting: SettingDef): string | null {
@@ -98,15 +96,15 @@ function unitFor(setting: SettingDef): string {
    Shown above the slider when a mapping exists.
    ═══════════════════════════════════════════════════════════ */
 const QUICK_PICKS: Record<string, number[]> = {
-  fadeIn:     [0.5, 1, 2, 3],
-  fadeOut:    [0.5, 1, 2, 3],
-  duration:   [10, 30, 60, 90],
-  minSilence: [0.3, 0.5, 1],
-  keepSilence:[0, 0.1, 0.3],
-  attack:     [5, 10, 20, 50],
-  release:    [50, 100, 200, 500],
-  delayMs:    [50, 100, 200, 350],
-  start:      [0, 5, 15, 30],
+  fadeIn:      [0.5, 1, 2, 3],
+  fadeOut:     [0.5, 1, 2, 3],
+  duration:    [10, 30, 60, 90],
+  minSilence:  [0.3, 0.5, 1],
+  keepSilence: [0, 0.1, 0.3],
+  attack:      [5, 10, 20, 50],
+  release:     [50, 100, 200, 500],
+  delayMs:     [50, 100, 200, 350],
+  start:       [0, 5, 15, 30],
 };
 
 function quickPicksFor(setting: SettingDef): number[] | null {
