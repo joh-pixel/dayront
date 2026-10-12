@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import FileDropzone from './FileDropzone';
 import ProgressBar, { useSmoothProgress } from './ProgressBar';
 import PrivacyToggle from './PrivacyToggle';
+import SettingField from './SettingField';
 
 import {
   convertFile,
@@ -24,7 +25,7 @@ import {
   changeFPS,
   muteVideo,
   extractAudio,
-  // ── NEW: audio-production batch ──
+  // ── Audio-production batch ──
   fadeAudio,
   normalizeLoudness,
   dynamicCompressAudio,
@@ -77,7 +78,6 @@ type ToolType =
   | 'extract-audio'
   | 'convert-video'
   | 'resolution-convert'
-  // ── NEW: audio production ──
   | 'fade'
   | 'normalize'
   | 'dynamic-compress'
@@ -120,27 +120,6 @@ interface ToolConfig {
   presetWidth?: number;
   presetHeight?: number;
   requiresDesktop?: boolean;
-}
-
-/** Detect time-related settings */
-function isTimeSetting(name: string): boolean {
-  const lower = name.toLowerCase();
-  return lower.includes('start') || lower.includes('duration') || lower.includes('cut');
-}
-
-/** Human-readable hint for range sliders */
-function rangeHint(setting: SettingDef): string | null {
-  const name = setting.name.toLowerCase();
-  if (name === 'crf') return 'Lower = better quality, larger file';
-  if (name === 'quality') return '0 = best, 9 = smallest';
-  if (name === 'threshold') return 'Signals below this level are compressed or gated';
-  if (name === 'ratio') return 'Higher = more aggressive compression';
-  if (name === 'attack') return 'How fast the effect reacts (shorter = more responsive)';
-  if (name === 'release') return 'How fast the effect releases (longer = smoother)';
-  if (name === 'bass' || name === 'mid' || name === 'treble') return 'Boost (+dB) or cut (-dB) this band';
-  if (name === 'ceiling') return 'Peak ceiling in dB — never exceeded';
-  if (name === 'makeup') return 'Compensates for level lost during compression';
-  return null;
 }
 
 /**
@@ -204,7 +183,6 @@ function getAllowedExtensions(config: ToolConfig): string[] {
     case 'speed':
     case 'reverse':
     case 'stereo-to-mono':
-    // NEW audio-only tools
     case 'dynamic-compress':
     case 'gate':
     case 'limit':
@@ -401,10 +379,7 @@ export default function Converter({
     return initial;
   });
 
-  const [timeUnits, setTimeUnits] = useState<Record<string, 'seconds' | 'minutes'>>({});
-
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const previewRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
 
   const isMobile = useIsMobile();
   const isDesktopOnlyTool = isMobile && toolConfig.requiresDesktop === true;
@@ -432,16 +407,6 @@ export default function Converter({
 
   function updateSetting(name: string, value: string | number) {
     setSettingsState((previous) => ({ ...previous, [name]: value }));
-  }
-
-  function toDisplayValue(name: string, internalValue: number): number {
-    const unit = timeUnits[name] || 'seconds';
-    return unit === 'minutes' ? internalValue / 60 : internalValue;
-  }
-
-  function fromDisplayValue(name: string, displayValue: number): number {
-    const unit = timeUnits[name] || 'seconds';
-    return unit === 'minutes' ? displayValue * 60 : displayValue;
   }
 
   function sanitizeFiles(selected: File[]): File[] {
@@ -494,7 +459,6 @@ export default function Converter({
       const type = toolConfig.type;
 
       switch (type) {
-        /* ── Existing audio utilities ── */
         case 'cut': {
           const start = Math.max(0, Number(getSetting('start') ?? 0));
           const duration = Math.max(0.01, Number(getSetting('duration') ?? 30));
@@ -536,8 +500,6 @@ export default function Converter({
             c || toolConfig.outputFormat || 'mp3', privacy, updateProgress);
           break;
         }
-
-        /* ── NEW: audio production — processing ── */
         case 'fade': {
           const c = getAudioVideoContainer(files[0]);
           output = await fadeAudio(files[0],
@@ -664,8 +626,6 @@ export default function Converter({
             privacy, updateProgress);
           break;
         }
-
-        /* ── NEW: loudness meter — analysis only, no output Blob ── */
         case 'loudness-meter': {
           const reading = await meterLoudness(files[0], updateProgress);
           const base = files[0].name.replace(/\.[^.]+$/, '');
@@ -673,10 +633,8 @@ export default function Converter({
           setOutputFilename(`${base}-loudness.txt`);
           setProgress(100);
           setProcessing(false);
-          return; // skip the blob-save block below
+          return;
         }
-
-        /* ── Existing format/video cases ── */
         case 'convert': {
           output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
           break;
@@ -751,11 +709,9 @@ export default function Converter({
           throw new Error('Unsupported tool.');
       }
 
-      /* ── Save output (all tools above except loudness-meter) ── */
       const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       await saveFile(id, output);
 
-      // Container override for the audio-with-video-stream-copied tools
       const containerOverride = (
         type === 'denoise' || type === 'fade' || type === 'normalize' ||
         type === 'dehum' || type === 'ringtone'
@@ -856,23 +812,6 @@ export default function Converter({
     toolConfig.type === 'crossfade';
   const allowedExtensions = getAllowedExtensions(toolConfig);
 
-  const inputClass = [
-    'w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900',
-    'outline-none transition placeholder:text-gray-400',
-    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
-    'dark:border-gray-600 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500',
-    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
-  ].join(' ');
-
-  const selectClass = [
-    'w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm font-medium text-gray-900',
-    'outline-none transition appearance-none cursor-pointer',
-    'focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20',
-    'dark:border-gray-600 dark:bg-gray-950 dark:text-white',
-    'dark:focus:border-sky-400 dark:focus:ring-sky-400/20',
-  ].join(' ');
-
-  // Audio-with-video-copied tools keep the video container on video inputs
   const containerOverride = (
     toolConfig.type === 'denoise' ||
     toolConfig.type === 'fade' ||
@@ -1015,126 +954,15 @@ export default function Converter({
                 </div>
               </div>
               <div class="space-y-6 p-5">
-                {settings.map((setting) => {
-                  const value = settingsState[setting.name] ?? setting.default;
-                  return (
-                    <div key={setting.name} class="space-y-2.5">
-                      <label
-                        for={`setting-${setting.name}`}
-                        class="block text-sm font-semibold text-gray-900 dark:text-white"
-                      >
-                        {setting.label}
-                      </label>
-
-                      {setting.type === 'select' && (
-                        <div class="relative">
-                          <select
-                            id={`setting-${setting.name}`}
-                            value={String(value)}
-                            disabled={processing}
-                            class={selectClass}
-                            onChange={(event) =>
-                              updateSetting(setting.name, event.currentTarget.value)
-                            }
-                          >
-                            {setting.options?.map((option) => {
-                              const val = typeof option === 'string' ? option : option.value;
-                              const lbl = typeof option === 'string' ? option : option.label;
-                              return (
-                                <option key={String(val)} value={val}>
-                                  {lbl}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-
-                      {setting.type === 'range' && (
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-950">
-                          <div class="flex items-center gap-3">
-                            <input
-                              id={`setting-${setting.name}`}
-                              type="range"
-                              min={setting.min}
-                              max={setting.max}
-                              value={Number(value)}
-                              disabled={processing}
-                              onInput={(event) =>
-                                updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
-                              }
-                              class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-300 accent-sky-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700"
-                            />
-                            <output
-                              aria-live="polite"
-                              class="flex h-9 min-w-[52px] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2 text-xs font-bold tabular-nums text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                            >
-                              {value}
-                            </output>
-                          </div>
-                          {rangeHint(setting) && (
-                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{rangeHint(setting)}</p>
-                          )}
-                          {(setting.min !== undefined || setting.max !== undefined) && (
-                            <div class="mt-2 flex justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                              <span>{setting.min ?? ''}</span>
-                              <span>{setting.max ?? ''}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {setting.type === 'number' && (
-                        isTimeSetting(setting.name) ? (
-                          <div class="flex gap-2">
-                            <input
-                              type="number"
-                              id={`setting-${setting.name}`}
-                              min={setting.min != null ? (timeUnits[setting.name] === 'minutes' ? Math.ceil((setting.min || 0) / 60) : setting.min) : undefined}
-                              max={setting.max != null ? (timeUnits[setting.name] === 'minutes' ? Math.floor((setting.max || 9999) / 60) : setting.max) : undefined}
-                              value={toDisplayValue(setting.name, Number(value))}
-                              disabled={processing}
-                              onInput={(e) => {
-                                const displayVal = Number((e.target as HTMLInputElement).value);
-                                if (!isNaN(displayVal)) {
-                                  updateSetting(setting.name, fromDisplayValue(setting.name, displayVal));
-                                }
-                              }}
-                              class={inputClass}
-                              step={timeUnits[setting.name] === 'minutes' ? 0.1 : 1}
-                            />
-                            <select
-                              value={timeUnits[setting.name] || 'seconds'}
-                              onChange={(e) => setTimeUnits((prev) => ({ ...prev, [setting.name]: e.currentTarget.value as 'seconds' | 'minutes' }))}
-                              class="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-white"
-                            >
-                              <option value="seconds">Seconds</option>
-                              <option value="minutes">Minutes</option>
-                            </select>
-                          </div>
-                        ) : (
-                          <input
-                            type="number"
-                            id={`setting-${setting.name}`}
-                            min={setting.min}
-                            max={setting.max}
-                            value={Number(value)}
-                            disabled={processing}
-                            onInput={(event) =>
-                              updateSetting(setting.name, Number((event.target as HTMLInputElement).value))
-                            }
-                            class={inputClass}
-                          />
-                        )
-                      )}
-                    </div>
-                  );
-                })}
+                {settings.map((setting) => (
+                  <SettingField
+                    key={setting.name}
+                    setting={setting}
+                    value={settingsState[setting.name] ?? setting.default}
+                    onChange={(v) => updateSetting(setting.name, v)}
+                    disabled={processing}
+                  />
+                ))}
               </div>
             </section>
           )}
@@ -1217,7 +1045,6 @@ export default function Converter({
         </div>
       )}
 
-      {/* ── Loudness Meter result ── */}
       {meterReading && (
         <div class="overflow-hidden rounded-2xl border border-sky-200 bg-sky-50 shadow-sm dark:border-sky-900/70 dark:bg-sky-950/30">
           <div class="p-6">
@@ -1285,7 +1112,6 @@ export default function Converter({
         </div>
       )}
 
-      {/* ── Standard result ── */}
       {resultBlob && (
         <div class="overflow-hidden rounded-2xl border border-green-200 bg-green-50 shadow-sm dark:border-green-900/70 dark:bg-green-950/30">
           <div class="p-6">
