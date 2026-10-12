@@ -78,8 +78,21 @@ export function cleanFileName(rawName: string): string {
 /* ── makeOutputName ───────────────────────────────────────── */
 
 /**
- * Produce a clean output filename:
- *   "mytrack.mp3" → "mytrack-mp4-to-mp3.mp3"
+ * Produce a clean output filename with the Dayront brand at the end:
+ *
+ *   "mytrack.mp3"                                    → "mytrack-dayront.mp3"
+ *   "mytrack-denoise-conversion.mp3"                 → "mytrack-dayront.mp3"
+ *   "mytrack-mp4-to-mp3-conversion.mp3"              → "mytrack-dayront.mp3"
+ *   "mytrack-denoise-conversion-gate-conversion.mp3" → "mytrack-dayront.mp3"
+ *   "mytrack-dayront.mp3"                            → "mytrack-dayront.mp3"  (idempotent)
+ *
+ * The suffix stripping is what makes chaining tools predictable — without
+ * it, every tool pass would append another "-<tool>-conversion" segment
+ * and the filename would grow forever.
+ *
+ * Callers should pass 'dayront' as the first argument. Other values are
+ * supported for future tools (e.g. batch exports) but the standard
+ * single-tool flow always uses 'dayront'.
  */
 export function makeOutputName(
   toolSlug: string,
@@ -88,7 +101,16 @@ export function makeOutputName(
 ): string {
   const cleaned = cleanFileName(originalName);
   const lastDot = cleaned.lastIndexOf('.');
-  const base = lastDot > 0 ? cleaned.slice(0, lastDot) : cleaned;
+  let base = lastDot > 0 ? cleaned.slice(0, lastDot) : cleaned;
+
+  // Strip any trailing Dayront suffixes so re-processing a Dayront output
+  // doesn't accumulate segments. Matches one or more of:
+  //   -<lowercase-slug>-conversion   OR   -dayront
+  base = base.replace(/(?:-[a-z0-9-]+-conversion|-dayront)+$/i, '');
+  // Trim any leftover separator characters.
+  base = base.replace(/[-_\s]+$/, '');
+  if (!base) base = 'my-file';
+
   const slugSafe = toolSlug.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
   return `${base}-${slugSafe}.${format}`;
 }
