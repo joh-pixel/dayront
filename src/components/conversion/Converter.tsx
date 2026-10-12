@@ -3,6 +3,8 @@ import FileDropzone from './FileDropzone';
 import ProgressBar, { useSmoothProgress } from './ProgressBar';
 import PrivacyToggle from './PrivacyToggle';
 import SettingField from './SettingField';
+import FileHero from './FileHero';
+import SettingsSheet, { type SettingsPreset } from './SettingsSheet';
 
 import {
   convertFile,
@@ -122,6 +124,144 @@ interface ToolConfig {
   requiresDesktop?: boolean;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   PRESETS — chips shown at the top of the settings sheet.
+   Each preset is a full record of settings that get applied
+   on tap. Only tools with a `type` key here get preset chips.
+   ═══════════════════════════════════════════════════════════ */
+
+const TOOL_PRESETS: Partial<Record<ToolType, SettingsPreset[]>> = {
+  gate: [
+    { name: 'Voice',   icon: '🎙️', settings: { threshold: -50, ratio: 4, attack: 10, release: 200 } },
+    { name: 'Podcast', icon: '🎧', settings: { threshold: -45, ratio: 8, attack: 5,  release: 250 } },
+    { name: 'Music',   icon: '🎵', settings: { threshold: -60, ratio: 3, attack: 20, release: 300 } },
+  ],
+  equalize: [
+    { name: 'Voice',        icon: '🎙️', settings: { bass: -2, mid: 2, treble: 1 } },
+    { name: 'Podcast',      icon: '🎧', settings: { bass: -3, mid: 2, treble: 2 } },
+    { name: 'Music',        icon: '🎵', settings: { bass: 2,  mid: 0, treble: 1 } },
+    { name: 'Bass Boost',   icon: '🔊', settings: { bass: 6,  mid: 0, treble: 0 } },
+    { name: 'Treble Boost', icon: '✨', settings: { bass: 0,  mid: 0, treble: 5 } },
+  ],
+  normalize: [
+    { name: 'Spotify',   icon: '🎵', settings: { targetLufs: -14, truePeak: -1.5, lra: 11 } },
+    { name: 'YouTube',   icon: '📺', settings: { targetLufs: -14, truePeak: -1.5, lra: 11 } },
+    { name: 'Podcasts',  icon: '🎧', settings: { targetLufs: -16, truePeak: -1.5, lra: 11 } },
+    { name: 'Broadcast', icon: '📻', settings: { targetLufs: -23, truePeak: -1,   lra: 15 } },
+  ],
+  'dynamic-compress': [
+    { name: 'Gentle',     icon: '🌿', settings: { threshold: -15, ratio: 2, attack: 30, release: 300, makeup: 1 } },
+    { name: 'Standard',   icon: '⚖️', settings: { threshold: -20, ratio: 4, attack: 20, release: 250, makeup: 3 } },
+    { name: 'Aggressive', icon: '🔥', settings: { threshold: -25, ratio: 8, attack: 10, release: 150, makeup: 6 } },
+    { name: 'Voice-over', icon: '🎙️', settings: { threshold: -18, ratio: 3, attack: 15, release: 300, makeup: 3 } },
+  ],
+  limit: [
+    { name: 'Streaming', icon: '🎵', settings: { ceiling: -1,   attack: 5, release: 50 } },
+    { name: 'Video',     icon: '🎬', settings: { ceiling: -3,   attack: 5, release: 50 } },
+    { name: 'Max Loud',  icon: '🔥', settings: { ceiling: -0.3, attack: 3, release: 80 } },
+  ],
+  fade: [
+    { name: 'Short', icon: '⚡', settings: { fadeIn: 0.5, fadeOut: 0.5, curve: 'tri' } },
+    { name: 'Music', icon: '🎵', settings: { fadeIn: 2,   fadeOut: 3,   curve: 'tri' } },
+    { name: 'Long',  icon: '🌅', settings: { fadeIn: 5,   fadeOut: 5,   curve: 'qsin' } },
+    { name: 'Bump',  icon: '💥', settings: { fadeIn: 0.2, fadeOut: 0.2, curve: 'exp' } },
+  ],
+  'silence-remove': [
+    { name: 'Tight',    icon: '⚡', settings: { threshold: -40, minSilence: 0.3, keepSilence: 0.05 } },
+    { name: 'Standard', icon: '⚖️', settings: { threshold: -40, minSilence: 0.5, keepSilence: 0.1  } },
+    { name: 'Relaxed',  icon: '🌊', settings: { threshold: -40, minSilence: 1.0, keepSilence: 0.3  } },
+  ],
+  crossfade: [
+    { name: 'Quick',    icon: '⚡', settings: { duration: 0.5, curve: 'tri'  } },
+    { name: 'Standard', icon: '🎵', settings: { duration: 1.5, curve: 'tri'  } },
+    { name: 'DJ Mix',   icon: '🎧', settings: { duration: 5,   curve: 'qsin' } },
+    { name: 'Ambient',  icon: '🌊', settings: { duration: 10,  curve: 'log'  } },
+  ],
+  dehum: [
+    { name: '50 Hz EU',   icon: '⚡', settings: { frequency: 50, harmonics: 3 } },
+    { name: '60 Hz US',   icon: '⚡', settings: { frequency: 60, harmonics: 3 } },
+    { name: 'Aggressive', icon: '🔥', settings: { frequency: 50, harmonics: 5 } },
+  ],
+  reverb: [
+    { name: 'Subtle',   icon: '🌫️', settings: { delayMs: 50,  decay: 0.4 } },
+    { name: 'Standard', icon: '🌊', settings: { delayMs: 100, decay: 0.5 } },
+    { name: 'Hall',     icon: '🏛️', settings: { delayMs: 200, decay: 0.7 } },
+    { name: 'Canyon',   icon: '🏔️', settings: { delayMs: 500, decay: 0.8 } },
+  ],
+  resample: [
+    { name: 'Music',     icon: '🎵', settings: { sampleRate: 44100, bitDepth: 16 } },
+    { name: 'Video',     icon: '🎬', settings: { sampleRate: 48000, bitDepth: 24 } },
+    { name: 'Hi-Res',    icon: '✨', settings: { sampleRate: 96000, bitDepth: 24 } },
+    { name: 'Telephone', icon: '📞', settings: { sampleRate: 8000,  bitDepth: 16 } },
+  ],
+  'video-compress': [
+    { name: 'High Quality', icon: '✨', settings: { crf: 18, preset: 'slow' } },
+    { name: 'Balanced',     icon: '⚖️', settings: { crf: 23, preset: 'medium' } },
+    { name: 'Small File',   icon: '📦', settings: { crf: 28, preset: 'veryfast' } },
+    { name: 'Fast',         icon: '⚡', settings: { crf: 23, preset: 'ultrafast' } },
+  ],
+  'video-to-gif': [
+    { name: 'Small',        icon: '📦', settings: { fps: 10, width: 240 } },
+    { name: 'Standard',     icon: '⚖️', settings: { fps: 10, width: 320 } },
+    { name: 'Smooth',       icon: '✨', settings: { fps: 15, width: 480 } },
+    { name: 'High Quality', icon: '💎', settings: { fps: 24, width: 640 } },
+  ],
+};
+
+/**
+ * Return a compact one-line summary of the current settings, for the
+ * "Adjust settings" trigger card. Falls back gracefully when the tool
+ * has no settings or the values are unexpected.
+ */
+function summarizeSettings(
+  tool: ToolConfig,
+  values: Record<string, string | number>,
+): string {
+  const settings = tool.settings ?? [];
+  if (settings.length === 0) return 'No settings to configure';
+
+  const parts: string[] = [];
+  for (const setting of settings.slice(0, 3)) {
+    const raw = values[setting.name] ?? setting.default;
+    if (setting.type === 'select' && setting.options) {
+      const match = setting.options.find((o) =>
+        typeof o === 'string'
+          ? String(o) === String(raw)
+          : String(o.value) === String(raw),
+      );
+      const label =
+        typeof match === 'string'
+          ? match
+          : match && typeof match === 'object' && 'label' in match
+            ? match.label
+            : String(raw);
+      // Keep it short — first clause before an em-dash, max 2 words.
+      const short = label.split('—')[0].trim().split(' ').slice(0, 2).join(' ');
+      parts.push(short || String(raw));
+    } else {
+      parts.push(String(raw));
+    }
+  }
+  if (settings.length > 3) parts.push(`+${settings.length - 3} more`);
+  return parts.join(' · ');
+}
+
+/** Match current settings to a preset name, or undefined. */
+function findActivePreset(
+  presets: SettingsPreset[] | undefined,
+  values: Record<string, string | number>,
+): string | undefined {
+  if (!presets) return undefined;
+  for (const preset of presets) {
+    const keys = Object.keys(preset.settings);
+    const allMatch = keys.every(
+      (k) => String(values[k]) === String(preset.settings[k]),
+    );
+    if (allMatch) return preset.name;
+  }
+  return undefined;
+}
+
 /**
  * Video extensions recognised by the audio-with-copied-video tools (denoise,
  * fade, normalize, dehum, ringtone, loudness-meter). Video stream is copied,
@@ -131,10 +271,6 @@ const AUDIO_VIDEO_EXTS = new Set([
   'mp4', 'm4v', 'mov', 'mkv', 'avi', 'webm', 'flv',
 ]);
 
-/**
- * Return the effective output container for a video-input job, or ''
- * when the input is audio (in which case `outputFormat` applies).
- */
 function getAudioVideoContainer(file: File | undefined): string {
   if (!file) return '';
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
@@ -142,7 +278,6 @@ function getAudioVideoContainer(file: File | undefined): string {
   return ext === 'webm' ? 'webm' : 'mp4';
 }
 
-/** Detect mobile devices */
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -158,7 +293,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-/** Determine accepted input file extensions based on the tool's configuration */
 function getAllowedExtensions(config: ToolConfig): string[] {
   if (config.type === 'resolution-convert') {
     return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
@@ -175,7 +309,6 @@ function getAllowedExtensions(config: ToolConfig): string[] {
   }
 
   switch (config.type) {
-    // Audio utilities (audio only)
     case 'cut':
     case 'merge':
     case 'compress':
@@ -195,7 +328,6 @@ function getAllowedExtensions(config: ToolConfig): string[] {
     case 'karaoke':
       return ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac', 'opus', 'aiff', 'amr', 'ape'];
 
-    // Accepts audio OR video (video stream copied, audio processed)
     case 'denoise':
     case 'fade':
     case 'normalize':
@@ -207,7 +339,6 @@ function getAllowedExtensions(config: ToolConfig): string[] {
         'mp4', 'mov', 'mkv', 'avi', 'webm', 'flv', 'm4v',
       ];
 
-    // Video-only utilities
     case 'video-compress':
     case 'video-cut':
     case 'video-merge':
@@ -409,6 +540,10 @@ export default function Converter({
     setSettingsState((previous) => ({ ...previous, [name]: value }));
   }
 
+  function applyPreset(preset: Record<string, string | number>) {
+    setSettingsState((previous) => ({ ...previous, ...preset }));
+  }
+
   function sanitizeFiles(selected: File[]): File[] {
     return selected.map((file) => {
       const clean = cleanFileName(file.name);
@@ -437,6 +572,20 @@ export default function Converter({
     else setPromo(null);
 
     if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }
+  }
+
+  function removeFile(index: number) {
+    if (processing) return;
+    const next = files.filter((_, i) => i !== index);
+    setFiles(next);
+    if (next.length === 0) {
+      setPromo(null);
+      setBypassPromo(false);
+    } else {
+      const capacity = checkWebCapacity(next, isMobile);
+      if (capacity) setPromo({ reason: capacity.reason, totalMB: capacity.totalMB });
+      else setPromo(null);
+    }
   }
 
   function handleTryAnyway() {
@@ -829,6 +978,10 @@ export default function Converter({
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
 
+  const toolPresets = TOOL_PRESETS[toolConfig.type];
+  const activePreset = findActivePreset(toolPresets, settingsState);
+  const settingsSummary = summarizeSettings(toolConfig, settingsState);
+
   function getLoadingLabel(): string {
     if (progress > 0) return 'Processing your file…';
     if (smoothProgress < 4) return 'Downloading FFmpeg engine…';
@@ -864,29 +1017,11 @@ export default function Converter({
         />
 
         {files.length > 0 && (
-          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
-              <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
-              <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                {files.length} {files.length === 1 ? 'file' : 'files'}
-              </span>
-            </div>
-            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-              {files.map((file) => (
-                <li
-                  key={`${file.name}-${file.size}-${file.lastModified}`}
-                  class="flex items-center justify-between gap-4 px-5 py-3"
-                >
-                  <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
-                    {file.name}
-                  </span>
-                  <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-                    {formatBytes(file.size)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FileHero
+            files={files}
+            multiple={multipleAllowed}
+            onRemove={removeFile}
+          />
         )}
 
         <button
@@ -913,58 +1048,32 @@ export default function Converter({
           />
 
           {files.length > 0 && (
-            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
-                <p class="text-sm font-bold text-gray-900 dark:text-white">Selected files</p>
-                <span class="shrink-0 rounded-full bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                  {files.length} {files.length === 1 ? 'file' : 'files'}
-                </span>
-              </div>
-              <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                {files.map((file) => (
-                  <li
-                    key={`${file.name}-${file.size}-${file.lastModified}`}
-                    class="flex items-center justify-between gap-4 px-5 py-3"
-                  >
-                    <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {file.name}
-                    </span>
-                    <span class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-                      {formatBytes(file.size)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <FileHero
+              files={files}
+              multiple={multipleAllowed}
+              onRemove={removeFile}
+            />
           )}
 
           {settings.length > 0 && (
-            <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div class="border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/60">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-lg dark:bg-sky-900/40">
-                    ⚙️
-                  </div>
-                  <div class="min-w-0">
-                    <h2 class="text-sm font-bold text-gray-900 dark:text-white">Settings &amp; Adjustments</h2>
-                    <p class="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">
-                      Customize your output before processing.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-6 p-5">
-                {settings.map((setting) => (
-                  <SettingField
-                    key={setting.name}
-                    setting={setting}
-                    value={settingsState[setting.name] ?? setting.default}
-                    onChange={(v) => updateSetting(setting.name, v)}
-                    disabled={processing}
-                  />
-                ))}
-              </div>
-            </section>
+            <SettingsSheet
+              summary={settingsSummary}
+              toolName={toolConfig.label || 'Tool'}
+              presets={toolPresets}
+              activePresetName={activePreset}
+              onApplyPreset={applyPreset}
+              disabled={processing}
+            >
+              {settings.map((setting) => (
+                <SettingField
+                  key={setting.name}
+                  setting={setting}
+                  value={settingsState[setting.name] ?? setting.default}
+                  onChange={(v) => updateSetting(setting.name, v)}
+                  disabled={processing}
+                />
+              ))}
+            </SettingsSheet>
           )}
 
           <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
