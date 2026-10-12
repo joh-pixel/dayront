@@ -874,7 +874,7 @@ export default function Converter({
 
       const originalName = files[0]?.name || 'my-file';
       const filename = makeOutputName(
-        toolConfig.type + '-conversion',
+        'dayront',
         originalName,
         format,
       );
