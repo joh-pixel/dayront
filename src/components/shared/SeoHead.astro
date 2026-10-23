@@ -67,6 +67,9 @@ const tool = toolSlug ? getToolBySlug(toolSlug) : null;
 let jsonLd: Record<string, any> | null = null;
 
 if (schemaType === 'software' && tool) {
+  // ★ FIXED: Check if this is a converter (from/to) to route to /convert/ vs /tools/
+  const toolPath = tool.from && tool.to ? `/convert/${tool.slug}` : `/tools/${tool.slug}`;
+
   jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -75,7 +78,7 @@ if (schemaType === 'software' && tool) {
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Web browser',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    url: `${siteUrl}/tools/${tool.slug}`,
+    url: `${siteUrl}${toolPath}`,
     browserRequirements: 'Requires a modern browser with WebAssembly support',
   };
 } else if (schemaType === 'article') {

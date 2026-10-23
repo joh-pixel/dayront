@@ -8,8 +8,6 @@ import vercel from "@astrojs/vercel";
 
 /**
  * ★ AI packages that must NOT be bundled by Vite/Rollup.
- * They are loaded at runtime from CDN via the import map
- * declared in src/layouts/BaseLayout.astro.
  */
 const AI_EXTERNALS = [
   "@huggingface/transformers",
@@ -19,42 +17,21 @@ const AI_EXTERNALS = [
 
 /**
  * ★ Capacitor packages that must NOT be bundled by Vite/Rollup.
- *
- * Two reasons:
- *   1. They only exist inside the native mobile app shell (Capacitor 8.x)
- *      — bundling them for the web build would produce a broken bundle.
- *   2. They are loaded lazily at runtime only when running in the app
- *      (see src/core/storage.ts and src/core/ffmpeg-native.ts).
- *
- * The dynamic imports in those files use `/* @vite-ignore *\/` so Vite
- * doesn't try to resolve them at build time, and this externals list
- * tells Rollup to skip them in the production build.
- *
- * IMPORTANT: @capacitor/app is now STATICALLY imported by
- * src/ui/mobile/layouts/MobileLayout.tsx (needed for the back-button
- * listener and deep links). It MUST be in this list, otherwise
- * Rollup fails to resolve it during the SSR pass of static generation.
  */
 const CAPACITOR_EXTERNALS = [
-  // Core + platform
   "@capacitor/core",
   "@capacitor/android",
   "@capacitor/cli",
-
-  // Native APIs used across the app
   "@capacitor/app",
   "@capacitor/preferences",
   "@capacitor/filesystem",
   "@capacitor/share",
   "@capacitor/local-notifications",
-
-  // Community + third-party plugins
   "@capacitor-community/keep-awake",
   "@capacitor-community/ffmpeg",
   "@capawesome/capacitor-file-picker",
 ];
 
-/** Merged list — used across build / worker / ssr / optimizeDeps. */
 const ALL_EXTERNALS = [...AI_EXTERNALS, ...CAPACITOR_EXTERNALS];
 
 export default defineConfig({
@@ -80,6 +57,7 @@ export default defineConfig({
         !page.includes("/category/") &&
         !page.includes("/download") &&
         !page.includes("/status") &&
+        !page.includes("/app/") && // ★ Prevents PWA routes from bloating the sitemap
         !page.includes("/404"),
       i18n: {
         defaultLocale: "en",
@@ -87,7 +65,15 @@ export default defineConfig({
       },
     }),
     robotsTxt({
-      policy: [{ userAgent: "*", allow: "/" }],
+      policy: [
+        { 
+          userAgent: "*", 
+          allow: "/", 
+          // ★ UPDATED: Matches the full list of rules to save crawl budget
+          disallow: ["/app/", "/api/", "/status", "/*?q=", "/*?lang=", "/download"] 
+        }
+      ],
+      sitemap: true, // ★ Ensures the sitemap URL is added to robots.txt
     }),
   ],
 
@@ -107,28 +93,20 @@ export default defineConfig({
         "react/jsx-runtime": "preact/jsx-runtime",
       },
     },
-
-    // ★ Client-side build — tells Rollup not to try bundling the
-    // Capacitor + AI packages, they'll be resolved at runtime.
     build: {
       rollupOptions: {
         external: ALL_EXTERNALS,
       },
     },
-
-    // ★ Worker build (Web Workers spawned by Vite)
     worker: {
       format: "es",
       rollupOptions: {
         external: ALL_EXTERNALS,
       },
     },
-
-    // ★ Server-side render (build-time render pass for static output)
     ssr: {
       external: ALL_EXTERNALS,
     },
-
     plugins: [
       {
         name: "configure-response-headers",
@@ -156,8 +134,6 @@ export default defineConfig({
         },
       },
     ],
-
-    // ★ Exclude the same packages from dep pre-bundling in dev mode
     optimizeDeps: {
       exclude: [
         "@ffmpeg/ffmpeg",

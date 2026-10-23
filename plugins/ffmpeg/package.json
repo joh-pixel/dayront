@@ -5,11 +5,7 @@
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
-  "files": [
-    "android/src/main/",
-    "dist/",
-    "src/"
-  ],
+  "files": ["android/src/main/", "dist/", "src/"],
   "keywords": ["capacitor", "plugin", "ffmpeg"],
   "capacitor": {
     "android": {
