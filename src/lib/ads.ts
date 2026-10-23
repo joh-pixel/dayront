@@ -71,7 +71,7 @@ export const activeAds: AdCampaign[] = [
     advertiser: 'Dayront',
     isDayront: true,
     emoji: '🛠️',
-    title: 'Explore all 40+ free tools',
+    title: 'Explore all 70+ free tools',
     subtitle: 'Audio, video, and AI — all in your browser',
     ctaText: 'Browse tools',
     href: '/tools',
