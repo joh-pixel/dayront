@@ -50,6 +50,8 @@ export interface Tool {
     | 'video-to-audio'
     | 'video-utility'
     | 'video-conversion'
+    | 'image-utility'
+    | 'image-conversion'
     | 'ai';
   from?: string;
   to?: string;
@@ -878,6 +880,65 @@ const baseTools: Tool[] = [
       { title: 'Download the report', text: 'Plain text with LUFS, dBTP, and LU plus reference targets.' },
     ],
     relatedTools: ['audio-normalize', 'audio-limit', 'audio-dynamic-compress'],
+  },
+
+  // ══════════════════════════════════════════════════════════
+  //   IMAGE UTILITIES
+  // ══════════════════════════════════════════════════════════
+  {
+    slug: 'image-resize',
+    name: 'Image Resizer',
+    category: 'image-utility',
+    description: 'Resize images to exact dimensions or keep aspect ratio.',
+    metaTitle: 'Image Resizer – Resize Images Online Free | Dayront',
+    metaDescription: 'Resize images to exact dimensions or keep aspect ratio. Fast, private, and browser-based.',
+    icon: '📐',
+    type: 'image-resize',
+    outputFormat: 'png',
+    settings: [
+      { name: 'width',  label: 'Width (px)',                    type: 'number', min: 10, default: 1920 },
+      { name: 'height', label: 'Height (px) — use -1 for auto', type: 'number', min: -1, default: -1 },
+    ],
+    faq: [
+      { question: 'How do I keep the aspect ratio?', answer: 'Set the height to -1. The tool will calculate the correct height based on your chosen width.' },
+      { question: 'What does upscaling do?', answer: 'Upscaling makes an image larger, but it does not add new detail. It will look softer than the original.' },
+      { question: 'What formats are supported?', answer: 'You can resize JPG, PNG, and WebP images.' },
+    ],
+    howTo: [
+      { title: 'Upload your image', text: 'Select your image file.' },
+      { title: 'Set dimensions', text: 'Enter a width. Set height to -1 to keep aspect ratio.' },
+      { title: 'Download', text: 'Save your resized image.' },
+    ],
+    relatedTools: ['image-convert', 'resize-video', 'crop-video'],
+  },
+  {
+    slug: 'image-convert',
+    name: 'Image Converter',
+    category: 'image-conversion',
+    description: 'Convert images between JPG, PNG, and WebP.',
+    metaTitle: 'Image Converter – Convert JPG, PNG, WebP | Dayront',
+    metaDescription: 'Convert images between JPG, PNG, and WebP instantly in your browser. No uploads, 100% private.',
+    icon: '🖼️',
+    type: 'image-convert',
+    outputFormat: 'png',
+    settings: [
+      { name: 'format', label: 'Output Format', type: 'select', default: 'png', options: [
+        { value: 'png',  label: 'PNG — Lossless, supports transparency' },
+        { value: 'jpg',  label: 'JPG — Smallest file size' },
+        { value: 'webp', label: 'WebP — Modern, highly compressed' },
+      ] },
+    ],
+    faq: [
+      { question: 'Does it preserve transparency?', answer: 'PNG and WebP preserve transparency. JPG does not; transparent areas will be filled with white.' },
+      { question: 'What is WebP?', answer: 'WebP is a modern image format developed by Google that provides superior lossless and lossy compression for images on the web.' },
+      { question: 'Is my image uploaded?', answer: 'No, all conversion happens locally in your browser.' },
+    ],
+    howTo: [
+      { title: 'Upload your image', text: 'Select a JPG, PNG, or WebP file.' },
+      { title: 'Choose format', text: 'Select your desired output format.' },
+      { title: 'Download', text: 'Save your converted image.' },
+    ],
+    relatedTools: ['image-resize', 'crop-video', 'mp4-to-mp3'],
   },
 
   // ══════════════════════════════════════════════════════════
@@ -1721,6 +1782,134 @@ const baseTools: Tool[] = [
     relatedTools: ['mp4-to-mp3', 'mute-video', 'audio-cutter'],
   },
 
+  // ── Video transforms ─────────────────────
+  {
+    slug: 'video-rotate',
+    name: 'Rotate Video',
+    category: 'video-utility',
+    description: 'Rotate video 90°, 180°, or 270° instantly in your browser.',
+    metaTitle: 'Rotate Video – Flip Video 90, 180, 270 Degrees | Dayront',
+    metaDescription: 'Rotate your video orientation instantly in your browser. No uploads, 100% private.',
+    icon: '🔄',
+    type: 'video-rotate',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'angle', label: 'Rotation', type: 'select', default: 90, options: [
+        { value: 90,  label: '90° — Clockwise' },
+        { value: 180, label: '180° — Upside Down' },
+        { value: 270, label: '270° — Counter-Clockwise' },
+      ] },
+    ],
+    faq: [
+      { question: 'Does it re-encode the audio?', answer: 'No, the audio stream is copied exactly as it is for maximum speed and quality.' },
+      { question: 'What does 90 degrees mean?', answer: '90° is clockwise. 270° is counter-clockwise. 180° turns it upside down.' },
+      { question: 'Does it fix sideways iPhone videos?', answer: 'Yes, if the video is physically recorded sideways, this will fix the orientation permanently.' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Select the video you want to rotate.' },
+      { title: 'Choose an angle', text: 'Select 90°, 180°, or 270°.' },
+      { title: 'Download', text: 'Get your correctly oriented video.' },
+    ],
+    relatedTools: ['crop-video', 'resize-video', 'video-compressor'],
+  },
+  {
+    slug: 'video-reverse',
+    name: 'Reverse Video',
+    category: 'video-utility',
+    description: 'Play video and audio backwards.',
+    metaTitle: 'Reverse Video – Play Video Backwards Online | Dayront',
+    metaDescription: 'Reverse your video and audio instantly in your browser. No uploads, 100% private.',
+    icon: '↩️',
+    type: 'reverse-video',
+    outputFormat: 'mp4',
+    settings: [],
+    faq: [
+      { question: 'Does this reverse the audio too?', answer: 'Yes, both the video stream and audio stream are played backwards.' },
+      { question: 'Why is this slow for large files?', answer: 'Reversing a video requires FFmpeg to load the entire video into memory and rewrite it from the last frame to the first. For the best results, keep files under 100MB.' },
+      { question: 'Is it private?', answer: 'Yes, everything runs in your browser.' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Select an MP4, MOV, or WebM file.' },
+      { title: 'Reverse', text: 'Click start to reverse the video and audio.' },
+      { title: 'Download', text: 'Get your reversed video.' },
+    ],
+    relatedTools: ['reverse-audio', 'video-speed', 'video-cutter'],
+  },
+  {
+    slug: 'video-speed',
+    name: 'Video Speed Changer',
+    category: 'video-utility',
+    description: 'Speed up or slow down video with pitch-preserved audio.',
+    metaTitle: 'Video Speed Changer – Speed Up or Slow Down Video | Dayront',
+    metaDescription: 'Change the speed of your video and audio in your browser. 0.5x, 2x, or custom speeds. No uploads, 100% private.',
+    icon: '⏩',
+    type: 'video-speed',
+    outputFormat: 'mp4',
+    settings: [
+      { name: 'factor', label: 'Playback Speed', type: 'select', default: 2, options: [
+        { value: 0.5, label: '0.5× — Slow Motion' },
+        { value: 1,   label: '1× — Normal' },
+        { value: 1.5, label: '1.5× — Slightly Faster' },
+        { value: 2,   label: '2× — Double Speed' },
+        { value: 3,   label: '3× — Triple Speed' },
+      ] },
+    ],
+    faq: [
+      { question: 'Does this affect the audio pitch?', answer: "No. We use FFmpeg's `atempo` and `setpts` filters to change the speed while preserving the original pitch of the audio." },
+      { question: 'What speeds are supported?', answer: 'From 0.5x (half speed) up to 3x (triple speed).' },
+      { question: 'Will it re-encode the video?', answer: 'Yes, changing speed requires re-encoding the video and audio streams. We use H.264 and AAC for maximum compatibility.' },
+    ],
+    howTo: [
+      { title: 'Upload your video', text: 'Select an MP4, MOV, or WebM file.' },
+      { title: 'Choose a speed', text: 'Select 0.5x, 1.5x, 2x, or 3x.' },
+      { title: 'Download', text: 'Get your speed-adjusted video.' },
+    ],
+    relatedTools: ['change-fps', 'video-compressor', 'video-cutter'],
+  },
+
+  {
+    slug: 'waveform-generator',
+    name: 'Waveform Generator',
+    category: 'video-utility',
+    description: 'Generate transparent audio-reactive waveforms for video editors.',
+    metaTitle: 'Transparent Audio Waveform Generator | Dayront',
+    metaDescription: 'Generate audio-reactive waveforms for CapCut, Premiere, and DaVinci Resolve. Export with a transparent background 100% privately.',
+    icon: '🌊',
+    type: 'waveform-generator',
+    outputFormat: 'webm',
+    faq: [],
+    howTo: [],
+    relatedTools: [],
+  },
+  {
+    slug: 'mockup-player',
+    name: 'Mockup Player',
+    category: 'video-utility',
+    description: 'Create pixel-perfect Spotify cards and lockscreen mockups.',
+    metaTitle: 'Spotify Mockup Player Generator | Dayront',
+    metaDescription: 'Create pixel-perfect Spotify cards and iOS lockscreen mockups. Download as transparent PNG.',
+    icon: '📱',
+    type: 'mockup-player',
+    outputFormat: 'png',
+    faq: [],
+    howTo: [],
+    relatedTools: [],
+  },
+  {
+    slug: 'music-visualizer',
+    name: 'Music Visualizer',
+    category: 'video-utility',
+    description: 'Combine audio and album art into a bouncing music video.',
+    metaTitle: 'Music Visualizer – Audio Reactive Video Maker | Dayront',
+    metaDescription: 'Generate stunning audio-reactive videos. Combine background video, audio, and album art with a bouncing wave.',
+    icon: '🎬',
+    type: 'music-visualizer',
+    outputFormat: 'mp4',
+    faq: [],
+    howTo: [],
+    relatedTools: [],
+  },
+
   // ══════════════════════════════════════════════════════════
   //   AI TOOLS
   // ══════════════════════════════════════════════════════════
@@ -1964,6 +2153,10 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   convert:          { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
   'convert-video':  { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
 
+  // ── Image ────────────────────────────────
+  'image-resize':   { tier: 'light', engine: 'wasm', webMaxMB: 50, recommendApp: false },
+  'image-convert':  { tier: 'light', engine: 'wasm', webMaxMB: 50, recommendApp: false },
+
   // ── Video utility ────────────────────────
   'video-cut':      { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: false },
   'video-merge':    { tier: 'heavy',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoHeavy,  recommendApp: true },
@@ -1977,6 +2170,16 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   'extract-audio':  { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
   'resolution-convert': { tier: 'medium', engine: 'wasm', webMaxMB: 200, recommendApp: true },
 
+  // ── Video transforms ─────────────────────
+  'video-rotate':   { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true },
+  'reverse-video':  { tier: 'heavy',  engine: 'wasm', webMaxMB: 100,                         recommendApp: true },
+  'video-speed':    { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium,  recommendApp: true },
+
+  // ── Generative video utilities ───────────
+  'waveform-generator': { tier: 'heavy',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: true,  webNote: 'Audio analysis and transparent WebM encoding are CPU-intensive. The Dayront app is up to 10× faster.' },
+  'mockup-player':      { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoLight,  recommendApp: false },
+  'music-visualizer':   { tier: 'heavy',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: true,  webNote: 'Rendering audio-reactive video is CPU-intensive. The Dayront app is much faster.' },
+
   // ── AI ────────────────────────────────────
   'ai-captions':     { tier: 'heavy',  engine: 'ai',     webMaxMB: DEFAULT_LIMITS.ai, recommendApp: true },
   'ai-remove-bg':    { tier: 'heavy',  engine: 'ai',     webMaxMB: DEFAULT_LIMITS.ai, recommendApp: true },
@@ -1989,6 +2192,8 @@ const PLATFORM_DEFAULTS: Record<string, Partial<Tool>> = {
   'video-to-audio':    { tier: 'light',  engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
   'video-utility':     { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
   'video-conversion':  { tier: 'medium', engine: 'wasm', webMaxMB: DEFAULT_LIMITS.videoMedium, recommendApp: false },
+  'image-utility':     { tier: 'light',  engine: 'wasm', webMaxMB: 50,                         recommendApp: false },
+  'image-conversion':  { tier: 'light',  engine: 'wasm', webMaxMB: 50,                         recommendApp: false },
   ai:                  { tier: 'heavy',  engine: 'ai',   webMaxMB: DEFAULT_LIMITS.ai,          recommendApp: true },
 };
 
@@ -2014,6 +2219,12 @@ const PLATFORM_OVERRIDES: Record<string, Partial<Tool>> = {
     webMaxMB: 150,
     recommendApp: true,
     webNote: 'GIF conversion is memory-heavy. Keep clips short for best results.',
+  },
+  'reverse-video': {
+    tier: 'heavy',
+    webMaxMB: 100,
+    recommendApp: true,
+    webNote: 'Reversing buffers the entire file in memory. For files over 100 MB, use the Dayront app.',
   },
   'ai-video-captions': {
     tier: 'heavy',
@@ -2132,9 +2343,9 @@ export function detectPlatform(): PlatformInfo {
   const isTauri = w.__TAURI__ !== undefined || w.__TAURI_INTERNALS__ !== undefined;
   const isCapacitor = w.Capacitor !== undefined;
   const isExtension =
-    typeof chrome !== 'undefined' &&
-    chrome.runtime !== undefined &&
-    chrome.runtime.id !== undefined;
+    typeof w.chrome !== 'undefined' &&
+    w.chrome.runtime !== undefined &&
+    w.chrome.runtime.id !== undefined;
 
   const ua = navigator.userAgent || '';
   const isMobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);

@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WaveformGenerator from '../../components/music/WaveformGenerator.tsx';
+---
+<BaseLayout title="Transparent Audio Waveform Generator | Dayront" description="Generate audio-reactive waveforms for CapCut, Premiere, and DaVinci Resolve. Export with a transparent background 100% privately.">
+  <main class="max-w-4xl mx-auto px-4 py-12 text-gray-900 dark:text-gray-100">
+    <header class="text-center mb-12">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-100 text-3xl mb-4">🌊</div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold mb-4">Waveform Generator</h1>
+      <p class="text-lg text-gray-600 dark:text-gray-300">Generate high-fidelity, transparent audio overlays for your video editor.</p>
+    </header>
+    <WaveformGenerator client:load />
+  </main>
+</BaseLayout>

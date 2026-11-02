@@ -125,6 +125,7 @@ export function makeOutputName(
 export async function saveBlob(blob: Blob, filename: string): Promise<void> {
   if (isNative()) {
     try {
+      // @ts-ignore
       const { Filesystem, Directory } = await import(
         /* @vite-ignore */ '@capacitor/filesystem'
       );
@@ -172,9 +173,11 @@ export async function shareBlob(
   if (isNative()) {
     let writtenUri = '';
     try {
+      // @ts-ignore
       const { Filesystem, Directory } = await import(
         /* @vite-ignore */ '@capacitor/filesystem'
       );
+      // @ts-ignore
       const { Share } = await import(
         /* @vite-ignore */ '@capacitor/share'
       );

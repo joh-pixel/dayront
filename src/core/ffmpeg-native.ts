@@ -138,6 +138,7 @@ export async function runNativeFFmpeg(
 }
 
 async function importCapacitorFilesystem(): Promise<any> {
+  // @ts-ignore
   const mod: any = await import(/* @vite-ignore */ '@capacitor/filesystem');
   return mod;
 }

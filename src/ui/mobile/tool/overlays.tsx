@@ -434,7 +434,7 @@ export function WebPromo({
         </div>
       </div>
       <NativeAppPromo
-        reason={reason}
+        reason={reason as any}
         totalMB={totalMB}
         isMobile={true}
         canBypass={true}

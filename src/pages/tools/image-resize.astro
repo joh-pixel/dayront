@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "image-resize",
+  name: "Image Resizer",
+  metaTitle: "Image Resizer – Resize Images Online Free | Dayront",
+  metaDescription: "Resize images to exact dimensions or keep aspect ratio. Fast, private, and browser-based.",
+  icon: "📐",
+  howTo: [
+    { title: "Upload your image", text: "Select your image file." },
+    { title: "Set dimensions", text: "Enter a width. Set height to -1 to keep aspect ratio." },
+    { title: "Download", text: "Save your resized image." },
+  ],
+  faq: [
+    { question: "How do I keep the aspect ratio?", answer: "Set the height to -1. The tool will calculate the correct height based on your chosen width." },
+    { question: "What does upscaling do?", answer: "Upscaling makes an image larger, but it does not add new detail. It will look softer than the original." },
+    { question: "What formats are supported?", answer: "You can resize JPG, PNG, and WebP images." },
+  ],
+  relatedTools: [
+    { href: "/tools/image-convert", icon: "🖼️", name: "Image Converter" },
+    { href: "/tools/resize-video", icon: "↔️", name: "Resize Video" },
+    { href: "/tools/crop-video", icon: "🔲", name: "Crop Video" },
+  ],
+  type: "image-resize",
+  from: undefined,
+  to: undefined,
+  outputFormat: "png",
+  settings: [
+    { name: "width", label: "Width (px)", type: "number", min: 10, default: 1920 },
+    { name: "height", label: "Height (px) — use -1 for auto", type: "number", min: -1, default: -1 },
+  ],
+  tutorial: "\n    <h2>Resize Images</h2>\n    <p>Quickly scale images down for web use or up for printing. Setting the height to <code>-1</code> tells the tool to automatically calculate the height based on the original aspect ratio.</p>\n    <p>All image resizing is done via the FFmpeg `scale` filter locally in your browser.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

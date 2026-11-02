@@ -14,6 +14,7 @@
  * the sheet; tapping one applies a whole settings record at once.
  */
 import { useEffect, useRef, useState } from 'preact/hooks';
+// @ts-ignore - Preact's compat typing occasionally fails to export this
 import { createPortal } from 'preact/compat';
 import type { ComponentChildren } from 'preact';
 

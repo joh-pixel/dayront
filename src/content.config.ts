@@ -3,8 +3,6 @@ import { glob } from 'astro/loaders';
 
 const blogCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/blog" }),
-  // 👇 Enable rendering so `post.render()` works
-  render: true,
   schema: z.object({
     title: z.string(),
     description: z.string(),

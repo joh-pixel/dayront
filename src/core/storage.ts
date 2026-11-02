@@ -340,6 +340,7 @@ export function markNotifySubmitted(): void {
 export async function getAsync(key: string): Promise<string | null> {
   if (hasNative()) {
     try {
+      // @ts-ignore
       const mod: any = await import(/* @vite-ignore */ '@capacitor/preferences');
       const { value } = await mod.Preferences.get({ key: fullKey(key) });
       return value ?? null;
@@ -354,6 +355,7 @@ export async function getAsync(key: string): Promise<string | null> {
 export async function setAsync(key: string, value: string): Promise<void> {
   if (hasNative()) {
     try {
+      // @ts-ignore
       const mod: any = await import(/* @vite-ignore */ '@capacitor/preferences');
       await mod.Preferences.set({ key: fullKey(key), value });
       return;

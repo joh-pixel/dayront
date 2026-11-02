@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "video-rotate",
+  name: "Rotate Video",
+  metaTitle: "Rotate Video – Flip Video 90, 180, 270 Degrees | Dayront",
+  metaDescription: "Rotate your video orientation instantly in your browser. No uploads, 100% private.",
+  icon: "🔄",
+  howTo: [
+    { title: "Upload your video", text: "Select the video you want to rotate." },
+    { title: "Choose an angle", text: "Select 90°, 180°, or 270°." },
+    { title: "Download", text: "Get your correctly oriented video." },
+  ],
+  faq: [
+    { question: "Does it re-encode the audio?", answer: "No, the audio stream is copied exactly as it is for maximum speed and quality." },
+    { question: "What does 90 degrees mean?", answer: "90° is clockwise. 270° is counter-clockwise. 180° turns it upside down." },
+    { question: "Does it fix sideways iPhone videos?", answer: "Yes, if the video is physically recorded sideways, this will fix the orientation permanently." },
+  ],
+  relatedTools: [
+    { href: "/tools/crop-video", icon: "🔲", name: "Crop Video" },
+    { href: "/tools/resize-video", icon: "↔️", name: "Resize Video" },
+    { href: "/tools/video-compressor", icon: "📉", name: "Video Compressor" },
+  ],
+  type: "video-rotate",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [
+    { name: "angle", label: "Rotation", type: "select", default: 90, options: [
+      { value: 90,  label: "90° — Clockwise" },
+      { value: 180, label: "180° — Upside Down" },
+      { value: 270, label: "270° — Counter-Clockwise" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Rotate Video</h2>\n    <p>Fix sideways phone footage or create new orientations for vertical platforms like TikTok and Reels.</p>\n    <p>We use the FFmpeg `transpose` filter to rotate the pixels, while copying the audio stream untouched.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

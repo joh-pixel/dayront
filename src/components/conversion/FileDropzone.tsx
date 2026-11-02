@@ -1,5 +1,4 @@
-import { useRef, useState, type DragEvent, type ChangeEvent } from 'preact/compat';
-import { useRef as usePrefRef } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 
 interface Props {
   onFilesSelected: (files: File[]) => void;
@@ -65,17 +64,17 @@ export default function FileDropzone({
     onFilesSelected(finalFiles);
   }
 
-  function handleDragOver(e: DragEvent) {
+  function handleDragOver(e: any) {
     e.preventDefault();
     setIsDragging(true);
   }
 
-  function handleDragLeave(e: DragEvent) {
+  function handleDragLeave(e: any) {
     e.preventDefault();
     setIsDragging(false);
   }
 
-  function handleDrop(e: DragEvent) {
+  function handleDrop(e: any) {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer?.files) {
@@ -83,7 +82,7 @@ export default function FileDropzone({
     }
   }
 
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: any) {
     if (e.currentTarget.files) {
       processFiles(Array.from(e.currentTarget.files));
       // Reset so the same file can be re-selected after fixing an error

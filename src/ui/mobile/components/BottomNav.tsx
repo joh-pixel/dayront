@@ -10,6 +10,7 @@
  *   so it can control navigation timing (e.g. swipe gestures).
  */
 import { useEffect, useState } from 'preact/hooks';
+import type { JSX } from 'preact';
 import { haptic } from '../haptic';
 
 type TabKey = 'home' | 'tools' | 'recent' | 'settings';

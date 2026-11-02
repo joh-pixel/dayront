@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "video-speed",
+  name: "Video Speed Changer",
+  metaTitle: "Video Speed Changer – Speed Up or Slow Down Video | Dayront",
+  metaDescription: "Change the speed of your video and audio in your browser. 0.5x, 2x, or custom speeds. No uploads, 100% private.",
+  icon: "⏩",
+  howTo: [
+    { title: "Upload your video", text: "Select an MP4, MOV, or WebM file." },
+    { title: "Choose a speed", text: "Select 0.5x, 1.5x, 2x, or 3x." },
+    { title: "Download", text: "Get your speed-adjusted video." },
+  ],
+  faq: [
+    { question: "Does this affect the audio pitch?", answer: "No. We use FFmpeg's `atempo` and `setpts` filters to change the speed while preserving the original pitch of the audio." },
+    { question: "What speeds are supported?", answer: "From 0.5x (half speed) up to 3x (triple speed)." },
+    { question: "Will it re-encode the video?", answer: "Yes, changing speed requires re-encoding the video and audio streams. We use H.264 and AAC for maximum compatibility." },
+  ],
+  relatedTools: [
+    { href: "/tools/change-fps", icon: "⏱️", name: "Change FPS" },
+    { href: "/tools/video-compressor", icon: "📉", name: "Video Compressor" },
+    { href: "/tools/video-cutter", icon: "✂️", name: "Video Cutter" },
+  ],
+  type: "video-speed",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [
+    { name: "factor", label: "Playback Speed", type: "select", default: 2, options: [
+      { value: 0.5, label: "0.5× — Slow Motion" },
+      { value: 1,   label: "1× — Normal" },
+      { value: 1.5, label: "1.5× — Slightly Faster" },
+      { value: 2,   label: "2× — Double Speed" },
+      { value: 3,   label: "3× — Triple Speed" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Change Video Speed</h2>\n    <p>Speed up or slow down your video for dramatic effect or to fit a specific time constraint. Unlike simple playback speed changes, this tool re-encodes the video and modifies the presentation timestamps (PTS) so the resulting file plays at the new speed natively.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

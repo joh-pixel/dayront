@@ -152,7 +152,7 @@ export default function ToolsScreen({ tools, recentSlugs }: Props) {
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
-            spellCheck={false}
+            spellcheck={false}
             aria-label="Search tools"
           />
           {hasQuery && (

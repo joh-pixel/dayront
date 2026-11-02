@@ -51,6 +51,9 @@ function getMimeType(format: string): string {
     mpg: 'video/mpeg',
     gif: 'image/gif',
     png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
     txt: 'text/plain',
     bin: 'application/octet-stream',
   };
@@ -85,7 +88,8 @@ function makeName(prefix: string, extension: string): string {
 
 async function deleteFile(ff: FFmpeg, filename: string): Promise<void> {
   try {
-    await ff.deleteFile(filename);
+    // Cast to any because the types package doesn't officially expose deleteFile yet
+    await (ff as any).deleteFile(filename);
   } catch {
     /* ignore */
   }
@@ -312,6 +316,10 @@ const TYPE_ACCEPTS: Record<string, FileKind[]> = {
   'ringtone': ['audio', 'video'],
   'loudness-meter': ['audio', 'video'],
 
+  // Image tools
+  'image-resize': ['image'],
+  'image-convert': ['image'],
+
   // Video-only utilities
   'video-cut': ['video'],
   'video-merge': ['video'],
@@ -325,6 +333,11 @@ const TYPE_ACCEPTS: Record<string, FileKind[]> = {
   'extract-audio': ['video'],
   'resolution-convert': ['video'],
   'convert-video': ['video'],
+
+  // Video transforms
+  'video-rotate': ['video'],
+  'reverse-video': ['video'],
+  'video-speed': ['video'],
 
   // AI
   'ai-captions': ['video'],
@@ -580,7 +593,7 @@ async function execute(
     } catch (error) {
       failure = translateFFmpegError(error, toolSlug);
     } finally {
-      if (onProgress) ff.off('progress', progressHandler);
+      if (onProgress) (ff as any).off('progress', progressHandler);
     }
   });
 
@@ -625,8 +638,8 @@ async function executeCapture(
     } catch (error) {
       failure = translateFFmpegError(error, toolSlug);
     } finally {
-      ff.off('log', logHandler);
-      if (onProgress) ff.off('progress', progressHandler);
+      (ff as any).off('log', logHandler);
+      if (onProgress) (ff as any).off('progress', progressHandler);
     }
   });
 
@@ -2090,6 +2103,282 @@ export async function extractAudio(
 }
 
 /* ========================================================================== */
+/* 10b. IMAGE UTILITIES                                                       */
+/* ========================================================================== */
+
+/**
+ * Resize an image with optional auto height for aspect-ratio preservation.
+ * Height of -1 tells ffmpeg's `scale` filter to compute it automatically.
+ */
+export async function resizeImage(
+  file: File,
+  width: number,
+  height: number,
+  outputFormat = 'png',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  if (!Number.isFinite(width) || width < 1 || width > 7680) {
+    throw new Error('Width must be between 1 and 7680 pixels.');
+  }
+  if (!Number.isFinite(height) || (height !== -1 && (height < 1 || height > 4320))) {
+    throw new Error('Height must be between 1 and 4320 pixels, or -1 for auto.');
+  }
+
+  const format = normalizeFormat(outputFormat);
+  if (!['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
+    throw new Error('Output format must be PNG, JPG, or WebP.');
+  }
+
+  await validateInputFile(file, 'image-resize');
+
+  const ff = await getFFmpeg();
+  const inName = makeName('img-resize-in', getExtension(file.name));
+  const outName = makeName('img-resized', format);
+
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+
+    const safeWidth = Math.max(1, Math.floor(width));
+    const scaleFilter =
+      height === -1
+        ? `scale=${safeWidth}:-1:flags=lanczos`
+        : `scale=${safeWidth}:${Math.max(1, Math.floor(height))}:flags=lanczos`;
+
+    const args: string[] = ['-i', inName, '-vf', scaleFilter];
+
+    if (format === 'jpg' || format === 'jpeg') {
+      args.push('-pix_fmt', 'yuvj420p');
+      args.push('-c:v', 'mjpeg', '-q:v', '2');
+    } else if (format === 'webp') {
+      args.push('-c:v', 'libwebp', '-quality', '85');
+    } else {
+      args.push('-c:v', 'png');
+    }
+
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress, 'image-resize');
+    return await readBlob(ff, outName, format);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/**
+ * Convert an image between PNG / JPG / WebP.
+ * JPG output flattens transparency — pixels' underlying RGB values are kept,
+ * which in most editors produces a white (or solid) background.
+ */
+export async function convertImage(
+  file: File,
+  outputFormat = 'png',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  const format = normalizeFormat(outputFormat);
+  if (!['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
+    throw new Error('Output format must be PNG, JPG, or WebP.');
+  }
+
+  await validateInputFile(file, 'image-convert');
+
+  const ff = await getFFmpeg();
+  const inName = makeName('img-conv-in', getExtension(file.name));
+  const outName = makeName('img-converted', format);
+
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+
+    const args: string[] = ['-i', inName];
+
+    if (format === 'jpg' || format === 'jpeg') {
+      args.push('-pix_fmt', 'yuvj420p');
+      args.push('-c:v', 'mjpeg', '-q:v', '2');
+    } else if (format === 'webp') {
+      args.push('-c:v', 'libwebp', '-quality', '85');
+    } else {
+      args.push('-c:v', 'png');
+    }
+
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress, 'image-convert');
+    return await readBlob(ff, outName, format);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/* ========================================================================== */
+/* 10c. VIDEO TRANSFORMS                                                      */
+/* ========================================================================== */
+
+/**
+ * Rotate a video by 90°, 180°, or 270° clockwise.
+ * Audio stream is copied untouched.
+ */
+export async function rotateVideo(
+  file: File,
+  angle: 90 | 180 | 270,
+  outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  if (![90, 180, 270].includes(angle)) {
+    throw new Error('Angle must be 90, 180, or 270 degrees.');
+  }
+
+  const format = normalizeFormat(outputFormat);
+  await validateInputFile(file, 'video-rotate');
+
+  const ff = await getFFmpeg();
+  const inName = makeName('vrotate-in', getExtension(file.name));
+  const outName = makeName('vrotated', format);
+
+  // transpose=1 = 90° CW, transpose=2 = 90° CCW (=270° CW),
+  // 180° = apply transpose=1 twice.
+  const filters: string[] =
+    angle === 90  ? ['transpose=1'] :
+    angle === 270 ? ['transpose=2'] :
+                    ['transpose=1', 'transpose=1'];
+
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+
+    const args: string[] = [
+      '-i', inName,
+      '-vf', filters.join(','),
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '20',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'copy',
+      '-movflags', '+faststart',
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress, 'video-rotate');
+    return await readBlob(ff, outName, format);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/**
+ * Reverse a video and its audio stream.
+ * Memory-heavy — buffers the entire file. Suitable for clips under ~100 MB.
+ */
+export async function reverseVideo(
+  file: File,
+  outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  const format = normalizeFormat(outputFormat);
+  await validateInputFile(file, 'video-reverse');
+
+  const ff = await getFFmpeg();
+  const inName = makeName('vrev-in', getExtension(file.name));
+  const outName = makeName('vreversed', format);
+
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+
+    const args: string[] = [
+      '-i', inName,
+      '-vf', 'reverse',
+      '-af', 'areverse',
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '20',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-movflags', '+faststart',
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress, 'video-reverse');
+    return await readBlob(ff, outName, format);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/**
+ * Change video playback speed with pitch-preserved audio.
+ * Video: setpts=1/factor*PTS. Audio: atempo chained to handle 0.5–3×.
+ */
+export async function changeVideoSpeed(
+  file: File,
+  factor: number,
+  outputFormat = 'mp4',
+  cleanMetadata: boolean = false,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  if (!Number.isFinite(factor) || factor < 0.5 || factor > 3) {
+    throw new Error('Speed factor must be between 0.5 and 3.');
+  }
+
+  const format = normalizeFormat(outputFormat);
+  await validateInputFile(file, 'video-speed');
+
+  const ff = await getFFmpeg();
+  const inName = makeName('vspeed-in', getExtension(file.name));
+  const outName = makeName('vspeed-out', format);
+
+  const videoFilter = `setpts=${(1 / factor).toFixed(6)}*PTS`;
+
+  // atempo only accepts 0.5–2.0 per instance — chain for extremes.
+  const audioFilters: string[] = [];
+  let remaining = factor;
+  while (remaining > 2) {
+    audioFilters.push('atempo=2.0');
+    remaining /= 2;
+  }
+  while (remaining < 0.5) {
+    audioFilters.push('atempo=0.5');
+    remaining /= 0.5;
+  }
+  audioFilters.push(`atempo=${remaining.toFixed(4)}`);
+  const audioFilter = audioFilters.join(',');
+
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+
+    const args: string[] = [
+      '-i', inName,
+      '-vf', videoFilter,
+      '-af', audioFilter,
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '20',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-movflags', '+faststart',
+    ];
+    if (cleanMetadata) args.push('-map_metadata', '-1');
+    args.push('-y', outName);
+
+    await execute(args, onProgress, 'video-speed');
+    return await readBlob(ff, outName, format);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/* ========================================================================== */
 /* 11. PUBLIC UTILITIES                                                       */
 /* ========================================================================== */
 
@@ -2125,4 +2414,126 @@ export function getToolLimitInfo(toolSlug: string) {
     recommendApp: !native && (tool?.recommendApp ?? false),
     webNote: tool?.webNote,
   };
+}
+
+/* ========================================================================== */
+/* 12. METADATA UTILITIES                                                     */
+/* ========================================================================== */
+
+/**
+ * Strips all metadata from a file (used by src/lib/metadata.ts).
+ */
+export async function stripMetadata(
+  file: File,
+  outputFormat: string,
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  return convertFile(file, outputFormat, true, onProgress);
+}
+
+/* ========================================================================== */
+/* 13. WAVEFORM & VISUALIZER COMPOSITOR                                       */
+/* ========================================================================== */
+
+/**
+ * Renders ONLY the audio waveform as a video.
+ * Used for the standalone Waveform Generator tool.
+ */
+export async function generateWaveformVideo(
+  file: File,
+  waveColor: string,
+  isTransparent: boolean,
+  outputFormat: 'mp4' | 'webm',
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  await validateInputFile(file, 'waveform-generator');
+  const ff = await getFFmpeg();
+  const inName = makeName('wave-in', getExtension(file.name));
+  const outName = makeName('wave-out', outputFormat);
+
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+
+    // We use a solid color if not transparent, otherwise transparent
+    const args: string[] = [
+      '-i', inName,
+      '-filter_complex', `[0:a]showwaves=s=1280x360:mode=cline:colors=${waveColor}:r=30[outv]`,
+      '-map', '[outv]',
+      '-map', '0:a',
+      '-shortest',
+      '-y', outName,
+    ];
+
+    if (isTransparent) {
+      args.push('-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p', '-b:v', '4M');
+      args.push('-c:a', 'libopus', '-b:a', '128k');
+    } else {
+      args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '23');
+      args.push('-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart');
+    }
+
+    await execute(args, onProgress, 'waveform-generator');
+    return await readBlob(ff, outName, outputFormat);
+  } finally {
+    await deleteFile(ff, inName);
+    await deleteFile(ff, outName);
+  }
+}
+
+/**
+ * Composites a background video, an audio track, and a static Canvas PNG (the card).
+ * Used for the All-in-One Music Visualizer.
+ */
+export async function composeMusicVideo(
+  bgVideo: File,
+  audio: File,
+  cardImage: Blob,
+  waveColor: string,
+  isTransparent: boolean,
+  outputFormat: 'mp4' | 'webm',
+  onProgress?: (p: number) => void,
+): Promise<Blob> {
+  await validateInputFile(bgVideo, 'music-visualizer');
+  const ff = await getFFmpeg();
+  const bgName = makeName('bg-in', getExtension(bgVideo.name));
+  const audioName = makeName('audio-in', getExtension(audio.name));
+  const cardName = makeName('card', 'png');
+  const outName = makeName('viz-out', outputFormat);
+
+  try {
+    await ff.writeFile(bgName, await fetchFile(bgVideo));
+    await ff.writeFile(audioName, await fetchFile(audio));
+    await ff.writeFile(cardName, await fetchFile(cardImage));
+
+    const args: string[] = [
+      '-i', bgName,
+      '-i', audioName,
+      '-i', cardName,
+      '-filter_complex', `
+        [1:a]showwaves=s=600x100:mode=cline:colors=${waveColor}:r=30[wave];
+        [2:v][wave]overlay=x=80:y=180[widget];
+        [0:v][widget]overlay=x=(W-w)/2:y=(H-h)/2[outv]
+      `,
+      '-map', '[outv]',
+      '-map', '1:a',
+      '-shortest',
+      '-y', outName,
+    ];
+
+    if (isTransparent) {
+      args.push('-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p', '-b:v', '4M');
+      args.push('-c:a', 'libopus', '-b:a', '128k');
+    } else {
+      args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '23');
+      args.push('-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart');
+    }
+
+    await execute(args, onProgress, 'music-visualizer');
+    return await readBlob(ff, outName, outputFormat);
+  } finally {
+    await deleteFile(ff, bgName);
+    await deleteFile(ff, audioName);
+    await deleteFile(ff, cardName);
+    await deleteFile(ff, outName);
+  }
 }

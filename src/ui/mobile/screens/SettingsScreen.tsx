@@ -191,6 +191,7 @@ export default function SettingsScreen() {
     /* 1. Native share sheet */
     if (native) {
       try {
+        // @ts-ignore
         const mod: any = await import(/* @vite-ignore */ '@capacitor/share');
         const { Share } = mod;
         await Share.share({

@@ -43,6 +43,12 @@ import {
   karaokeAudio,
   makeRingtone,
   meterLoudness,
+  // ── Image & video transforms ──
+  resizeImage,
+  convertImage,
+  rotateVideo,
+  reverseVideo,
+  changeVideoSpeed,
   type LoudnessReading,
 } from '../../lib/ffmpeg';
 
@@ -94,7 +100,14 @@ type ToolType =
   | 'reverb'
   | 'karaoke'
   | 'ringtone'
-  | 'loudness-meter';
+  | 'loudness-meter'
+  // ── Image tools ──
+  | 'image-resize'
+  | 'image-convert'
+  // ── Video transforms ──
+  | 'video-rotate'
+  | 'reverse-video'
+  | 'video-speed';
 
 /* ── Friendly option type ───────────────────────────────── */
 export interface SettingOption {
@@ -205,6 +218,28 @@ const TOOL_PRESETS: Partial<Record<ToolType, SettingsPreset[]>> = {
     { name: 'Standard',     icon: '⚖️', settings: { fps: 10, width: 320 } },
     { name: 'Smooth',       icon: '✨', settings: { fps: 15, width: 480 } },
     { name: 'High Quality', icon: '💎', settings: { fps: 24, width: 640 } },
+  ],
+  'image-resize': [
+    { name: 'Thumbnail', icon: '🔍', settings: { width: 400,  height: -1 } },
+    { name: 'Web HD',    icon: '🌐', settings: { width: 1280, height: -1 } },
+    { name: 'Full HD',   icon: '📺', settings: { width: 1920, height: -1 } },
+    { name: '4K',        icon: '💎', settings: { width: 3840, height: -1 } },
+  ],
+  'image-convert': [
+    { name: 'PNG',  icon: '🖼️', settings: { format: 'png'  } },
+    { name: 'JPG',  icon: '📷', settings: { format: 'jpg'  } },
+    { name: 'WebP', icon: '✨', settings: { format: 'webp' } },
+  ],
+  'video-rotate': [
+    { name: '90° CW',  icon: '↻',  settings: { angle: 90  } },
+    { name: '180°',    icon: '🔄', settings: { angle: 180 } },
+    { name: '90° CCW', icon: '↺',  settings: { angle: 270 } },
+  ],
+  'video-speed': [
+    { name: 'Slow-mo',   icon: '🐢', settings: { factor: 0.5 } },
+    { name: 'Fast',      icon: '⚡', settings: { factor: 1.5 } },
+    { name: 'Double',    icon: '⏩', settings: { factor: 2   } },
+    { name: 'Timelapse', icon: '🚀', settings: { factor: 3   } },
   ],
 };
 
@@ -348,10 +383,17 @@ function getAllowedExtensions(config: ToolConfig): string[] {
     case 'change-fps':
     case 'mute-video':
     case 'extract-audio':
+    case 'video-rotate':
+    case 'reverse-video':
+    case 'video-speed':
       return ['mp4', 'mov', 'mkv', 'avi', 'webm', 'flv'];
 
     case 'gif-to-video':
       return ['gif'];
+
+    case 'image-resize':
+    case 'image-convert':
+      return ['png', 'jpg', 'jpeg', 'webp'];
 
     case 'convert':
     case 'convert-video':
@@ -605,6 +647,7 @@ export default function Converter({
 
     try {
       let output: Blob;
+      let formatOverride = '';
       const type = toolConfig.type;
 
       switch (type) {
@@ -784,6 +827,20 @@ export default function Converter({
           setProcessing(false);
           return;
         }
+        // ── Image tools ──
+        case 'image-resize': {
+          const w = Number(getSetting('width') ?? 1920);
+          const h = Number(getSetting('height') ?? -1);
+          output = await resizeImage(files[0], w, h,
+            toolConfig.outputFormat || 'png', privacy, updateProgress);
+          break;
+        }
+        case 'image-convert': {
+          const fmt = String(getSetting('format') ?? 'png');
+          output = await convertImage(files[0], fmt, privacy, updateProgress);
+          formatOverride = fmt;
+          break;
+        }
         case 'convert': {
           output = await convertFile(files[0], toolConfig.to || 'mp3', privacy, updateProgress);
           break;
@@ -850,6 +907,24 @@ export default function Converter({
             privacy, updateProgress);
           break;
         }
+        // ── Video transforms ──
+        case 'video-rotate': {
+          const angle = Number(getSetting('angle') ?? 90) as 90 | 180 | 270;
+          output = await rotateVideo(files[0], angle,
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
+        case 'reverse-video': {
+          output = await reverseVideo(files[0],
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
+        case 'video-speed': {
+          const factor = Number(getSetting('factor') ?? 2);
+          output = await changeVideoSpeed(files[0], factor,
+            toolConfig.outputFormat || 'mp4', privacy, updateProgress);
+          break;
+        }
         case 'convert-video': {
           output = await convertFile(files[0], toolConfig.to || 'mp4', privacy, updateProgress);
           break;
@@ -867,6 +942,7 @@ export default function Converter({
       ) ? getAudioVideoContainer(files[0]) : '';
 
       const format =
+        formatOverride ||
         containerOverride ||
         toolConfig.outputFormat ||
         toolConfig.to ||
@@ -977,6 +1053,7 @@ export default function Converter({
 
   const isVideoPreview = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'gif'].includes(outputFormat) || outputFormat === 'gif';
   const isGif = outputFormat === 'gif';
+  const isImagePreview = ['png', 'jpg', 'jpeg', 'webp'].includes(outputFormat);
 
   const toolPresets = TOOL_PRESETS[toolConfig.type];
   const activePreset = findActivePreset(toolPresets, settingsState);
@@ -1009,7 +1086,7 @@ export default function Converter({
     return (
       <div class="w-full space-y-6 text-gray-900 dark:text-gray-100">
         <NativeAppPromo
-          reason={promo.reason}
+          reason={promo.reason as any}
           totalMB={promo.totalMB}
           isMobile={isMobile}
           canBypass={true}
@@ -1235,7 +1312,9 @@ export default function Converter({
 
             {previewUrl && (
               <div class="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                {isGif ? (
+                {isImagePreview ? (
+                  <img src={previewUrl} alt="Preview" class="w-full h-auto" />
+                ) : isGif ? (
                   <img src={previewUrl} alt="Preview" class="w-full h-auto" />
                 ) : isVideoPreview ? (
                   <video controls class="w-full max-h-96" src={previewUrl}>

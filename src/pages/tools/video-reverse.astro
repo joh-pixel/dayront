@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "video-reverse",
+  name: "Reverse Video",
+  metaTitle: "Reverse Video – Play Video Backwards Online | Dayront",
+  metaDescription: "Reverse your video and audio instantly in your browser. No uploads, 100% private.",
+  icon: "↩️",
+  howTo: [
+    { title: "Upload your video", text: "Select an MP4, MOV, or WebM file." },
+    { title: "Reverse", text: "Click start to reverse the video and audio." },
+    { title: "Download", text: "Get your reversed video." },
+  ],
+  faq: [
+    { question: "Does this reverse the audio too?", answer: "Yes, both the video stream and audio stream are played backwards." },
+    { question: "Why is this slow for large files?", answer: "Reversing a video requires FFmpeg to load the entire video into memory and rewrite it from the last frame to the first. For the best results, keep files under 100MB." },
+    { question: "Is it private?", answer: "Yes, everything runs in your browser." },
+  ],
+  relatedTools: [
+    { href: "/tools/reverse-audio", icon: "🔊", name: "Reverse Audio" },
+    { href: "/tools/video-speed", icon: "⏩", name: "Video Speed Changer" },
+    { href: "/tools/video-cutter", icon: "✂️", name: "Video Cutter" },
+  ],
+  type: "reverse-video",
+  from: undefined,
+  to: undefined,
+  outputFormat: "mp4",
+  settings: [],
+  tutorial: "\n    <h2>Reverse Video and Audio</h2>\n    <p>Play your video backwards. This is great for transition effects, comedy edits, or highlighting specific actions.</p>\n    <p>Please note: FFmpeg needs to buffer the entire video to reverse it. Very large files may fail due to browser memory limits.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

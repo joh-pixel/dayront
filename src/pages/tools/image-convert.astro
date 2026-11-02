@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolLayout from '../../layouts/ToolLayout.astro';
+
+const tool = {
+  slug: "image-convert",
+  name: "Image Converter",
+  metaTitle: "Image Converter – Convert JPG, PNG, WebP | Dayront",
+  metaDescription: "Convert images between JPG, PNG, and WebP instantly in your browser. No uploads, 100% private.",
+  icon: "🖼️",
+  howTo: [
+    { title: "Upload your image", text: "Select a JPG, PNG, or WebP file." },
+    { title: "Choose format", text: "Select your desired output format." },
+    { title: "Download", text: "Save your converted image." },
+  ],
+  faq: [
+    { question: "Does it preserve transparency?", answer: "PNG and WebP preserve transparency. JPG does not; transparent areas will be filled with white." },
+    { question: "What is WebP?", answer: "WebP is a modern image format developed by Google that provides superior lossless and lossy compression for images on the web." },
+    { question: "Is my image uploaded?", answer: "No, all conversion happens locally in your browser." },
+  ],
+  relatedTools: [
+    { href: "/tools/image-resize", icon: "📐", name: "Image Resizer" },
+    { href: "/tools/crop-video", icon: "🔲", name: "Crop Video" },
+    { href: "/tools/mp4-to-mp3", icon: "🎬", name: "MP4 to MP3" },
+  ],
+  type: "image-convert",
+  from: undefined,
+  to: undefined,
+  outputFormat: "png",
+  settings: [
+    { name: "format", label: "Output Format", type: "select", default: "png", options: [
+      { value: "png", label: "PNG — Lossless, supports transparency" },
+      { value: "jpg", label: "JPG — Smallest file size" },
+      { value: "webp", label: "WebP — Modern, highly compressed" },
+    ] },
+  ],
+  tutorial: "\n    <h2>Convert Images</h2>\n    <p>Easily switch between standard image formats. We use FFmpeg's image processing capabilities to decode the image and re-encode it in your chosen format.</p>\n    <p>Note: When converting transparent images (like PNGs) to JPG, the transparency will be filled with a solid white background.</p>\n  ",
+  relatedBlogs: [],
+};
+---
+
+<ToolLayout
+  toolKey={tool.slug}
+  toolConfig={{
+    type: tool.type,
+    from: tool.from,
+    to: tool.to,
+    outputFormat: tool.outputFormat,
+    label: tool.name,
+    settings: tool.settings,
+  }}
+  extraContent={{
+    tutorial: tool.tutorial,
+    relatedBlogs: tool.relatedBlogs,
+  }}
+/>

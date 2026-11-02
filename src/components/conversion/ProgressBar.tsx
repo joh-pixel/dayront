@@ -88,8 +88,8 @@ export default function ProgressBar({
       class={`w-full ${className}`}
       role="progressbar"
       aria-valuenow={safePercent}
-      aria-valuemin="0"
-      aria-valuemax="100"
+      aria-valuemin={0}
+      aria-valuemax={100}
       aria-label="Processing progress"
     >
       <div class="h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">

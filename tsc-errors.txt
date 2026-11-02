@@ -1,0 +1,43 @@
+src/components/UrlDownloader.tsx(259,13): error TS2322: Type '{ id: string; type: "url"; value: string; disabled: boolean; onInput: (e: TargetedInputEvent<HTMLInputElement>) => void; onKeyDown: (e: TargetedKeyboardEvent<HTMLInputElement>) => void; ... 5 more ...; class: string; }' is not assignable to type 'InputHTMLAttributes<HTMLInputElement>'.
+  Property 'spellCheck' does not exist on type 'InputHTMLAttributes<HTMLInputElement>'. Did you mean 'spellcheck'?
+src/components/conversion/Converter.tsx(913,48): error TS2345: Argument of type 'number' is not assignable to parameter of type '90 | 180 | 270'.
+src/components/conversion/FileDropzone.tsx(1,10): error TS2305: Module '"preact/compat"' has no exported member 'useRef'.
+src/components/conversion/FileDropzone.tsx(1,18): error TS2305: Module '"preact/compat"' has no exported member 'useState'.
+src/components/conversion/FileDropzone.tsx(1,33): error TS2305: Module '"preact/compat"' has no exported member 'DragEvent'.
+src/components/conversion/FileDropzone.tsx(1,49): error TS2305: Module '"preact/compat"' has no exported member 'ChangeEvent'.
+src/components/conversion/ProgressBar.tsx(87,6): error TS2322: Type '{ children: Element; class: string; role: "progressbar"; "aria-valuenow": number; "aria-valuemin": string; "aria-valuemax": string; "aria-label": string; }' is not assignable to type 'HTMLAttributes<HTMLDivElement>'.
+  Types of property ''aria-valuemax'' are incompatible.
+    Type 'string' is not assignable to type 'Signalish<number | undefined>'.
+src/components/conversion/SettingsSheet.tsx(17,10): error TS2305: Module '"preact/compat"' has no exported member 'createPortal'.
+src/components/music/MockupPlayer.tsx(89,103): error TS18047: 'e.target' is possibly 'null'.
+src/components/music/MockupPlayer.tsx(89,112): error TS2339: Property 'files' does not exist on type 'EventTarget'.
+src/components/music/MusicVisualizer.tsx(2,35): error TS2307: Cannot find module '../../../lib/ffmpeg' or its corresponding type declarations.
+src/components/music/MusicVisualizer.tsx(101,106): error TS18047: 'e.target' is possibly 'null'.
+src/components/music/MusicVisualizer.tsx(101,115): error TS2339: Property 'files' does not exist on type 'EventTarget'.
+src/components/music/MusicVisualizer.tsx(109,107): error TS18047: 'e.target' is possibly 'null'.
+src/components/music/MusicVisualizer.tsx(109,116): error TS2339: Property 'files' does not exist on type 'EventTarget'.
+src/components/music/MusicVisualizer.tsx(118,103): error TS18047: 'e.target' is possibly 'null'.
+src/components/music/MusicVisualizer.tsx(118,112): error TS2339: Property 'files' does not exist on type 'EventTarget'.
+src/components/music/WaveformGenerator.tsx(2,39): error TS2307: Cannot find module '../../../lib/ffmpeg' or its corresponding type declarations.
+src/components/music/WaveformGenerator.tsx(33,102): error TS18047: 'e.target' is possibly 'null'.
+src/components/music/WaveformGenerator.tsx(33,111): error TS2339: Property 'files' does not exist on type 'EventTarget'.
+src/components/music/WaveformGenerator.tsx(45,92): error TS18047: 'e.target' is possibly 'null'.
+src/components/music/WaveformGenerator.tsx(45,101): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/content.config.ts(7,3): error TS2353: Object literal may only specify known properties, and 'render' does not exist in type 'DataCollectionConfig<ZodObject<{ title: ZodString; description: ZodString; date: ZodDate; author: ZodDefault<ZodString>; categories: ZodDefault<ZodArray<ZodString, "many">>; tags: ZodDefault<...>; relatedPosts: ZodDefault<...>; image: ZodOptional<...>; }, "strip", ZodTypeAny, { ...; }, { ...; }>> | ContentLayerConfi...'.
+src/core/ffmpeg.ts(91,14): error TS2339: Property 'deleteFile' does not exist on type 'FFmpeg'.
+src/core/ffmpeg.ts(595,26): error TS2339: Property 'off' does not exist on type 'FFmpeg'.
+src/core/ffmpeg.ts(640,10): error TS2339: Property 'off' does not exist on type 'FFmpeg'.
+src/core/ffmpeg.ts(641,26): error TS2339: Property 'off' does not exist on type 'FFmpeg'.
+src/core/storage.ts(343,56): error TS2307: Cannot find module '@capacitor/preferences' or its corresponding type declarations.
+src/core/storage.ts(357,56): error TS2307: Cannot find module '@capacitor/preferences' or its corresponding type declarations.
+src/core/tools.ts(2346,12): error TS2304: Cannot find name 'chrome'.
+src/core/tools.ts(2347,5): error TS2304: Cannot find name 'chrome'.
+src/core/tools.ts(2348,5): error TS2304: Cannot find name 'chrome'.
+src/i18n/utils.ts(4,30): error TS7016: Could not find a declaration file for module 'astro-i18next'. '/data/data/com.termux/files/home/dayront/node_modules/astro-i18next/dist/index.js' implicitly has an 'any' type.
+  There are types at '/data/data/com.termux/files/home/dayront/node_modules/astro-i18next/dist/types/index.d.ts', but this result could not be resolved when respecting package.json "exports". The 'astro-i18next' library may need to update its package.json or typings.
+src/lib/metadata.ts(1,10): error TS2305: Module '"./ffmpeg"' has no exported member 'stripMetadata'.
+src/ui/mobile/components/BottomNav.tsx(23,69): error TS2503: Cannot find namespace 'JSX'.
+src/ui/mobile/screens/ToolsScreen.tsx(155,13): error TS2322: Type '{ ref: RefObject<HTMLInputElement>; type: "search"; class: string; placeholder: string; value: string; onInput: (e: TargetedInputEvent<HTMLInputElement>) => void; ... 4 more ...; "aria-label": string; }' is not assignable to type 'InputHTMLAttributes<HTMLInputElement>'.
+  Property 'spellCheck' does not exist on type 'InputHTMLAttributes<HTMLInputElement>'. Did you mean 'spellcheck'?
+src/ui/mobile/tool/overlays.tsx(437,9): error TS2322: Type 'FallbackReason | "native-limit"' is not assignable to type 'FallbackReason | "desktop-only"'.
+  Type '"native-limit"' is not assignable to type 'FallbackReason | "desktop-only"'.

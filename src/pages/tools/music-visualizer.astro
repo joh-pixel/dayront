@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MusicVisualizer from '../../components/music/MusicVisualizer.tsx';
+---
+<BaseLayout title="Music Visualizer – Audio Reactive Video Maker | Dayront" description="Generate stunning audio-reactive videos. Combine background video, audio, and album art with a bouncing wave. 100% private.">
+  <main class="max-w-5xl mx-auto px-4 py-12 text-gray-900 dark:text-gray-100">
+    <header class="text-center mb-12">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-100 text-3xl mb-4">🎬</div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold mb-4">Music Visualizer</h1>
+      <p class="text-lg text-gray-600 dark:text-gray-300">Drop in your MP3, pick a background video, and let the wave do the talking.</p>
+    </header>
+    <MusicVisualizer client:load />
+  </main>
+</BaseLayout>
