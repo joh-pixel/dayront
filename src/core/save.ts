@@ -85,14 +85,6 @@ export function cleanFileName(rawName: string): string {
  *   "mytrack-mp4-to-mp3-conversion.mp3"              → "mytrack-dayront.mp3"
  *   "mytrack-denoise-conversion-gate-conversion.mp3" → "mytrack-dayront.mp3"
  *   "mytrack-dayront.mp3"                            → "mytrack-dayront.mp3"  (idempotent)
- *
- * The suffix stripping is what makes chaining tools predictable — without
- * it, every tool pass would append another "-<tool>-conversion" segment
- * and the filename would grow forever.
- *
- * Callers should pass 'dayront' as the first argument. Other values are
- * supported for future tools (e.g. batch exports) but the standard
- * single-tool flow always uses 'dayront'.
  */
 export function makeOutputName(
   toolSlug: string,
@@ -104,8 +96,7 @@ export function makeOutputName(
   let base = lastDot > 0 ? cleaned.slice(0, lastDot) : cleaned;
 
   // Strip any trailing Dayront suffixes so re-processing a Dayront output
-  // doesn't accumulate segments. Matches one or more of:
-  //   -<lowercase-slug>-conversion   OR   -dayront
+  // doesn't accumulate segments.
   base = base.replace(/(?:-[a-z0-9-]+-conversion|-dayront)+$/i, '');
   // Trim any leftover separator characters.
   base = base.replace(/[-_\s]+$/, '');
@@ -125,10 +116,10 @@ export function makeOutputName(
 export async function saveBlob(blob: Blob, filename: string): Promise<void> {
   if (isNative()) {
     try {
-      // @ts-ignore
-      const { Filesystem, Directory } = await import(
-        /* @vite-ignore */ '@capacitor/filesystem'
-      );
+      const fsModule = '@capacitor/filesystem';
+      // @ts-ignore - Capacitor plugins are only available in the native build
+      const { Filesystem, Directory } = await import(/* @vite-ignore */ fsModule);
+      
       const base64 = await blobToBase64(blob);
       await Filesystem.writeFile({
         path: filename,
@@ -160,9 +151,6 @@ export async function saveBlob(blob: Blob, filename: string): Promise<void> {
  * Open the native share sheet (Android / iOS).
  * Returns `true` if the user picked something, `false` if they cancelled
  * or if the platform doesn't support it.
- *
- * On native:   writes to Cache/ then shares the file URI via @capacitor/share
- * On web:      uses the Web Share API with files (if supported)
  */
 export async function shareBlob(
   blob: Blob,
@@ -173,14 +161,13 @@ export async function shareBlob(
   if (isNative()) {
     let writtenUri = '';
     try {
-      // @ts-ignore
-      const { Filesystem, Directory } = await import(
-        /* @vite-ignore */ '@capacitor/filesystem'
-      );
-      // @ts-ignore
-      const { Share } = await import(
-        /* @vite-ignore */ '@capacitor/share'
-      );
+      const fsModule = '@capacitor/filesystem';
+      const shareModule = '@capacitor/share';
+      
+      // @ts-ignore - Capacitor plugins are only available in the native build
+      const { Filesystem, Directory } = await import(/* @vite-ignore */ fsModule);
+      // @ts-ignore - Capacitor plugins are only available in the native build
+      const { Share } = await import(/* @vite-ignore */ shareModule);
 
       const base64 = await blobToBase64(blob);
       const written = await Filesystem.writeFile({
@@ -191,17 +178,6 @@ export async function shareBlob(
       });
       writtenUri = written.uri;
 
-      /* ★ Use `files:` (plural), not `url:` (singular).
-       *
-       * The `url` parameter is documented for web links. On Android,
-       * passing a `file://` URI through `url` throws (FileUriExposed),
-       * the plugin's catch swallows it, and our caller silently fell
-       * back to saveBlob — producing a "Saved to your device" toast
-       * and no share sheet.
-       *
-       * `files` is the canonical way to hand local file URIs to the
-       * share sheet. Passing `text` as well ensures apps that only
-       * accept plain text still get a useful fallback. */
       await Share.share({
         title,
         text: filename,
@@ -214,8 +190,7 @@ export async function shareBlob(
       const msg = String(err?.message || err || '').toLowerCase();
       const code = String(err?.code || '');
 
-      // User dismissed the share sheet — not an error, and definitely
-      // not something we should silently convert into a save.
+      // User dismissed the share sheet
       if (
         msg.includes('cancel') ||
         msg.includes('abort') ||
@@ -226,8 +201,6 @@ export async function shareBlob(
         return false;
       }
 
-      // Real failure — log everything so it appears in logcat when
-      // webContentsDebuggingEnabled is enabled for debugging.
       console.error('[shareBlob] Native share failed:');
       console.error('  message:', msg);
       console.error('  code:', code);

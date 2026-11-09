@@ -1,0 +1,40 @@
+[33mcommit f1fe9d56e282bab6793b6ff490e3b0eed1e00540[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: joh-pixel <Wrealinc@gmail.com>
+Date:   Mon Nov 2 03:19:16 2026 +0100
+
+    feat(tools): add image & video transforms and fix all TS errors
+
+ .github/.nomedia                      |   0
+ .vscode/.nomedia                      |   0
+ assets/.nomedia                       |   0
+ plugins/.nomedia                      |   0
+ scripts/.nomedia                      |   0
+ src/components/UrlDownloader.tsx      |   2 [32m+[m[31m-[m
+ .../conversion/Converter.tsx          |  85 [32m++[m[31m-[m
+ .../conversion/FileDropzone.tsx       |  11 [32m+[m[31m-[m
+ .../conversion/ProgressBar.tsx        |   4 [32m+[m[31m-[m
+ .../conversion/SettingsSheet.tsx      |   1 [32m+[m
+ src/components/music/MockupPlayer.tsx | 118 [32m++++[m
+ .../music/MusicVisualizer.tsx         | 163 [32m+++++[m
+ .../music/WaveformGenerator.tsx       |  80 [32m+++[m
+ src/content.config.ts                 |   2 [31m-[m
+ src/core/ffmpeg-native.ts             |   1 [32m+[m
+ src/core/ffmpeg.ts                    | 419 [32m++++++++++++[m[31m-[m
+ src/core/save.ts                      |   3 [32m+[m
+ src/core/storage.ts                   |   2 [32m+[m
+ src/core/tools.ts                     | 217 [32m++++++[m[31m-[m
+ src/i18n/utils.ts                     |   1 [32m+[m
+ src/pages/tools/image-convert.astro   |  56 [32m++[m
+ src/pages/tools/image-resize.astro    |  53 [32m++[m
+ src/pages/tools/mockup-player.astro   |  14 [32m+[m
+ .../tools/music-visualizer.astro      |  14 [32m+[m
+ src/pages/tools/video-reverse.astro   |  50 [32m++[m
+ src/pages/tools/video-rotate.astro    |  56 [32m++[m
+ src/pages/tools/video-speed.astro     |  58 [32m++[m
+ .../tools/waveform-generator.astro    |  14 [32m+[m
+ .../mobile/components/BottomNav.tsx   |   1 [32m+[m
+ .../mobile/screens/SettingsScreen.tsx |   1 [32m+[m
+ src/ui/mobile/screens/ToolsScreen.tsx |   2 [32m+[m[31m-[m
+ src/ui/mobile/tool/overlays.tsx       |   2 [32m+[m[31m-[m
+ tsc-errors.txt                        |  43 [32m++[m
+ 33 files changed, 1450 insertions(+), 23 deletions(-)
