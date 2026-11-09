@@ -16,6 +16,17 @@ const AI_EXTERNALS = [
 ];
 
 /**
+ * ★ 3D packages that must NOT be bundled by Vite/Rollup.
+ * These often cause SSR build issues on Vercel if not externalized.
+ */
+const THREE_EXTERNALS = [
+  "three",
+  "three-stdlib",
+  "@react-three/fiber",
+  "@react-three/drei",
+];
+
+/**
  * ★ Capacitor packages that must NOT be bundled by Vite/Rollup.
  */
 const CAPACITOR_EXTERNALS = [
@@ -32,7 +43,12 @@ const CAPACITOR_EXTERNALS = [
   "@capawesome/capacitor-file-picker",
 ];
 
-const ALL_EXTERNALS = [...AI_EXTERNALS, ...CAPACITOR_EXTERNALS];
+/** Merged list — used across build / worker / ssr / optimizeDeps. */
+const ALL_EXTERNALS = [
+  ...AI_EXTERNALS,
+  ...THREE_EXTERNALS,
+  ...CAPACITOR_EXTERNALS,
+];
 
 export default defineConfig({
   site: "https://dayront.com",
@@ -57,7 +73,7 @@ export default defineConfig({
         !page.includes("/category/") &&
         !page.includes("/download") &&
         !page.includes("/status") &&
-        !page.includes("/app/") && // ★ Prevents PWA routes from bloating the sitemap
+        !page.includes("/app/") &&
         !page.includes("/404"),
       i18n: {
         defaultLocale: "en",
@@ -69,11 +85,10 @@ export default defineConfig({
         { 
           userAgent: "*", 
           allow: "/", 
-          // ★ UPDATED: Matches the full list of rules to save crawl budget
           disallow: ["/app/", "/api/", "/status", "/*?q=", "/*?lang=", "/download"] 
         }
       ],
-      sitemap: true, // ★ Ensures the sitemap URL is added to robots.txt
+      sitemap: true,
     }),
   ],
 
